@@ -51,6 +51,7 @@ members = [
     "utils",
     "rothschild",
     "metrics/perf_monitor",
+    "x-pyo3",
 ]
 
 [workspace.package]

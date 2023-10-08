@@ -1,0 +1,20 @@
+[package]
+name = "x-pyo3"
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+edition.workspace = true
+include.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "rusty_kaspa_db"
+crate-type = ["cdylib"]
+
+[dependencies]
+kaspa-consensus-core.workspace = true
+kaspa-database.workspace = true
+
+dirs = "4.0"
+pyo3 = "0.19.2"
