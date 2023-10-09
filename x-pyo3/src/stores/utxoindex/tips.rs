@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use pyo3::prelude::*;
-
 use kaspa_consensus_core::BlockHashSet;
 use kaspa_database::{
     prelude::{CachedDbItem, DB, StoreResult},
