@@ -1,11 +1,14 @@
 use std::{
+    collections::HashSet,
     fs,
     path::PathBuf,
     sync::Arc,
+
 };
 
 use pyo3::prelude::*;
 
+use kaspa_consensus_core::BlockHashSet;
 use kaspa_database::prelude::DB;
 
 use crate::stores::{
@@ -46,7 +49,7 @@ struct StoreManager {
 
 #[pyclass]
 pub struct Reader {
-    store_manager: StoreManager,
+    stores: StoreManager,
 
     #[pyo3(get, set)]
     home_dir: PathBuf,
@@ -88,11 +91,11 @@ impl Reader {
 
         // Set network_dir based on passed network
         let network_dir = match network.as_deref() {
-            Some("mainnet") => app_dir.join("mainnet"),
-            Some("testnet") => app_dir.join("testnet"),
-            Some("devnet") => app_dir.join("devnet"),
-            Some("simnet") => app_dir.join("simnet"),
-            _ => app_dir.join("mainnet"),
+            Some("mainnet") => app_dir.join("kaspa-mainnet"),
+            Some("testnet") => app_dir.join("kaspa-testnet"),
+            Some("devnet") => app_dir.join("kaspa-devnet"),
+            Some("simnet") => app_dir.join("kaspa-simnet"),
+            _ => app_dir.join("kaspa-mainnet"),
         };
 
         // Set db_dir
@@ -117,10 +120,10 @@ impl Reader {
                 .build();
 
             // Create circulating supply store
-            circulating_supply_store = Some(DbCirculatingSupplyStore::new(utxo_index_db.clone()));
+            circulating_supply_store = Some(DbCirculatingSupplyStore::new(utxo_index_db.clone())); // TODO is it right to clone?
 
             // Create utxo tips store
-            utxo_tips_store = Some(DbUtxoIndexTipsStore::new(utxo_index_db.clone()));
+            utxo_tips_store = Some(DbUtxoIndexTipsStore::new(utxo_index_db.clone())); // TODO is it right to clone?
         }
 
         // Set meta_db_dir
@@ -129,13 +132,14 @@ impl Reader {
         // Set consensus_db_dir
         let consensus_db_dir = db_dir.join("consensus");
 
-        let store_manager = StoreManager {
+        let stores = StoreManager {
             circulating_supply_store,
             utxo_tips_store
         };
 
         Reader {
-            store_manager,
+            stores,
+
             home_dir,
             app_dir,
             network_dir,
@@ -145,5 +149,46 @@ impl Reader {
             consensus_db_dir
         }
     }
+    
+    pub fn get_cs(&self) -> u64 {
+        // TODO check if utxoindex exists on system first
 
+        self.stores.circulating_supply_store.as_ref().unwrap().get().unwrap()
+    }
+
+    pub fn get_utxo_tips(&self) -> HashSet<String> {
+        // TODO check if utxoindex exists on system first
+
+        // Get tips from store
+        let utxo_tips = self.stores.utxo_tips_store.as_ref().unwrap().get().unwrap();
+
+        // Return as HashSet<String> (rather than BlockHashSet) for ease of type conversion w/ PyO3
+        let mut tips = HashSet::new();
+        for tip in utxo_tips.iter() {
+            tips.insert(tip.to_string());
+        }
+
+        tips
+    }
+
+    // pub fn get_utxos()
+        // loads all utxos into memory and returns
+        // would be nice if there was a way to chunk and yield like a python generator
+
+        // param to control pubkey script (exclude, as adress, bytes, hex, etc.)
+        // param to control transaction_outpoint (exclude, etc.)
+        // param to include/exclude daa
+        // param to include/exclude amount
+        // param to include/exclude is_coinbase
+
+    // pub fn export_utxos()
+        // export utxos to csv
+
+    // get utxos by script
+
+    // get unique addresses
+    // export unique addresses 
+
+    // get utxo ages
+    // export utxo ages
 }

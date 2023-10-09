@@ -23,7 +23,7 @@ impl DbUtxoIndexTipsStore {
         Self { db: Arc::clone(&db), access: CachedDbItem::new(db.clone(), DatabaseStorePrefixes::UtxoIndexTips.into()) }
     }
 
-    fn get(&self) -> StoreResult<Arc<BlockHashSet>> {
+    pub fn get(&self) -> StoreResult<Arc<BlockHashSet>> {
         self.access.read()
     }
 }

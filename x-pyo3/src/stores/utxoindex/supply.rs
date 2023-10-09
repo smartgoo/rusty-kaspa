@@ -28,7 +28,7 @@ impl DbCirculatingSupplyStore {
         Self { db: Arc::clone(&db), access: CachedDbItem::new(db, DatabaseStorePrefixes::CirculatingSupply.into()) }
     }
 
-    fn get(&self) -> StoreResult<u64> {
+    pub fn get(&self) -> StoreResult<u64> {
         self.access.read()
     }
 }
