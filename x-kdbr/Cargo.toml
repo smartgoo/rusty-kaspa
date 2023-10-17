@@ -1,0 +1,29 @@
+[package]
+name = "x-pyo3"
+version.workspace = true
+authors.workspace = true
+license.workspace = true
+edition.workspace = true
+include.workspace = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "kdbr"
+crate-type = ["cdylib"]
+
+[dependencies]
+kaspa-addresses.workspace = true
+kaspa-consensus-core.workspace = true
+kaspa-database.workspace = true
+kaspa-hashes.workspace = true
+kaspa-utxoindex.workspace = true
+kaspa-txscript.workspace = true
+
+itertools.workspace = true
+serde.workspace = true
+
+chrono = "0.4"
+csv = "1.2"
+dirs = "4.0"
+pyo3 = "0.19.2"
