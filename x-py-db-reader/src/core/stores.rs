@@ -3,10 +3,7 @@ use crate::stores::{
     meta::MultiConsensusManagementStore,
     utxoindex::{indexed_utxos::DbUtxoSetByScriptPublicKeyStore, supply::DbCirculatingSupplyStore, tips::DbUtxoIndexTipsStore},
 };
-use kaspa_consensus::model::stores::{
-    headers::{DbHeadersStore, HeaderStoreReader},
-    tips::DbTipsStore,
-};
+use kaspa_consensus::model::stores::{headers::DbHeadersStore, tips::DbTipsStore};
 
 pub struct Stores {
     pub meta_store: MultiConsensusManagementStore,

@@ -1,6 +1,3 @@
-// use crate::core::model::{CompactUtxoCollection, CompactUtxoEntry, UtxoSetByScriptPublicKey};
-
-use chrono::prelude::*;
 use csv::Writer;
 use itertools::Itertools;
 use kaspa_addresses::Prefix;
@@ -14,12 +11,11 @@ use kaspa_txscript::extract_script_pub_key_address;
 use kaspa_utxoindex::model::{CompactUtxoCollection, CompactUtxoEntry, UtxoSetByScriptPublicKey};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-// use std::error::Error;
 use std::{
     fmt::Display,
     fs::File,
     mem::size_of,
-    path::{Path, PathBuf},
+    path::PathBuf,
     sync::Arc,
 };
 
@@ -176,18 +172,18 @@ impl DbUtxoSetByScriptPublicKeyStore {
         ))
     }
 
+    // Export all outpoints to a local CSV file
     pub fn export_all_outpoints(
         &self,
         filepath: String,
         chunk_size: i32,
         verbose: bool,
         address: bool,
-        script_public_key: bool,
         daa_score: bool,
         amount: bool,
         is_coinbase: bool,
+        outpoint: bool,
     ) -> i64 {
-        // TODO what to return?
 
         // Create CSV file and writer
         let final_path = PathBuf::from(filepath);
@@ -199,9 +195,6 @@ impl DbUtxoSetByScriptPublicKeyStore {
         if address {
             headers.push("address");
         }
-        // if script_public_key { // TODO
-        //     headers.push("script_public_key");
-        // }
         if daa_score {
             headers.push("daa_score");
         }
@@ -211,6 +204,10 @@ impl DbUtxoSetByScriptPublicKeyStore {
         if is_coinbase {
             headers.push("is_coinbase");
         }
+        if outpoint {
+            headers.push("transaction_id");
+            headers.push("transaction_index");
+        }
         let _ = wtr.write_record(&headers);
 
         let mut chunk_count = 0;
@@ -219,53 +216,61 @@ impl DbUtxoSetByScriptPublicKeyStore {
         let iter = self.access.iterator();
         for chunk in &iter.chunks(chunk_size.try_into().unwrap()) {
             for r in chunk {
-                // TODO optimize. Lots of opportunities in this chunk of code to do so
-
+                // TODO add types. key: Box<[u8]>, value: UtxoEntry
                 let (key, value) = r.unwrap();
-
-                let mut row = Vec::new();
 
                 // Convert key to UtxoEntryFullAccessKey
                 let utxo_entry_full_access_key = UtxoEntryFullAccessKey(Arc::new(key.to_vec()));
 
-                // TODO also extract TransactionOutpointKey and include optionally based on args
-
-                // Pull ScriptPublicKeyBucket out of UtxoEntryFullAccessKey
-                let script_public_key_bucket = utxo_entry_full_access_key.extract_script_public_key_bucket();
-
-                // Pull ScriptPublicKey out of ScriptPublicKeyBucket
-                let script_public_key = ScriptPublicKey::from(script_public_key_bucket);
-
-                // Convert to address
-                let addr = extract_script_pub_key_address(&script_public_key, Prefix::Mainnet).unwrap();
-
-                // Add to row according to params
+                // Build row for CSV file
+                let mut row: Vec<String> = Vec::new();
                 if address {
+                    // Extract ScriptPublicKeyBucket from UtxoEntryFullAccessKey
+                    let script_public_key_bucket = utxo_entry_full_access_key.extract_script_public_key_bucket();
+
+                    // Get ScriptPublicKey from ScriptPublicKeyBucket
+                    let script_public_key = ScriptPublicKey::from(script_public_key_bucket);
+
+                    // Convert ScriptPublicKey to address
+                    let addr = extract_script_pub_key_address(&script_public_key, Prefix::Mainnet).unwrap();
+
+                    // Add to row
                     row.push(addr.to_string());
                 }
-                // if script_public_key { // TODO
-                //     headers.push("script_public_key");
-                // }
+
                 if daa_score {
                     row.push(value.block_daa_score.to_string());
                 }
+
                 if amount {
                     row.push(value.amount.to_string());
                 }
+
                 if is_coinbase {
+                    // Convert is_coinbase to single char to reduce file size
                     let coinbase_value = if value.is_coinbase { "t" } else { "f" };
                     row.push(coinbase_value.to_string());
                 }
 
-                // Write to CSV. value is type CompactUtxoEntry
+                if outpoint {
+                    // Extract TransactionOutpoint from UtxoEntryFullAccessKey
+                    let transaction_outpoint = utxo_entry_full_access_key.extract_outpoint();
+                    let outpoint_tx_id = transaction_outpoint.transaction_id;
+                    let outpoint_tx_idx = transaction_outpoint.index;
+
+                    row.push(outpoint_tx_id.to_string());
+                    row.push(outpoint_tx_idx.to_string());
+                }
+
                 let _ = wtr.write_record(&row);
 
-                utxo_count += 1; // TODO probably should use chunk but being lazy atm
+                // TODO probably should use chunk but feeling lazy atm
+                utxo_count += 1;
             }
 
             if verbose {
                 chunk_count += 1;
-                println!("{} chunks written to csv", chunk_count);
+                println!("{} UTXOs written to CSV in {} chunks", utxo_count, chunk_count);
             }
         }
 

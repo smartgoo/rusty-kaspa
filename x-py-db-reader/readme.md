@@ -19,16 +19,17 @@ From the same python venv:
 
 # TODO
 ### WIP:
-- Exporting UTXO set:
+- [x] Exporting UTXO set:
     - [x] Rename Reader fn `export_all_utxos()` to `export_utxo_set()`
-    - [ ] Handle `script_public_key` param properly in `DbUtxoSetByScriptPublicKeyStore.export_all_outpoints()`
-    - [ ] Add `outpoint` param (true/false, default=false?). If true, includes outpoint tx and index
-    - [ ] Optmized for `for r in chunk` loop. Should only parse `key` based passed params
-    - [x] Decide on what should be returned. Currently is count of utxos exported.
-- [ ] clean up TODOs throughout code
+    - [x] Add `outpoint` param (true/false, default=false). If true, includes outpoint tx and index.
+    - [x] Clean up `for r in chunk` loop. Should only parse `key` based passed params
+    - [x] Decide on what should be returned
+    - [ ] Tests for `export_utxo_set()` stack
+    - [ ] Thoroughly document entire `export_utxo_set()` stack in rust and pyo3 compliant manner
 
 
 ### Next:
+- Should `export_utxo_set()` expose param that dictates whether or not to export ScriptPublicKey?
 - Undo fully custom store implementations in `x-py-db-reader/src/stores` and use oob stores (with some minor visibility modifications and extended functionality where required).
 - Write `export_unique_addresses()` fn. Support params for `balances`=true/false, `utxo_count`=true/false
 - Write `get_unique_addresses()` fn. Support params for `balances`=true/false, `utxo_count`=true/false

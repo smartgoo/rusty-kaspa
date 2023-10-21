@@ -1,7 +1,6 @@
 use kaspa_hashes::Hash;
 use kaspa_math::Uint192;
 use pyo3::prelude::*;
-use pyo3::types::IntoPyDict;
 
 pub trait ToPy {
     fn to_py(&self, py: Python) -> PyObject;

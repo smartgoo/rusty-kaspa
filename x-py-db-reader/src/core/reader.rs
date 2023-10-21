@@ -108,10 +108,10 @@ impl Reader {
         chunk_size=100000,
         verbose=false,
         address=true,
-        script_public_key=false,
         daa_score=true,
         amount=true,
-        is_coinbase=true
+        is_coinbase=true,
+        outpoint=false
     ))]
     pub fn export_utxo_set(
         &self,
@@ -119,20 +119,20 @@ impl Reader {
         chunk_size: i32,
         verbose: bool,
         address: bool,
-        script_public_key: bool,
         daa_score: bool,
         amount: bool,
         is_coinbase: bool,
+        outpoint: bool,
     ) -> i64 {
         self.stores.utxo_store.as_ref().unwrap().export_all_outpoints(
             filepath,
             chunk_size,
             verbose,
             address,
-            script_public_key,
             daa_score,
             amount,
             is_coinbase,
+            outpoint,
         )
     }
 }

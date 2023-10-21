@@ -9,4 +9,4 @@ if __name__ == "__main__":
         h = store.get_block_header(tip)
         print(h['hash'], h['timestamp'], h['daa_score'])
     
-    print(store.export_all_utxos(filepath="test.csv", chunk_size=1_000_000, verbose=True))
+    print(store.export_utxo_set(filepath="/opt2/work/dev/test.csv", verbose=True, outpoint=False))
