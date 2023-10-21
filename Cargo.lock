@@ -6172,7 +6172,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "x-pyo3"
+name = "x-py-kaspadbr"
 version = "0.1.7"
 dependencies = [
  "chrono",
@@ -6180,9 +6180,11 @@ dependencies = [
  "dirs 4.0.0",
  "itertools 0.10.5",
  "kaspa-addresses",
+ "kaspa-consensus",
  "kaspa-consensus-core",
  "kaspa-database",
  "kaspa-hashes",
+ "kaspa-math",
  "kaspa-txscript",
  "kaspa-utxoindex",
  "pyo3",

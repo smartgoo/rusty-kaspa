@@ -1,5 +1,5 @@
 [package]
-name = "x-pyo3"
+name = "x-py-kaspadbr"
 version.workspace = true
 authors.workspace = true
 license.workspace = true
@@ -9,14 +9,16 @@ include.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "kdbr"
+name = "kaspadbr"
 crate-type = ["cdylib"]
 
 [dependencies]
 kaspa-addresses.workspace = true
+kaspa-consensus.workspace = true
 kaspa-consensus-core.workspace = true
 kaspa-database.workspace = true
 kaspa-hashes.workspace = true
+kaspa-math.workspace = true
 kaspa-utxoindex.workspace = true
 kaspa-txscript.workspace = true
 

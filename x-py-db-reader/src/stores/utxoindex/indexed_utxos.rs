@@ -15,11 +15,13 @@ use kaspa_txscript::extract_script_pub_key_address;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 // use std::error::Error;
-use std::fmt::Display;
-use std::fs::File;
-use std::mem::size_of;
-use std::path::PathBuf;
-use std::sync::Arc;
+use std::{
+    fmt::Display,
+    fs::File,
+    mem::size_of,
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 pub const VERSION_TYPE_SIZE: usize = size_of::<ScriptPublicKeyVersion>(); // Const since we need to re-use this a few times.
 
@@ -174,26 +176,55 @@ impl DbUtxoSetByScriptPublicKeyStore {
         ))
     }
 
-    pub fn export_all_outpoints(&self) -> String { // TODO return Result<>
+    pub fn export_all_outpoints(
+        &self,
+        filepath: String,
+        chunk_size: i32,
+        verbose: bool,
+        address: bool,
+        script_public_key: bool,
+        daa_score: bool,
+        amount: bool,
+        is_coinbase: bool
+    ) -> i64 { // TODO what to return?
+
         // Create CSV file and writer
-        let current_datetime = Utc::now().format("%Y-%m-%d_%H%M%S").to_string();
-        let filename = format!("output_{}.csv", current_datetime);
-        let file = File::create(filename.clone()).expect("Failed to create file");
+        let final_path = PathBuf::from(filepath);
+        let file = File::create(&final_path).expect("Failed to create file");
         let mut wtr = Writer::from_writer(file); // TODO outdir
 
         // Write CSV headers row
-        let _ = wtr.write_record(&["address", "block_daa_score", "amount", "is_coinbase"]);
+        let mut headers = Vec::new();
+        if address {
+            headers.push("address");
+        }
+        // if script_public_key { // TODO
+        //     headers.push("script_public_key");
+        // }
+        if daa_score {
+            headers.push("daa_score");
+        }
+        if amount {
+            headers.push("amount");
+        }
+        if is_coinbase {
+            headers.push("is_coinbase");
+        }
+        let _ = wtr.write_record(&headers);
 
-        let chunk_size = 100_000;
-        let mut chunks_processed = 0;
+        // let chunk_size = 100_000;
+        let mut chunk_count = 0;
+        let mut utxo_count: i64 = 0;
 
         let iter = self.access.iterator();
-        for chunk in &iter.chunks(chunk_size) {
+        for chunk in &iter.chunks(chunk_size.try_into().unwrap()) {
             for r in chunk {
+                // TODO optimize. Lots of opportunities in this chunk of code to do so 
+
                 let (key, value) = r.unwrap();
 
-                // TODO write last indexed block and block timestamp to a separate file?
-
+                let mut row = Vec::new();
+                
                 // Convert key to UtxoEntryFullAccessKey 
                 let utxo_entry_full_access_key = UtxoEntryFullAccessKey(Arc::new(key.to_vec()));
 
@@ -204,19 +235,42 @@ impl DbUtxoSetByScriptPublicKeyStore {
 
                 // Pull ScriptPublicKey out of ScriptPublicKeyBucket
                 let script_public_key = ScriptPublicKey::from(script_public_key_bucket);
-                
+                // if {script_public_key}
+
                 // Convert to address
                 let addr = extract_script_pub_key_address(&script_public_key, Prefix::Mainnet).unwrap();
 
+                // Add to row according to params
+                if address {
+                    row.push(addr.to_string());
+                }
+                // if script_public_key { // TODO
+                //     headers.push("script_public_key");
+                // }
+                if daa_score {
+                    row.push(value.block_daa_score.to_string());
+                }
+                if amount {
+                    row.push(value.amount.to_string());
+                }
+                if is_coinbase {
+                    let coinbase_value = if value.is_coinbase { "t" } else { "f" };
+                    row.push(coinbase_value.to_string());
+                }
+
                 // Write to CSV. value is type CompactUtxoEntry
-                let _ = wtr.write_record(&[addr.to_str(), value.block_daa_score.to_string(), value.amount.to_string(), value.is_coinbase.to_string()]);
+                let _ = wtr.write_record(&row);
+
+                utxo_count += 1; // TODO probably should use chunk but being lazy atm
             }
 
-            chunks_processed += 1;
-            println!("{}", chunks_processed);
+            if verbose {
+                chunk_count += 1;
+                println!("{} chunks written to csv", chunk_count);
+            }
         }
 
-        filename
+        utxo_count
     }
 
 }

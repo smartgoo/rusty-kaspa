@@ -51,7 +51,7 @@ members = [
     "utils",
     "rothschild",
     "metrics/perf_monitor",
-    "x-kdbr",
+    "x-py-db-reader",
 ]
 
 [workspace.package]
