@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use kaspa_consensus_core::BlockHashSet;
 use kaspa_database::{
-    prelude::{CachedDbItem, DB, StoreResult},
+    prelude::{CachedDbItem, StoreResult, DB},
     registry::DatabaseStorePrefixes,
 };
 

@@ -1,10 +1,7 @@
+use super::types::ToPy;
 use kaspa_consensus_core::header::Header;
 use pyo3::prelude::*;
-use pyo3::types::{
-    IntoPyDict,
-    PyDict,
-};
-use super::types::ToPy;
+use pyo3::types::{IntoPyDict, PyDict};
 
 // TODO move to mod.rs
 pub trait ToPyDict {

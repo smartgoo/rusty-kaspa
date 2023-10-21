@@ -1,18 +1,11 @@
-use crate::core::{dirs::Dirs};
+use crate::core::dirs::Dirs;
 use crate::stores::{
     meta::MultiConsensusManagementStore,
-    utxoindex::{
-        supply::DbCirculatingSupplyStore,
-        tips::DbUtxoIndexTipsStore,
-        indexed_utxos::DbUtxoSetByScriptPublicKeyStore,
-    },
+    utxoindex::{indexed_utxos::DbUtxoSetByScriptPublicKeyStore, supply::DbCirculatingSupplyStore, tips::DbUtxoIndexTipsStore},
 };
-
-use kaspa_consensus::{
-    model::stores::{
-        headers::{DbHeadersStore, HeaderStoreReader},
-        tips::DbTipsStore,
-    },
+use kaspa_consensus::model::stores::{
+    headers::{DbHeadersStore, HeaderStoreReader},
+    tips::DbTipsStore,
 };
 
 pub struct Stores {
@@ -29,16 +22,12 @@ pub struct Stores {
 impl Stores {
     pub fn new(dirs: &Dirs) -> Self {
         // Construct meta DB and store
-        let meta_db = kaspa_database::prelude::ConnBuilder
-            ::default()
-            .with_db_path(dirs.meta_db_dir.clone())
-            .build();
+        let meta_db = kaspa_database::prelude::ConnBuilder::default().with_db_path(dirs.meta_db_dir.clone()).build();
         let meta_store = MultiConsensusManagementStore::new(meta_db);
 
         // Construct active consensus DB
         let current_consensus_key = meta_store.get_current_consensus_entry().unwrap();
-        let consensus_db = kaspa_database::prelude::ConnBuilder
-            ::default()
+        let consensus_db = kaspa_database::prelude::ConnBuilder::default()
             .with_db_path(dirs.consensus_db_dir.join(format!("consensus-{:0>3}", current_consensus_key)))
             .build();
 

@@ -1,27 +1,15 @@
+use kaspa_consensus::{consensus::factory::ConsensusEntry, model::stores::U64Key};
 use kaspa_database::{
-    prelude::{
-        DB,
-        CachedDbAccess,
-        CachedDbItem,
-    },
-    registry::DatabaseStorePrefixes
-};
-use kaspa_consensus::{
-    consensus::factory::ConsensusEntry,
-    model::stores::U64Key,
+    prelude::{CachedDbAccess, CachedDbItem, DB},
+    registry::DatabaseStorePrefixes,
 };
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::HashMap,
-    sync::Arc,
-};
-
+use std::{collections::HashMap, sync::Arc};
 
 /*
     Source used for this file:
     rusty-kaspa/consensus/src/consensus/factory.rs
 */
-
 
 #[derive(Serialize, Deserialize, Clone, Default)]
 pub struct MultiConsensusMetadata {

@@ -1,19 +1,10 @@
-use crate::core::{
-    dirs::Dirs, 
-    stores::Stores
-};
-use crate::converters::{
-    dict::ToPyDict,
-};
+use crate::converters::dict::ToPyDict;
+use crate::core::{dirs::Dirs, stores::Stores};
 
 use kaspa_consensus::model::stores::headers::HeaderStoreReader;
 use kaspa_hashes::Hash;
 use pyo3::prelude::*;
-use std::{
-    collections::{HashSet},
-    path::PathBuf,
-    str::FromStr,
-};
+use std::{collections::HashSet, path::PathBuf, str::FromStr};
 
 #[pyclass]
 pub struct Reader {
@@ -48,7 +39,7 @@ impl Reader {
     #[new]
     pub fn new(app_dir: Option<PathBuf>, network: Option<String>) -> Self {
         // Init directories
-        // TODO ensure app_dir exists 
+        // TODO ensure app_dir exists
         let dirs = Dirs::new(app_dir.clone(), network.clone());
 
         // Init stores
@@ -63,23 +54,24 @@ impl Reader {
             db_dir: dirs.db_dir,
             utxo_index_db_dir: dirs.utxo_index_db_dir,
             meta_db_dir: dirs.meta_db_dir,
-            consensus_db_dir: dirs.consensus_db_dir
+            consensus_db_dir: dirs.consensus_db_dir,
         }
     }
-    
+
     // Gets current consensus entry from meta store
     pub fn get_current_consensus_entry(&self) -> Option<u64> {
         self.stores.meta_store.get_current_consensus_entry()
     }
-    
+
     // Gets block header for given hash from consensus DB. Returns a dict
-    pub fn get_block_header(&self, py: Python, block_hash: String) -> PyResult<PyObject> { // TODO can I explicitly define PyDict as the return type?
+    pub fn get_block_header(&self, py: Python, block_hash: String) -> PyResult<PyObject> {
+        // TODO can I explicitly define PyDict as the return type?
         // Convert block_hash from String to Hash
         let block_hash = Hash::from_str(&block_hash).unwrap();
 
         // Get block from store
         let header = self.stores.headers_store.get_header(block_hash).unwrap();
-        
+
         // Convert the header to a PyDict
         let header_dict = header.to_py_dict(py);
 
@@ -94,7 +86,8 @@ impl Reader {
     }
 
     // Gets utxo tips from utxoindex store
-    pub fn get_utxo_tips(&self) -> HashSet<String> { // TODO use a converter and return PyResult<PyObject> or a list type if possible
+    pub fn get_utxo_tips(&self) -> HashSet<String> {
+        // TODO use a converter and return PyResult<PyObject> or a list type if possible
         // TODO ensure utxoindex dir exists first
 
         // Get tips from store
@@ -112,7 +105,7 @@ impl Reader {
     // Exports entire UTXO set to a CSV file. Returns count of UTXOs exported.
     #[pyo3(signature = (
         filepath,
-        chunk_size=100000, 
+        chunk_size=100000,
         verbose=false,
         address=true,
         script_public_key=false,
@@ -120,8 +113,8 @@ impl Reader {
         amount=true,
         is_coinbase=true
     ))]
-    pub fn export_all_utxos(
-        &self, 
+    pub fn export_utxo_set(
+        &self,
         filepath: String, // TODO PyO3 was throwing some error on &str
         chunk_size: i32,
         verbose: bool,
@@ -129,23 +122,8 @@ impl Reader {
         script_public_key: bool,
         daa_score: bool,
         amount: bool,
-        is_coinbase: bool
+        is_coinbase: bool,
     ) -> i64 {
-        /* TODO
-            add outpoint param?
-                - export outpoint (tx id and index?)?
-                - options: true, false
-                - default ?
-
-            add daa_timestamp param
-                - include column w/ daa_timestamp
-                - options: true, false
-                - default: false
-
-            ability to control filepath/filename?
-            should this support any other format than csv? json? xml?
-        */
-
         self.stores.utxo_store.as_ref().unwrap().export_all_outpoints(
             filepath,
             chunk_size,
@@ -154,7 +132,7 @@ impl Reader {
             script_public_key,
             daa_score,
             amount,
-            is_coinbase
+            is_coinbase,
         )
     }
 }

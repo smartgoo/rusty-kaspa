@@ -27,4 +27,4 @@ if __name__ == "__main__":
 
     print('\n')
 
-    print(store.export_all_utxos(filepath="test.csv", verbose=True))
+    print(store.export_utxo_set(filepath="test.csv", verbose=True))

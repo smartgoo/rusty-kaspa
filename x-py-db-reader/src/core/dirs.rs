@@ -36,11 +36,7 @@ impl Dirs {
         let db_dir = network_dir.join("datadir");
 
         // Set utxo_index_db_dir if utxoindex dir exists inside of db_dir
-        let utxo_index_db_dir = if db_dir.join("utxoindex").exists() {
-            Some(db_dir.join("utxoindex"))
-        } else {
-            None
-        };
+        let utxo_index_db_dir = if db_dir.join("utxoindex").exists() { Some(db_dir.join("utxoindex")) } else { None };
 
         // Set meta_db_dir
         let meta_db_dir = db_dir.join("meta");
@@ -65,14 +61,14 @@ impl Dirs {
         #[cfg(not(target_os = "windows"))]
         return dirs::home_dir().unwrap();
     }
-    
+
     fn get_app_dir() -> PathBuf {
         #[cfg(target_os = "windows")]
         return Self::get_home_dir().join("rusty-kaspa");
         #[cfg(not(target_os = "windows"))]
         return Self::get_home_dir().join(".rusty-kaspa");
     }
-    
+
     // fn get_out_dir() -> PathBuf {
     //     let outdir = Self::get_home_dir().join("rusty-kaspa-out");
     //     if !outdir.exists() {

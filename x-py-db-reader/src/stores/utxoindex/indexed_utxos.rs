@@ -10,8 +10,8 @@ use kaspa_consensus_core::tx::{
 use kaspa_database::prelude::{CachedDbAccess, StoreResult, DB};
 use kaspa_database::registry::DatabaseStorePrefixes;
 use kaspa_hashes::Hash;
-use kaspa_utxoindex::model::{CompactUtxoCollection, CompactUtxoEntry, UtxoSetByScriptPublicKey};
 use kaspa_txscript::extract_script_pub_key_address;
+use kaspa_utxoindex::model::{CompactUtxoCollection, CompactUtxoEntry, UtxoSetByScriptPublicKey};
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 // use std::error::Error;
@@ -185,8 +185,9 @@ impl DbUtxoSetByScriptPublicKeyStore {
         script_public_key: bool,
         daa_score: bool,
         amount: bool,
-        is_coinbase: bool
-    ) -> i64 { // TODO what to return?
+        is_coinbase: bool,
+    ) -> i64 {
+        // TODO what to return?
 
         // Create CSV file and writer
         let final_path = PathBuf::from(filepath);
@@ -212,20 +213,19 @@ impl DbUtxoSetByScriptPublicKeyStore {
         }
         let _ = wtr.write_record(&headers);
 
-        // let chunk_size = 100_000;
         let mut chunk_count = 0;
         let mut utxo_count: i64 = 0;
 
         let iter = self.access.iterator();
         for chunk in &iter.chunks(chunk_size.try_into().unwrap()) {
             for r in chunk {
-                // TODO optimize. Lots of opportunities in this chunk of code to do so 
+                // TODO optimize. Lots of opportunities in this chunk of code to do so
 
                 let (key, value) = r.unwrap();
 
                 let mut row = Vec::new();
-                
-                // Convert key to UtxoEntryFullAccessKey 
+
+                // Convert key to UtxoEntryFullAccessKey
                 let utxo_entry_full_access_key = UtxoEntryFullAccessKey(Arc::new(key.to_vec()));
 
                 // TODO also extract TransactionOutpointKey and include optionally based on args
@@ -235,7 +235,6 @@ impl DbUtxoSetByScriptPublicKeyStore {
 
                 // Pull ScriptPublicKey out of ScriptPublicKeyBucket
                 let script_public_key = ScriptPublicKey::from(script_public_key_bucket);
-                // if {script_public_key}
 
                 // Convert to address
                 let addr = extract_script_pub_key_address(&script_public_key, Prefix::Mainnet).unwrap();
@@ -272,5 +271,4 @@ impl DbUtxoSetByScriptPublicKeyStore {
 
         utxo_count
     }
-
 }
