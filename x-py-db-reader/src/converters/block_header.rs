@@ -1,14 +1,8 @@
-use super::types::ToPy;
+use super::{types::ToPy, ToPyDict};
 use kaspa_consensus_core::header::Header;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-// TODO move to mod.rs
-pub trait ToPyDict {
-    fn to_py_dict<'a>(&'a self, py: Python<'a>) -> &'a PyDict;
-}
-
-// TODO move to it's own header.rs specific converter file
 // Converts Header struct into PyO3 Python dict
 // rusty-kaspa/consensus/core/src/header.rs
 impl ToPyDict for Header {

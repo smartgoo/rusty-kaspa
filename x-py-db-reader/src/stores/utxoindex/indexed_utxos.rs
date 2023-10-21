@@ -176,13 +176,13 @@ impl DbUtxoSetByScriptPublicKeyStore {
     pub fn export_all_outpoints(
         &self,
         filepath: String,
-        chunk_size: i32,
-        verbose: bool,
         address: bool,
         daa_score: bool,
         amount: bool,
         is_coinbase: bool,
         outpoint: bool,
+        chunk_size: i32,
+        verbose: bool,
     ) -> i64 {
 
         // Create CSV file and writer

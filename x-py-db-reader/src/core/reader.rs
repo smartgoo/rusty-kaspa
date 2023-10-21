@@ -1,4 +1,4 @@
-use crate::converters::dict::ToPyDict;
+use crate::converters::ToPyDict;
 use crate::core::{dirs::Dirs, stores::Stores};
 
 use kaspa_consensus::model::stores::headers::HeaderStoreReader;
@@ -105,34 +105,34 @@ impl Reader {
     // Exports entire UTXO set to a CSV file. Returns count of UTXOs exported.
     #[pyo3(signature = (
         filepath,
-        chunk_size=100000,
-        verbose=false,
         address=true,
         daa_score=true,
         amount=true,
         is_coinbase=true,
-        outpoint=false
+        outpoint=false,
+        chunk_size=100000,
+        verbose=false
     ))]
     pub fn export_utxo_set(
         &self,
         filepath: String, // TODO PyO3 was throwing some error on &str
-        chunk_size: i32,
-        verbose: bool,
         address: bool,
         daa_score: bool,
         amount: bool,
         is_coinbase: bool,
         outpoint: bool,
+        chunk_size: i32,
+        verbose: bool,
     ) -> i64 {
         self.stores.utxo_store.as_ref().unwrap().export_all_outpoints(
             filepath,
-            chunk_size,
-            verbose,
             address,
             daa_score,
             amount,
             is_coinbase,
             outpoint,
+            chunk_size,
+            verbose,
         )
     }
 }

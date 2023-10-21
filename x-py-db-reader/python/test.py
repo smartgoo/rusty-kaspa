@@ -20,11 +20,3 @@ if __name__ == "__main__":
     print(f'get_circulating_supply() -> {store.get_circulating_supply() / 100_000_000}')
     print(f'get_utxo_tips() -> {store.get_utxo_tips()}')
     print(f'get_block_header() -> {store.get_block_header("5e61c3af59255cdd6362b72b8300f29a50580f42f40641996213a4f33af67c30")}')
-
-    print('\n')
-    print(f'----- EXPORT FUNCTIONS')
-    print('TODO')
-
-    print('\n')
-
-    print(store.export_utxo_set(filepath="test.csv", verbose=True))
