@@ -13,3 +13,4 @@ analyzer-target
 testing/integration/perflogs*
 
 env/
+*.csv

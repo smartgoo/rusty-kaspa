@@ -12,8 +12,6 @@ pub struct Dirs {
 
 impl Dirs {
     pub fn new(app_dir: Option<PathBuf>, network: Option<String>) -> Self {
-        // TODO check if app_dir exists on system and throw error if not
-
         // Set home dir based on OS
         let home_dir = Self::get_home_dir();
 
@@ -53,6 +51,17 @@ impl Dirs {
             meta_db_dir,
             consensus_db_dir
         }
+    }
+
+    pub fn validate_existence(&self) -> bool {
+        self.home_dir.exists() &&
+        self.app_dir.exists() &&
+        self.network_dir.exists() &&
+        self.db_dir.exists() &&
+        // For utxo_index_db_dir, which is an Option<PathBuf>, we need to handle it a little differently:
+        self.utxo_index_db_dir.as_ref().map_or(true, |dir| dir.exists()) &&
+        self.meta_db_dir.exists() &&
+        self.consensus_db_dir.exists()
     }
 
     fn get_home_dir() -> PathBuf {

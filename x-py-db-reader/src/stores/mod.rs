@@ -1,2 +1,2 @@
 pub mod meta;
-pub mod utxoindex;
+pub mod indexed_utxos;

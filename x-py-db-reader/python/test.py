@@ -18,5 +18,11 @@ if __name__ == "__main__":
     print(f'----- READER FUNCTIONS')
     print(f'get_current_consensus_entry() -> {store.get_current_consensus_entry()}')
     print(f'get_circulating_supply() -> {store.get_circulating_supply() / 100_000_000}')
-    print(f'get_utxo_tips() -> {store.get_utxo_tips()}')
-    print(f'get_block_header() -> {store.get_block_header("5e61c3af59255cdd6362b72b8300f29a50580f42f40641996213a4f33af67c30")}')
+    utxo_tips = store.get_utxo_tips()
+    print(f'get_utxo_tips() -> {utxo_tips}')
+
+    # Get block that should exist
+    print(f'get_block_header() -> {store.get_block_header(utxo_tips[0])}')
+
+    # Get block that doesn't exist
+    print(f'get_block_header() -> {store.get_block_header("04a368709289ddfc363c3b0bc4c6db97b1aa4376ebce93f0cd95e6f62e7a7492")}')

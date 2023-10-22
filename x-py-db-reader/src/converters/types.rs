@@ -35,7 +35,7 @@ impl ToPy for Vec<Vec<Hash>> {
 // Converts Uint192 to String
 // Uint192 defined in: ./rusty-kaspa/crypto/hashes/src/lib.rs
 // impl ToPy for Uint192 {
-//     // TODO convert to int rather than string.
+//     // TODO convert to int
 //     // Using string temporarily because concerned about precision after conversion
 //     fn to_py(&self, py: Python) -> PyObject {
 //         format!("{:x}", self).into_py(py)

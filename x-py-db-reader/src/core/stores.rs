@@ -1,9 +1,10 @@
 use crate::core::dirs::Dirs;
 use crate::stores::{
     meta::MultiConsensusManagementStore,
-    utxoindex::{indexed_utxos::DbUtxoSetByScriptPublicKeyStore, supply::DbCirculatingSupplyStore, tips::DbUtxoIndexTipsStore},
+    indexed_utxos::DbUtxoSetByScriptPublicKeyStore,
 };
 use kaspa_consensus::model::stores::{headers::DbHeadersStore, tips::DbTipsStore};
+use kaspa_utxoindex::stores::{supply::DbCirculatingSupplyStore, tips::DbUtxoIndexTipsStore};
 
 pub struct Stores {
     pub meta_store: MultiConsensusManagementStore,
@@ -47,8 +48,8 @@ impl Stores {
                 .build();
 
             // Create UTXO Stores
-            circulating_supply_store = Some(DbCirculatingSupplyStore::new(utxo_index_db.clone())); // TODO is it right to clone?
-            utxo_tips_store = Some(DbUtxoIndexTipsStore::new(utxo_index_db.clone())); // TODO is it right to clone?
+            circulating_supply_store = Some(DbCirculatingSupplyStore::new(utxo_index_db.clone()));
+            utxo_tips_store = Some(DbUtxoIndexTipsStore::new(utxo_index_db.clone()));
             utxo_store = Some(DbUtxoSetByScriptPublicKeyStore::new(utxo_index_db.clone(), 0));
         }
 

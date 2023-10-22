@@ -216,8 +216,7 @@ impl DbUtxoSetByScriptPublicKeyStore {
         let iter = self.access.iterator();
         for chunk in &iter.chunks(chunk_size.try_into().unwrap()) {
             for r in chunk {
-                // TODO add types. key: Box<[u8]>, value: UtxoEntry
-                let (key, value) = r.unwrap();
+                let (key, value): (Box<[u8]>, CompactUtxoEntry) = r.unwrap();
 
                 // Convert key to UtxoEntryFullAccessKey
                 let utxo_entry_full_access_key = UtxoEntryFullAccessKey(Arc::new(key.to_vec()));
