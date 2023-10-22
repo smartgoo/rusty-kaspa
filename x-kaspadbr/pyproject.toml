@@ -1,0 +1,23 @@
+[build-system]
+requires = ["maturin"]
+build-backend = "maturin"
+
+[project]
+name = "kaspadbr"
+version = "0.0.1"
+description = "A Python package for reading the RocksDB instances of Kaspa's rusty-kaspa node."
+license = "ISC"
+authors = [{name = "smartgoo", email = "smartgoo@c5labs.dev"}]
+# readme = "README.md"
+# repository = "https://github.com/yourusername/your_project_name"
+# documentation = "https://your_documentation_link"
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Rust",
+]
+
+
+[package.metadata.maturin]
+name = "kaspadbr"
+description = "A Python package for reading the RocksDB instances of Kaspa's rusty-kaspa node."
+author = "smartgoo <smartgoo@c5labs.dev>"

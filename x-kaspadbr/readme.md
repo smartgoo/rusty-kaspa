@@ -1,7 +1,7 @@
 # Overview
 An **experimental** Python package for reading rusty-kaspa's RocksDB instances. 
 
-Uses PyO3 and Maturin.
+Written in rust, bindings generated with PyO3 and Maturin.
 
 # Setup
 1. `cd ./rusty-kaspa/x-py-db-reader`
