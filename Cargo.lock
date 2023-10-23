@@ -6172,7 +6172,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "x-py-kaspadbr"
+name = "x-kaspadbr"
 version = "0.1.7"
 dependencies = [
  "chrono",

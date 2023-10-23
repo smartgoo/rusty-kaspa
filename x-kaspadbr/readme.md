@@ -3,19 +3,21 @@ An **experimental** Python package for reading rusty-kaspa's RocksDB instances.
 
 Written in rust, bindings generated with PyO3 and Maturin.
 
-# Setup
-1. `cd ./rusty-kaspa/x-py-db-reader`
-2. `python -m venv env`
-3. `source env/bin/activate`
-4. `pip install maturin`
-5. `maturin develop --release`
+# Install
+Package is not yet available on PyPi. Here is how you would install in your local environment:
+1. clone the project
+2. `cd ./rusty-kaspa/x-kaspadbr`
+3. `python -m venv env`
+4. `source env/bin/activate`
+5. `pip install maturin`
+6. `maturin build --release`
+7. Copy wheel filepath output by command above: `Built wheel for CPython <version> to <filepath>`
+7. Install the built wheel in your desired env: `pip install <filepath>`
 
 # How to use
-See `./python/test.py` for reference.
+See `./x-kaspadbr/python/test.py` for reference.
 
-From the same python venv:
-1. `from kaspadbr import Reader`
-2. Refer to functions in `./src/core/reader.rs`
+Refer to `./x-kaspadbr/kaspadbr.pri` and `./x-kaspadbr/src/core/reader.rs` for more information.
 
 # TODO
 ### WIP:
