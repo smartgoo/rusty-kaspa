@@ -51,6 +51,7 @@ members = [
     "utils",
     "rothschild",
     "metrics/perf_monitor",
+    "x-kaspadbr",
 ]
 
 [workspace.package]

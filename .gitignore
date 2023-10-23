@@ -11,3 +11,6 @@ analyzer-target
 *.code-workspace
 /setup
 testing/integration/perflogs*
+
+env/
+*.csv
