@@ -9,7 +9,7 @@ description = "A Python package for reading the RocksDB instances of Kaspa's rus
 license = "ISC"
 authors = [{name = "smartgoo", email = "smartgoo@c5labs.dev"}]
 # readme = "README.md"
-# repository = "https://github.com/yourusername/your_project_name"
+repository = "https://github.com/smartgoo/kaspadbr"
 # documentation = "https://your_documentation_link"
 classifiers = [
     "Programming Language :: Python",
