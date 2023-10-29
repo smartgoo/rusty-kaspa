@@ -30,4 +30,9 @@ See `./x-kaspadbr/python/test.py` for reference.
 Refer to `./x-kaspadbr/kaspadbr.pyi` and `./x-kaspadbr/src/core/reader.rs` for more information.
 
 # TODO
-A lot
+A lot. 
+
+But these are next steps:
+- Undo custom indexed_utxos.rs store. Use OOB indexed_utxos.rs and extend functionality
+- Undo custom meta.rs store. Use OOB meta.rs with and extended functionality
+- Iterate UTXO set in chunks using PyO3 iterator
