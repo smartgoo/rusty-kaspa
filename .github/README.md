@@ -36,3 +36,6 @@ But these are next steps:
 - Undo custom indexed_utxos.rs store. Use OOB indexed_utxos.rs and extend functionality
 - Undo custom meta.rs store. Use OOB meta.rs with and extended functionality
 - Iterate UTXO set in chunks using PyO3 iterator
+
+Then:
+- Slowly add functions to read all stores and data types
