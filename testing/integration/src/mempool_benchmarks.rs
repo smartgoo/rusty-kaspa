@@ -23,6 +23,7 @@ use kaspa_notify::{
 };
 use kaspa_rpc_core::{api::rpc::RpcApi, Notification, RpcError};
 use kaspa_txscript::pay_to_address_script;
+use kaspa_utils::fd_budget;
 use kaspad_lib::args::Args;
 use parking_lot::Mutex;
 use rand::thread_rng;
@@ -190,6 +191,7 @@ async fn bench_bbt_latency() {
 
     let args = Args {
         simnet: true,
+        disable_upnp: true, // UPnP registration might take some time and is not needed for this test
         enable_unsynced_mining: true,
         num_prealloc_utxos: Some(TX_LEVEL_WIDTH as u64 * CONTRACT_FACTOR),
         prealloc_address: Some(prealloc_address.to_string()),
@@ -205,7 +207,8 @@ async fn bench_bbt_latency() {
     verify_tx_dag(&utxoset, &txs);
     info!("Generated overall {} txs", txs.len());
 
-    let mut daemon = Daemon::new_random_with_args(args);
+    let fd_total_budget = fd_budget::limit();
+    let mut daemon = Daemon::new_random_with_args(args, fd_total_budget);
     let client = daemon.start().await;
     let bbt_client = daemon.new_client().await;
 

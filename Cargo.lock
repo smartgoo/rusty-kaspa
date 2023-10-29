@@ -372,6 +372,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62af46d040ba9df09edc6528dae9d8e49f5f3e82f55b7d2ec31a733c38dbc49d"
 
 [[package]]
+name = "attohttpc"
+version = "0.24.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d9a9bf8b79a749ee0b911b91b671cc2b6c670bdbc7e3dfd537576ddc94bb2a2"
+dependencies = [
+ "http",
+ "log",
+ "url",
+]
+
+[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1851,6 +1862,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "igd-next"
+version = "0.14.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "57e065e90a518ab5fedf79aa1e4b784e10f8e484a834f6bda85c42633a2cb7af"
+dependencies = [
+ "async-trait",
+ "attohttpc",
+ "bytes",
+ "futures",
+ "http",
+ "hyper",
+ "log",
+ "rand 0.8.5",
+ "tokio",
+ "url",
+ "xmltree",
+]
+
+[[package]]
 name = "indexmap"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2001,6 +2031,7 @@ name = "kaspa-addressmanager"
 version = "0.1.7"
 dependencies = [
  "borsh",
+ "igd-next",
  "itertools 0.10.5",
  "kaspa-consensus-core",
  "kaspa-core",
@@ -2014,6 +2045,8 @@ dependencies = [
  "serde",
  "statest",
  "statrs",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]
@@ -2293,7 +2326,6 @@ dependencies = [
  "num_cpus",
  "parking_lot",
  "rand 0.8.5",
- "rlimit",
  "rocksdb",
  "serde",
  "smallvec",
@@ -2841,6 +2873,7 @@ dependencies = [
  "async-trait",
  "bincode",
  "borsh",
+ "cfg-if 1.0.0",
  "criterion",
  "event-listener",
  "faster-hex 0.6.1",
@@ -2848,6 +2881,7 @@ dependencies = [
  "ipnet",
  "itertools 0.10.5",
  "rand 0.8.5",
+ "rlimit",
  "serde",
  "serde_json",
  "smallvec",
@@ -2937,6 +2971,7 @@ dependencies = [
  "kaspa-notify",
  "kaspa-rpc-core",
  "kaspa-txscript",
+ "kaspa-txscript-errors",
  "kaspa-utils",
  "kaspa-wrpc-client",
  "md-5",
@@ -6172,6 +6207,7 @@ dependencies = [
 ]
 
 [[package]]
+<<<<<<< HEAD
 name = "x-kaspadbr"
 version = "0.1.7"
 dependencies = [
@@ -6189,6 +6225,20 @@ dependencies = [
  "kaspa-utxoindex",
  "pyo3",
  "serde",
+=======
+name = "xml-rs"
+version = "0.8.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0fcb9cbac069e033553e8bb871be2fbdffcab578eb25bd0f7c508cedc6dcd75a"
+
+[[package]]
+name = "xmltree"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d7d8a75eaf6557bb84a65ace8609883db44a29951042ada9b393151532e41fcb"
+dependencies = [
+ "xml-rs",
+>>>>>>> upstream_sync
 ]
 
 [[package]]

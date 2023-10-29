@@ -67,7 +67,7 @@ impl TestConsensus {
 
     /// Creates a test consensus instance based on `config` with a temp DB and the provided `notification_sender`
     pub fn with_notifier(config: &Config, notification_sender: Sender<Notification>) -> Self {
-        let (db_lifetime, db) = create_temp_db!(ConnBuilder::default());
+        let (db_lifetime, db) = create_temp_db!(ConnBuilder::default().with_files_limit(10));
         let notification_root = Arc::new(ConsensusNotificationRoot::new(notification_sender));
         let counters = Default::default();
         let tx_script_cache_counters = Default::default();
@@ -87,7 +87,7 @@ impl TestConsensus {
 
     /// Creates a test consensus instance based on `config` with a temp DB and no notifier
     pub fn new(config: &Config) -> Self {
-        let (db_lifetime, db) = create_temp_db!(ConnBuilder::default());
+        let (db_lifetime, db) = create_temp_db!(ConnBuilder::default().with_files_limit(10));
         let (dummy_notification_sender, _) = async_channel::unbounded();
         let notification_root = Arc::new(ConsensusNotificationRoot::new(dummy_notification_sender));
         let counters = Default::default();
@@ -281,5 +281,13 @@ impl ConsensusFactory for TestConsensusFactory {
 
     fn close(&self) {
         self.tc.notification_root().close();
+    }
+
+    fn delete_inactive_consensus_entries(&self) {
+        unimplemented!()
+    }
+
+    fn delete_staging_entry(&self) {
+        unimplemented!()
     }
 }

@@ -14,8 +14,8 @@ use kaspa_txscript::caches::TxScriptCacheCounters;
 use kaspa_utils::networking::ContextualNetAddress;
 
 use kaspa_addressmanager::AddressManager;
-use kaspa_consensus::pipeline::monitor::ConsensusMonitor;
 use kaspa_consensus::{consensus::factory::Factory as ConsensusFactory, pipeline::ProcessingCounters};
+use kaspa_consensus::{consensus::factory::MultiConsensusManagementStore, pipeline::monitor::ConsensusMonitor};
 use kaspa_consensusmanager::ConsensusManager;
 use kaspa_core::task::runtime::AsyncRuntime;
 use kaspa_index_processor::service::IndexService;
@@ -36,7 +36,6 @@ const DEFAULT_DATA_DIR: &str = "datadir";
 const CONSENSUS_DB: &str = "consensus";
 const UTXOINDEX_DB: &str = "utxoindex";
 const META_DB: &str = "meta";
-const UTXO_INDEX_DB_FILE_LIMIT: i32 = 100;
 const META_DB_FILE_LIMIT: i32 = 5;
 const DEFAULT_LOG_DIR: &str = "logs";
 
@@ -159,9 +158,9 @@ impl Runtime {
 /// The instance of the [`RpcCoreService`] needs to be released
 /// (dropped) before the `Core` is shut down.
 ///
-pub fn create_core(args: Args) -> (Arc<Core>, Arc<RpcCoreService>) {
+pub fn create_core(args: Args, fd_total_budget: i32) -> (Arc<Core>, Arc<RpcCoreService>) {
     let rt = Runtime::from_args(&args);
-    create_core_with_runtime(&rt, &args)
+    create_core_with_runtime(&rt, &args, fd_total_budget)
 }
 
 /// Create [`Core`] instance with supplied [`Args`] and [`Runtime`].
@@ -175,9 +174,16 @@ pub fn create_core(args: Args) -> (Arc<Core>, Arc<RpcCoreService>) {
 /// The instance of the [`RpcCoreService`] needs to be released
 /// (dropped) before the `Core` is shut down.
 ///
-pub fn create_core_with_runtime(runtime: &Runtime, args: &Args) -> (Arc<Core>, Arc<RpcCoreService>) {
+pub fn create_core_with_runtime(runtime: &Runtime, args: &Args, fd_total_budget: i32) -> (Arc<Core>, Arc<RpcCoreService>) {
     let network = args.network();
-
+    let mut fd_remaining = fd_total_budget;
+    let utxo_files_limit = if args.utxoindex {
+        let utxo_files_limit = fd_remaining * 10 / 100;
+        fd_remaining -= utxo_files_limit;
+        utxo_files_limit
+    } else {
+        0
+    };
     // Make sure args forms a valid set of properties
     if let Err(err) = validate_args(args) {
         println!("{}", err);
@@ -231,8 +237,11 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
     }
 
     // DB used for addresses store and for multi-consensus management
-    let mut meta_db =
-        kaspa_database::prelude::ConnBuilder::default().with_files_limit(META_DB_FILE_LIMIT).with_db_path(meta_db_dir.clone()).build();
+    let mut meta_db = kaspa_database::prelude::ConnBuilder::default()
+        .with_db_path(meta_db_dir.clone())
+        .with_files_limit(META_DB_FILE_LIMIT)
+        .build()
+        .unwrap();
 
     // TEMP: upgrade from Alpha version or any version before this one
     if meta_db.get_pinned(b"multi-consensus-metadata-key").is_ok_and(|r| r.is_some()) {
@@ -253,8 +262,15 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
         fs::create_dir_all(utxoindex_db_dir.as_path()).unwrap();
 
         // Reopen the DB
-        meta_db =
-            kaspa_database::prelude::ConnBuilder::default().with_files_limit(META_DB_FILE_LIMIT).with_db_path(meta_db_dir).build();
+        meta_db = kaspa_database::prelude::ConnBuilder::default()
+            .with_db_path(meta_db_dir)
+            .with_files_limit(META_DB_FILE_LIMIT)
+            .build()
+            .unwrap();
+    }
+
+    if !args.archival && MultiConsensusManagementStore::new(meta_db.clone()).is_archival_node().unwrap() {
+        get_user_approval_or_exit("--archival is set to false although the node was previously archival. Proceeding may delete archived data. Do you confirm? (y/n)", args.yes);
     }
 
     let connect_peers = args.connect_peers.iter().map(|x| x.normalize(config.default_p2p_port())).collect::<Vec<_>>();
@@ -289,6 +305,7 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
         notification_root.clone(),
         processing_counters.clone(),
         tx_script_cache_counters.clone(),
+        fd_remaining,
     ));
     let consensus_manager = Arc::new(ConsensusManager::new(consensus_factory));
     let consensus_monitor = Arc::new(ConsensusMonitor::new(processing_counters.clone(), tick_service.clone()));
@@ -311,9 +328,10 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
     let index_service: Option<Arc<IndexService>> = if args.utxoindex {
         // Use only a single thread for none-consensus databases
         let utxoindex_db = kaspa_database::prelude::ConnBuilder::default()
-            .with_files_limit(UTXO_INDEX_DB_FILE_LIMIT)
             .with_db_path(utxoindex_db_dir)
-            .build();
+            .with_files_limit(utxo_files_limit)
+            .build()
+            .unwrap();
         let utxoindex = UtxoIndexProxy::new(UtxoIndex::new(consensus_manager.clone(), utxoindex_db).unwrap());
         let index_service = Arc::new(IndexService::new(&notify_service.notifier(), Some(utxoindex)));
         Some(index_service)
@@ -321,7 +339,7 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
         None
     };
 
-    let address_manager = AddressManager::new(config.clone(), meta_db);
+    let (address_manager, port_mapping_extender_svc) = AddressManager::new(config.clone(), meta_db, tick_service.clone());
 
     let mining_monitor = Arc::new(MiningMonitor::new(mining_counters.clone(), tx_script_cache_counters.clone(), tick_service.clone()));
     let mining_manager = MiningManagerProxy::new(Arc::new(MiningManager::new_with_spam_blocking_option(
@@ -374,6 +392,9 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
     async_runtime.register(notify_service);
     if let Some(index_service) = index_service {
         async_runtime.register(index_service)
+    };
+    if let Some(port_mapping_extender_svc) = port_mapping_extender_svc {
+        async_runtime.register(Arc::new(port_mapping_extender_svc))
     };
     async_runtime.register(rpc_core_service.clone());
     async_runtime.register(grpc_service);
