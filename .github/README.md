@@ -14,7 +14,7 @@ Package is not yet available on PyPi. Here is how to install in local Python ven
 5. `pip install maturin`
 6. `maturin build --release`
 7. Command above with output a filepath to the built wheel: `Built wheel for CPython <version> to <filepath>`
-8. Switch to your desired env and install the built wheel: `pip install <filepath>`
+8. Switch to your desired env and install from the wheel: `pip install <filepath>`
 
 # Maturin Develop
 1. clone the project
@@ -26,7 +26,8 @@ Package is not yet available on PyPi. Here is how to install in local Python ven
 
 # How to use
 See `./x-kaspadbr/python/test.py` for reference.
-Refer to `./x-kaspadbr/kaspadbr.pri` and `./x-kaspadbr/src/core/reader.rs` for more information.
+
+Refer to `./x-kaspadbr/kaspadbr.pyi` and `./x-kaspadbr/src/core/reader.rs` for more information.
 
 # TODO
 ### WIP:

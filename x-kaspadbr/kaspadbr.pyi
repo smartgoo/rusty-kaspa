@@ -45,12 +45,12 @@ class Reader:
 
     def get_circulating_supply() -> int:
         """
-        Reads utxoindex circulating supply store in sompi. Node must be ran wth --utxoindex.
+        Returns circulating supply in sompi from the utxoindex circulating supply store. Node must be ran wth --utxoindex.
         """
 
     def get_utxo_tips() -> list[str]:
         """
-        Reads utxo index tips store. Returns a list of hashes. Node must be ran with --utxoindex.
+        Reads utxoindex tips store. Returns a list of hashes. Node must be ran with --utxoindex.
         """
     
     def export_utxo_set(
