@@ -9,7 +9,7 @@ pub trait ToPy {
 // Conversions for custom types
 
 // Converts Hash to String
-// Hash defined in: ./rusty-kaspa/crypto/hashes/src/lib.rs
+// ./rusty-kaspa/crypto/hashes/src/lib.rs
 impl ToPy for Hash {
     fn to_py(&self, py: Python) -> PyObject {
         self.to_string().into_py(py)
@@ -17,7 +17,7 @@ impl ToPy for Hash {
 }
 
 // Converts <Vec<Vec<Hash>> to List[List[String]]
-// Hash defined in: ./rusty-kaspa/crypto/hashes/src/lib.rs
+// ./rusty-kaspa/crypto/hashes/src/lib.rs
 impl ToPy for Vec<Vec<Hash>> {
     fn to_py(&self, py: Python) -> PyObject {
         let outer_list: Vec<_> = self
@@ -31,15 +31,14 @@ impl ToPy for Vec<Vec<Hash>> {
     }
 }
 
-// TODO
 // Converts Uint192 to String
 // Uint192 defined in: ./rusty-kaspa/crypto/hashes/src/lib.rs
-// impl ToPy for Uint192 {
-//     // TODO convert to int
-//     // Using string temporarily because concerned about precision after conversion
-//     fn to_py(&self, py: Python) -> PyObject {
-//         format!("{:x}", self).into_py(py)
-//     }
-// }
+impl ToPy for Uint192 {
+    // TODO convert to int
+    // Using string temporarily because concerned about precision after conversion
+    fn to_py(&self, py: Python) -> PyObject {
+        format!("{:x}", self).into_py(py)
+    }
+}
 
 // HashSet type converter

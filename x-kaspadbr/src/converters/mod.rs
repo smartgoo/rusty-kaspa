@@ -1,4 +1,5 @@
 pub mod block_header;
+pub mod transaction;
 mod types;
 
 use pyo3::prelude::*;

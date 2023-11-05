@@ -19,7 +19,7 @@ impl ToPyDict for Header {
         dict.set_item("bits", self.bits).unwrap();
         dict.set_item("nonce", self.nonce).unwrap();
         dict.set_item("daa_score", self.daa_score).unwrap();
-        // dict.set_item("blue_work", self.blue_work.to_py(py)).unwrap(); TODO
+        dict.set_item("blue_work", self.blue_work.to_py(py)).unwrap();
         dict.set_item("blue_score", self.blue_score).unwrap();
         dict.set_item("pruning_point", self.pruning_point.to_py(py)).unwrap();
 

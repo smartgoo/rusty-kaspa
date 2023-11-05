@@ -231,6 +231,7 @@ impl DbUtxoSetByScriptPublicKeyStore {
                     let script_public_key = ScriptPublicKey::from(script_public_key_bucket);
 
                     // Convert ScriptPublicKey to address
+                    // TODO use prefix passed on store init
                     let addr = extract_script_pub_key_address(&script_public_key, Prefix::Mainnet).unwrap();
 
                     // Add to row
