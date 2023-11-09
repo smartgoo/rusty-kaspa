@@ -1211,11 +1211,31 @@ dependencies = [
 
 [[package]]
 name = "dirs"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca3aa72a6f96ea37bbc5aa912f6788242832f75369bdfdadcb0e38423f100059"
+dependencies = [
+ "dirs-sys 0.3.7",
+]
+
+[[package]]
+name = "dirs"
 version = "5.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "44c45a9d03d6676652bcb5e724c7e988de1acad23a711b5217ab9cbecbec2225"
 dependencies = [
- "dirs-sys",
+ "dirs-sys 0.4.1",
+]
+
+[[package]]
+name = "dirs-sys"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1b1d1d91c932ef41c0f2663aa8b0ca0342d444d842c06914aa0a7e352d0bada6"
+dependencies = [
+ "libc",
+ "redox_users",
+ "winapi",
 ]
 
 [[package]]
@@ -1865,6 +1885,12 @@ dependencies = [
  "equivalent",
  "hashbrown 0.14.2",
 ]
+
+[[package]]
+name = "indoc"
+version = "1.0.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bfa799dd5ed20a7e349f3b4639aa80d74549c81716d9ec4f994c9b5815598306"
 
 [[package]]
 name = "inout"
@@ -3094,7 +3120,7 @@ dependencies = [
  "async-channel 2.0.0",
  "clap 4.4.7",
  "dhat",
- "dirs",
+ "dirs 5.0.1",
  "futures-util",
  "kaspa-addresses",
  "kaspa-addressmanager",
@@ -5307,6 +5333,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e51733f11c9c4f72aa0c160008246859e340b00807569a0da0e7a1079b27ba85"
 
 [[package]]
+name = "unindent"
+version = "0.1.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e1766d682d402817b5ac4490b3c3002d91dfa0d22812f341609f97b08757359c"
+
+[[package]]
 name = "universal-hash"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5758,7 +5790,7 @@ dependencies = [
  "borsh",
  "bs58",
  "cfg-if 1.0.0",
- "dirs",
+ "dirs 5.0.1",
  "faster-hex 0.8.1",
  "futures",
  "getrandom 0.2.10",
@@ -6135,14 +6167,13 @@ dependencies = [
 ]
 
 [[package]]
-<<<<<<< HEAD
 name = "x-kaspadbr"
 version = "0.1.7"
 dependencies = [
  "chrono",
  "csv",
  "dirs 4.0.0",
- "itertools 0.10.5",
+ "itertools 0.11.0",
  "kaspa-addresses",
  "kaspa-consensus",
  "kaspa-consensus-core",
@@ -6153,7 +6184,9 @@ dependencies = [
  "kaspa-utxoindex",
  "pyo3",
  "serde",
-=======
+]
+
+[[package]]
 name = "xml-rs"
 version = "0.8.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6166,7 +6199,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d7d8a75eaf6557bb84a65ace8609883db44a29951042ada9b393151532e41fcb"
 dependencies = [
  "xml-rs",
->>>>>>> upstream_sync
 ]
 
 [[package]]

@@ -29,6 +29,16 @@ See `./x-kaspadbr/python/test.py` for reference.
 
 Refer to `./x-kaspadbr/kaspadbr.pyi` and `./x-kaspadbr/src/core/reader.rs` for more information.
 
+# Roadmap
+Misc. features that might be added to this package over time:
+
+Two primary APIs at different abstraction levels:
+- A more abstracted API similar to RPC methods
+- 1:1 with OOB rusty-kaspa stores
+
+Utilities to dump/export data.
+Utilities to iterate stores
+
 # TODO
 A lot. 
 
