@@ -18,9 +18,6 @@ if __name__ == "__main__":
     print(f'----- READER FUNCTIONS')
     print(f'get_current_consensus_entry() -> {db.stores.metadata.current_consensus_key()}')
     print(f'get_circulating_supply() -> {db.stores.circulating_supply.get() / 100_000_000}')
-    
-    utxo_tips = db.stores.utxo_index_tips.get()
-    print(f'get_utxo_tips() -> {utxo_tips}')
 
     # Get block that should exist
     # block = store.get_block_header(utxo_tips[0], include_transactions=True)

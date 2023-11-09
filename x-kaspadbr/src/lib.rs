@@ -7,7 +7,7 @@ use pyo3::prelude::*;
 
 #[pymodule]
 fn kaspadbr(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<core::dbreader::DBReader>()?;
+    m.add_class::<core::db_reader::DBReader>()?;
     
     Ok(())
 }

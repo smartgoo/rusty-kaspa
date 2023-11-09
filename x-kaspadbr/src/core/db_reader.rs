@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use std::path::PathBuf;
 
 #[pyclass]
-pub struct Reader {
+pub struct DBReader {
     // DIRECTORIES
     #[pyo3(get)]
     home_dir: PathBuf,
@@ -34,7 +34,7 @@ pub struct Reader {
 }
 
 #[pymethods]
-impl Reader {
+impl DBReader {
     #[new]
     pub fn new(_py: Python, app_dir: Option<PathBuf>, network: Option<String>) -> PyResult<Self> {
         // Init directories
@@ -48,7 +48,7 @@ impl Reader {
         // Init wrapped stores. 1:1 with rusty-kaspa stores
         let stores = Stores::new(&dirs).unwrap();
 
-        Ok(Reader {
+        Ok(DBReader {
             home_dir: dirs.home_dir,
             app_dir: dirs.app_dir,
             network_dir: dirs.network_dir,
