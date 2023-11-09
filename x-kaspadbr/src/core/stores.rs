@@ -1,53 +1,53 @@
 use crate::core::dirs::Dirs;
-use crate::stores::{
-    meta::MultiConsensusManagementStore,
-    indexed_utxos::DbUtxoSetByScriptPublicKeyStore,
+use crate::py_stores::{
+    circulating_supply::PyCirculatingSupplyStore,
+    metadata::PyMetadataStore,
+    utxo_index::PyUtxoIndexStore,
+    utxo_index_tips::PyUtxoIndexTipsStore,
 };
-use kaspa_consensus::model::stores::{block_transactions::DbBlockTransactionsStore, headers::DbHeadersStore, tips::DbTipsStore};
-// use kaspa_utxoindex::stores::{tips::DbUtxoIndexTipsStore};
 
+use pyo3::prelude::*;
+
+#[derive(Clone)]
+#[pyclass]
 pub struct Stores {
-    pub meta_store: MultiConsensusManagementStore,
+    #[pyo3(get)]
+    metadata: PyMetadataStore,
 
-    // Consensus stores
-    pub tips_store: DbTipsStore,
-    pub headers_store: DbHeadersStore,
-    pub block_transactions_store: DbBlockTransactionsStore,
+    // Optional UTXO Index Stores
+    #[pyo3(get)]
+    circulating_supply: Option<PyCirculatingSupplyStore>,
 
-    // UTXO stores
-    // pub circulating_supply_store: Option<DbCirculatingSupplyStore>,
-    // pub utxo_tips_store: Option<DbUtxoIndexTipsStore>,
-    pub utxo_store: Option<DbUtxoSetByScriptPublicKeyStore>,
+    #[pyo3(get)]
+    utxo_index: Option<PyUtxoIndexStore>,
+
+    #[pyo3(get)]
+    utxo_index_tips: Option<PyUtxoIndexTipsStore>,
 }
 
 impl Stores {
-    pub fn new(dirs: &Dirs) -> Self {
+    pub fn new(dirs: &Dirs) -> PyResult<Self> {
         // Construct meta DB and store
         let meta_db = kaspa_database::prelude::ConnBuilder::default()
             .with_db_path(dirs.meta_db_dir.clone())
             .with_files_limit(10) // TODO
             .build()
             .unwrap();
-        let meta_store = MultiConsensusManagementStore::new(meta_db);
+        let metadata = PyMetadataStore::new(meta_db);
 
         // Construct active consensus DB
-        let current_consensus_key = meta_store.get_current_consensus_entry().unwrap();
+        let current_consensus_key = metadata.current_consensus_key().unwrap();
         let consensus_db = kaspa_database::prelude::ConnBuilder::default()
             .with_db_path(dirs.consensus_db_dir.join(format!("consensus-{:0>3}", current_consensus_key)))
             .with_files_limit(10) // TODO
             .build()
             .unwrap();
 
-        // Construct consensus stores
-        let tips_store = DbTipsStore::new(consensus_db.clone());
-        let headers_store = DbHeadersStore::new(consensus_db.clone(), 0);
-        let block_transactions_store = DbBlockTransactionsStore::new(consensus_db.clone(), 0);
-
         // Construct all utxo index stores, if utxoindex dir exists
-        // let mut circulating_supply_store: Option<DbCirculatingSupplyStore> = None;
-        // let mut utxo_tips_store: Option<DbUtxoIndexTipsStore> = None;
-        let mut utxo_store: Option<DbUtxoSetByScriptPublicKeyStore> = None;
-        
+        let mut circulating_supply: Option<PyCirculatingSupplyStore> = None;
+        let mut utxo_index: Option<PyUtxoIndexStore> = None;
+        let mut utxo_index_tips: Option<PyUtxoIndexTipsStore> = None;
+
         if dirs.utxo_index_db_dir.is_some() {
             // Create utxo index db
             let utxo_index_db = kaspa_database::prelude::ConnBuilder
@@ -58,21 +58,17 @@ impl Stores {
                 .unwrap();
 
             // Create UTXO Stores
-            // circulating_supply_store = Some(DbCirculatingSupplyStore::new(utxo_index_db.clone()));
-            // utxo_tips_store = Some(DbUtxoIndexTipsStore::new(utxo_index_db.clone()));
-            utxo_store = Some(DbUtxoSetByScriptPublicKeyStore::new(utxo_index_db.clone(), 0));
+            circulating_supply = Some(PyCirculatingSupplyStore::new(utxo_index_db.clone()));
+            utxo_index = Some(PyUtxoIndexStore::new(utxo_index_db.clone()));
+            utxo_index_tips = Some(PyUtxoIndexTipsStore::new(utxo_index_db.clone()));
         }
 
-        Stores {
-            meta_store,
+        Ok(Stores {
+            metadata, 
 
-            tips_store,
-            headers_store,
-            block_transactions_store,
-
-            // circulating_supply_store,
-            // utxo_tips_store,
-            utxo_store,
-        }
+            circulating_supply,
+            utxo_index,
+            utxo_index_tips,
+        })
     }
 }

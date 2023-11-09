@@ -1,9 +1,10 @@
-use crate::core::dirs::Dirs;
 use crate::stores::indexed_utxos::DbUtxoSetByScriptPublicKeyStore;
 
+use kaspa_database::prelude::DB;
 use pyo3::prelude::*;
-use std::path::PathBuf;
+use std::sync::Arc;
 
+#[derive(Clone)]
 #[pyclass]
 #[pyo3(name = "UtxoIndexStore")]
 pub struct PyUtxoIndexStore {
@@ -11,37 +12,19 @@ pub struct PyUtxoIndexStore {
     inner_store: DbUtxoSetByScriptPublicKeyStore,
 }
 
-#[pymethods]
 impl PyUtxoIndexStore {
-    #[new]
-    pub fn new(py: Python, app_dir: Option<PathBuf>, network: Option<String>) -> PyResult<Self> {
-        // Init dirs
-        let dirs = Dirs::new(app_dir.clone(), network.clone());
-
-        // Check that app dir exists
-        if !&dirs.validate_existence() {
-            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>("issue with rusty-kaspa directories."));
-        }
-
-        // Check that utxo index dir exists
-        // TODO
-
-        // Create utxo index db connection
-        let utxo_index_db = kaspa_database::prelude::ConnBuilder
-            ::default()
-            .with_db_path(dirs.utxo_index_db_dir.clone().unwrap())
-            .with_files_limit(10) // TODO
-            .build()
-            .unwrap();
-
+    pub fn new(utxo_index_db: Arc<DB>) -> Self {
         // Init inner store
         let inner_store = DbUtxoSetByScriptPublicKeyStore::new(utxo_index_db.clone(), 0);
 
-        Ok(PyUtxoIndexStore {
+        PyUtxoIndexStore {
             inner_store
-        })
+        }
     }
+}
 
+#[pymethods]
+impl PyUtxoIndexStore {
     /// Exports entire UTXO set to a CSV file. Returns count of UTXOs exported.
     #[pyo3(signature = (
         filepath,

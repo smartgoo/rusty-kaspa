@@ -1,3 +1,3 @@
+pub mod db_reader;
 pub mod dirs;
-pub mod reader;
 mod stores;
