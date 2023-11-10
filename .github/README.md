@@ -5,29 +5,20 @@ Built on top of [rusty-kaspa](https://github.com/kaspanet/rusty-kaspa), using [P
 
 The additional crate `x-kaspadbr` is where all code specific to this project can be found.
 
-# Install in another Python venv
-Package is not yet available on PyPi. Here is how to install in local Python venv:
-1. clone the project
-2. `cd ./rusty-kaspa/x-kaspadbr`
-3. `python -m venv env`
-4. `source env/bin/activate`
-5. `pip install maturin`
-6. `maturin build --release`
-7. Command above with output a filepath to the built wheel: `Built wheel for CPython <version> to <filepath>`
-8. Switch to your desired env and install from the wheel: `pip install <filepath>`
+# Development Process:
+**First**, develop rust code. All code for this project is in `x-kaspadbr` crate. Although code from other rusty-kaspa crates can be used as well.
 
-# Maturin Develop
-1. clone the project
-2. `cd ./rusty-kaspa/x-kaspadbr`
-3. `python -m venv env`
-4. `source env/bin/activate`
-5. `pip install maturin`
-6. `maturin develop --release` to build and install in the active Python venv.
+**Second**, build and install the Python package in local virtual env:
+1. `cd ./rusty-kaspa/x-kaspadbr`
+2. `python -m venv env`
+3. `source env/bin/activate`
+4. `pip install maturin`
+5. `maturin develop --release` to build and install in the active Python venv.
 
-# How to use
-See `./x-kaspadbr/python/test.py` for reference.
+**Third**, test the built Python package. Refer to code in `./x-kaspadbr/python/`.
 
-Refer to `./x-kaspadbr/kaspadbr.pyi` and `./x-kaspadbr/src/core/reader.rs` for more information.
+# How to use from Python
+See `./x-kaspadbr/python/` and `./x-kaspadbr/kaspadbr.pyi`.
 
 # Roadmap
 Misc. features that might be added to this package over time:
@@ -40,9 +31,8 @@ Utilities to dump/export data.
 Utilities to iterate stores
 
 # TODO
-A lot. 
-
-But these are next steps:
+A lot. But these are next steps:
+- [ ] Find the right project structure that allows modular, organized Rust code while providing a Pythonic module interface.
 - Undo custom indexed_utxos.rs store. Use OOB indexed_utxos.rs and extend functionality
 - Undo custom meta.rs store. Use OOB meta.rs with and extended functionality
 - Iterate UTXO set in chunks using PyO3 iterator
