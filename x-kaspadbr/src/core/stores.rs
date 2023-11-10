@@ -1,6 +1,7 @@
 use crate::core::dirs::Dirs;
 use crate::py_stores::{
     circulating_supply::PyCirculatingSupplyStore,
+    headers::PyHeaderStore,
     metadata::PyMetadataStore,
     utxo_index::PyUtxoIndexStore,
     utxo_index_tips::PyUtxoIndexTipsStore,
@@ -13,6 +14,9 @@ use pyo3::prelude::*;
 pub struct Stores {
     #[pyo3(get)]
     metadata: PyMetadataStore,
+
+    #[pyo3(get)]
+    headers: PyHeaderStore,
 
     // Optional UTXO Index Stores
     #[pyo3(get)]
@@ -43,6 +47,9 @@ impl Stores {
             .build()
             .unwrap();
 
+        // Headers store
+        let headers = PyHeaderStore::new(consensus_db);
+
         // Construct all utxo index stores, if utxoindex dir exists
         let mut circulating_supply: Option<PyCirculatingSupplyStore> = None;
         let mut utxo_index: Option<PyUtxoIndexStore> = None;
@@ -65,6 +72,7 @@ impl Stores {
 
         Ok(Stores {
             metadata, 
+            headers,
 
             circulating_supply,
             utxo_index,

@@ -1,5 +1,46 @@
-use kaspa_consensus::model::stores::{block_transactions::DbBlockTransactionsStore, headers::DbHeadersStore};
+use crate::converters::ToPyDict;
 
+use kaspa_database::prelude::{DB, StoreError};
+use kaspa_consensus::model::stores::headers::{DbHeadersStore, HeaderStoreReader};
+use kaspa_consensus_core::Hash;
+use pyo3::prelude::*;
+use std::{
+    str::FromStr,
+    sync::Arc,
+};
+
+#[derive(Clone)]
+#[pyclass]
+#[pyo3(name = "HeadersStore")]
+pub struct PyHeaderStore {
+    // To avoid Rust -> Python type conversion fun, not exposing this to Python
+    inner_store: DbHeadersStore,
+}
+
+impl PyHeaderStore {
+    pub fn new(consensus_db: Arc<DB>) -> Self {
+        let inner_store = DbHeadersStore::new(consensus_db, 0);
+
+        PyHeaderStore {
+            inner_store,
+        }
+    }
+}
+
+#[pymethods]
+impl PyHeaderStore {
+    pub fn get(&self, py: Python, block_hash: String) -> PyResult<PyObject> {
+        // Convert block_hash from String to Hash
+        let block_hash = Hash::from_str(&block_hash).unwrap();
+    
+        // Attempt to get header and handle error cases
+        match self.inner_store.get_header(block_hash) {
+            Ok(header) => Ok(header.to_py_dict(py).to_object(py)),
+            Err(StoreError::KeyNotFound(_)) => Ok(py.None()),
+            _ => todo!(), // TODO: Handle other StoreError cases
+        }
+    }
+}
 
 // Gets block header for given hash from consensus DB. Returns a dict
 // pub fn get_block(&self, py: Python, block_hash: String, include_transactions: bool) -> PyResult<PyObject> {

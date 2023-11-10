@@ -1,5 +1,6 @@
 from typing import Optional
 
+
 class DBReader:
     """
     A class for reading rusty-kaspa's various RocksDB instances. Primary interface of this package.
@@ -25,7 +26,26 @@ class DBReader:
         Reads the meta store and returns the current consensus key.
         """
 
-    def get_block_header(block_hash: str) -> Optional[dict]:
+class Stores:
+    """
+    A collection of Python-wrapped rusty-kaspa stores.
+    """
+    # metadata: PyMetadataStore TODO
+    headers: HeadersStore
+
+    # Optional UTXO index stores
+    circulating_supply: CirculatingSupplyStore
+    utxo_index: UtxoIndexStore
+    utxo_index_tips: UtxoIndexTipsStore
+
+
+class HeadersStore:
+    """
+    A class for reading rusty-kaspa's UtxoIndexTipsStore. Node must be ran with --utxoindex.
+    """
+    
+
+    def get(block_hash: str) -> Optional[dict]:
         """
         Reads the block header store for a given block.
 
@@ -46,33 +66,10 @@ class DBReader:
         """
 
 
-class Stores:
-    """
-    A collection of Python-wrapped rusty-kaspa stores.
-    """
-    # metadata: PyMetadataStore TODO
-
-    # Optional UTXO index stores
-    circulating_supply: CirculatingSupplyStore
-    utxo_index: UtxoIndexStore
-    utxo_index_tips: UtxoIndexTipsStore
-
-
 class CirculatingSupplyStore:
     """
     A class for reading rusty-kaspa's CirculatingSupplyStore. Node must be ran with --utxoindex.
     """
-    home_dir: str
-    app_dir: str
-    network_dir: str 
-    db_dir: str
-    utxo_index_db_dir: str
-
-    def __init__(app_dir: Optional[str], network: Optional[str]) -> None:
-        """
-        :param app_dir: Filepath of your rusty-kaspa appdir. Optional, default is based on OS. For Windows, <your homedir>/rusty-kaspa. For Linux, <your homedir>/.rusty-kaspa
-        :param network: Kaspa network. Optional, default is mainnet. Options are mainnet, testnet, devnet, simnet.
-        """
 
     def get() -> int:
         """
@@ -84,13 +81,7 @@ class UtxoIndexStore:
     """
     A class for reading rusty-kaspa's UtxoSetByScriptPublicKeyStore. Node must be ran with --utxoindex.
     """
-    
-    def __init__(app_dir: Optional[str], network: Optional[str]) -> None:
-        """
-        :param app_dir: Filepath of your rusty-kaspa appdir. Optional, default is based on OS. For Windows, <your homedir>/rusty-kaspa. For Linux, <your homedir>/.rusty-kaspa
-        :param network: Kaspa network. Optional, default is mainnet. Options are mainnet, testnet, devnet, simnet.
-        """
-
+ 
     def export(
         filepath: str,
         address: bool = True,
@@ -119,17 +110,7 @@ class UtxoIndexTipsStore:
     """
     A class for reading rusty-kaspa's UtxoIndexTipsStore. Node must be ran with --utxoindex.
     """
-    home_dir: str
-    app_dir: str
-    network_dir: str 
-    db_dir: str
-    utxo_index_db_dir: str
-    
-    def __init__(app_dir: Optional[str], network: Optional[str]) -> None:
-        """
-        :param app_dir: Filepath of your rusty-kaspa appdir. Optional, default is based on OS. For Windows, <your homedir>/rusty-kaspa. For Linux, <your homedir>/.rusty-kaspa
-        :param network: Kaspa network. Optional, default is mainnet. Options are mainnet, testnet, devnet, simnet.
-        """
+
 
     def get() -> list[str]:
         """

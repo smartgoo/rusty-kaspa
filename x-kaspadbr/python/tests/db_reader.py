@@ -18,10 +18,3 @@ if __name__ == "__main__":
     print(f'----- READER FUNCTIONS')
     print(f'get_current_consensus_entry() -> {db.stores.metadata.current_consensus_key()}')
     print(f'get_circulating_supply() -> {db.stores.circulating_supply.get() / 100_000_000}')
-
-    # Get block that should exist
-    # block = store.get_block_header(utxo_tips[0], include_transactions=True)
-    # print(f'get_block_header() -> {block["header"].keys()}')
-
-    # # Get block that doesn't exist
-    # print(f'get_block_header() -> {store.get_block_header("04a368709289ddfc363c3b0bc4c6db97b1aa4376ebce93f0cd95e6f62e7a7492", include_transactions=True)}')
