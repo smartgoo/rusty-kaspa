@@ -11,8 +11,11 @@ use kaspa_txscript::extract_script_pub_key_address;
 use kaspa_utxoindex::model::{CompactUtxoCollection, CompactUtxoEntry, UtxoSetByScriptPublicKey};
 use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
 use std::{
+    collections::{
+        HashSet,
+        HashMap,
+    },
     error::Error,
     fmt::Display,
     fs::File,
@@ -277,5 +280,51 @@ impl DbUtxoSetByScriptPublicKeyStore {
         }
 
         utxo_count
+    }
+
+    pub fn export_all_addresses(
+        &self,
+        filepath: String,
+        chunk_size: i32,
+        verbose: bool,
+    ) -> i64 {
+        let mut addresses: HashMap<String, u64> = HashMap::new();
+        
+        let mut chunk_count = 0;
+        let iter = self.access.iterator();
+        for chunk in &iter.chunks(chunk_size.try_into().unwrap()) {
+            for r in chunk {
+                let (key, value): (Box<[u8]>, CompactUtxoEntry) = r.unwrap();
+
+                let utxo_entry_full_access_key = UtxoEntryFullAccessKey(Arc::new(key.to_vec()));
+                let script_public_key_bucket = utxo_entry_full_access_key.extract_script_public_key_bucket();
+                let script_public_key = ScriptPublicKey::from(script_public_key_bucket);
+                let addr = extract_script_pub_key_address(&script_public_key, Prefix::Mainnet).unwrap();
+
+                // Sum the amounts
+                *addresses.entry(addr.to_string()).or_insert(0) += value.amount;
+            }
+            
+            chunk_count += 1;
+            if verbose {
+                println!("Processed {} utxo entry chunks", chunk_count);
+            }
+        }
+
+        let final_path = PathBuf::from(filepath);
+        let file = File::create(&final_path).expect("Failed to create file");
+        let mut wtr = Writer::from_writer(file);
+
+        // Write headers
+        wtr.write_record(&["address", "amount"]);
+
+        // Write summed amounts to CSV
+        let mut addr_count = 0;
+        for (key, sum) in addresses {
+            wtr.write_record(&[key, sum.to_string()]);
+            addr_count += 1;
+        }
+
+        addr_count
     }
 }

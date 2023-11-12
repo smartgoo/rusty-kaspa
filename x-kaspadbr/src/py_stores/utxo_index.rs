@@ -62,4 +62,22 @@ impl PyUtxoIndexStore {
             verbose,
         ))
     }
+
+    #[pyo3(signature = (
+        filepath,
+        chunk_size=100000,
+        verbose=false
+    ))]
+    pub fn export_addresses(
+        &self,
+        filepath: String,
+        chunk_size: i32,
+        verbose: bool
+    ) -> PyResult<i64> {
+        Ok(self.inner_store.export_all_addresses(
+            filepath,
+            chunk_size,
+            verbose
+        ))
+    }
 }
