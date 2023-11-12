@@ -6,7 +6,11 @@ Built on top of [rusty-kaspa](https://github.com/kaspanet/rusty-kaspa), using [P
 The additional crate `x-kaspadbr` is where all code specific to this project can be found.
 
 # Development Process:
-**First**, develop rust code. All code for this project is in `x-kaspadbr` crate. Although code from other rusty-kaspa crates can be used as well.
+Should you wish to develop this locally, here is the process.
+
+All code for this project is currently located in the `x-kaspadbr` crate.
+
+**First**, clone this project.
 
 **Second**, build and install the Python package in local virtual env:
 1. `cd ./rusty-kaspa/x-kaspadbr`
@@ -15,7 +19,16 @@ The additional crate `x-kaspadbr` is where all code specific to this project can
 4. `pip install maturin`
 5. `maturin develop --release` to build and install in the active Python venv.
 
-**Third**, test the built Python package. Refer to code in `./x-kaspadbr/python/`.
+**Third**, test the built Python package from within the same venv. Refer to code in `./x-kaspadbr/python/`.
+
+# Install in a local Python venv
+1. `cd ./rusty-kaspa/x-kaspadbr`
+2. `python -m venv env`
+3. `source env/bin/activate`
+4. `pip install maturin`
+5. `maturin build --release` to build wheel
+6. Copy the wheel filepath output by the command above: `📦 Built wheel for CPython <version> to <filepath>`.
+7. Switch to the desired local venv. `pip install <filepath>`
 
 # How to use from Python
 See `./x-kaspadbr/python/` and `./x-kaspadbr/kaspadbr.pyi`.
