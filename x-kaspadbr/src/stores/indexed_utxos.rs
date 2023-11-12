@@ -1,3 +1,5 @@
+use crate::py_stores::utxo_index::PyUtxoEntry;
+
 use csv::Writer;
 use itertools::Itertools;
 use kaspa_addresses::Prefix;
@@ -9,9 +11,11 @@ use kaspa_database::registry::DatabaseStorePrefixes;
 use kaspa_hashes::Hash;
 use kaspa_txscript::extract_script_pub_key_address;
 use kaspa_utxoindex::model::{CompactUtxoCollection, CompactUtxoEntry, UtxoSetByScriptPublicKey};
+use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::{
+    error::Error,
     fmt::Display,
     fs::File,
     mem::size_of,
@@ -129,7 +133,8 @@ pub trait UtxoSetByScriptPublicKeyStoreReader {
     /// Get [UtxoSetByScriptPublicKey] set by queried [ScriptPublicKeys],
     fn get_utxos_from_script_public_keys(&self, script_public_keys: ScriptPublicKeys) -> StoreResult<UtxoSetByScriptPublicKey>;
     fn get_all_outpoints(&self) -> StoreResult<HashSet<TransactionOutpoint>>; // This can have a big memory footprint, so it should be used only for tests.
-    fn export_all_outpoints(&self) -> PathBuf;
+    fn export_all_outpoints(&self) -> i64;
+    fn iterate_all_outpoints(&self) -> Option<PyUtxoEntry>;
 }
 
 // Implementations:
@@ -275,5 +280,9 @@ impl DbUtxoSetByScriptPublicKeyStore {
         }
 
         utxo_count
+    }
+
+    pub fn get_utxo_set_iterator(&self) -> Box<dyn Iterator<Item = Result<(Box<[u8]>, CompactUtxoEntry), Box<dyn Error>>> + '_ + Send> {
+        Box::new(self.access.clone().iterator())
     }
 }

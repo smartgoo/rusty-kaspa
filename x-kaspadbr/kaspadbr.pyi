@@ -43,7 +43,6 @@ class HeadersStore:
     """
     A class for reading rusty-kaspa's UtxoIndexTipsStore. Node must be ran with --utxoindex.
     """
-    
 
     def get(block_hash: str) -> Optional[dict]:
         """
@@ -110,7 +109,6 @@ class UtxoIndexTipsStore:
     """
     A class for reading rusty-kaspa's UtxoIndexTipsStore. Node must be ran with --utxoindex.
     """
-
 
     def get() -> list[str]:
         """

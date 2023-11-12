@@ -1,4 +1,10 @@
-use kaspa_consensus::{consensus::factory::ConsensusEntry, model::stores::U64Key};
+use kaspa_consensus::{
+    consensus::factory::{
+        ConsensusEntry, 
+        // MultiConsensusMetadata
+    },
+    model::stores::U64Key
+};
 use kaspa_database::{
     prelude::{CachedDbAccess, CachedDbItem, DB},
     registry::DatabaseStorePrefixes,
@@ -27,16 +33,16 @@ pub struct MultiConsensusMetadata {
 
 #[derive(Clone)]
 pub struct MultiConsensusManagementStore {
-    db: Arc<DB>,
-    entries: CachedDbAccess<U64Key, ConsensusEntry>,
+    _db: Arc<DB>,
+    _entries: CachedDbAccess<U64Key, ConsensusEntry>,
     metadata: CachedDbItem<MultiConsensusMetadata>,
 }
 
 impl MultiConsensusManagementStore {
     pub fn new(db: Arc<DB>) -> Self {
         Self {
-            db: db.clone(),
-            entries: CachedDbAccess::new(db.clone(), 16, DatabaseStorePrefixes::ConsensusEntries.into()),
+            _db: db.clone(),
+            _entries: CachedDbAccess::new(db.clone(), 16, DatabaseStorePrefixes::ConsensusEntries.into()),
             metadata: CachedDbItem::new(db, DatabaseStorePrefixes::MultiConsensusMetadata.into()),
         }
     }
