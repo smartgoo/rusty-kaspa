@@ -8,18 +8,15 @@ The additional crate `x-kaspadbr` is where all code specific to this project can
 # Development Process:
 Should you wish to develop this locally, here is the process.
 
-All code for this project is currently located in the `x-kaspadbr` crate.
-
 **First**, clone this project.
 
-**Second**, build and install the Python package in local virtual env:
-1. `cd ./rusty-kaspa/x-kaspadbr`
-2. `python -m venv env`
-3. `source env/bin/activate`
-4. `pip install maturin`
-5. `maturin develop --release` to build and install in the active Python venv.
+**Second**, develop as needed. All code for this project is currently located in the `x-kaspadbr` crate.
 
-**Third**, test the built Python package from within the same venv. Refer to code in `./x-kaspadbr/python/`.
+**Third**, use Maturin Develop to build and install the Python package in local virtual env for testing purposes.
+1. `cd ./rusty-kaspa/x-kaspadbr`
+2. `source env/bin/activate` (create venv first if necessary: `python -m venv env`, activate, and `pip install maturin`)
+5. `maturin develop --release` to build and install in the active Python venv.
+7. Test the built Python package from within the same venv. Refer to code in `./x-kaspadbr/python/`.
 
 # Install in a local Python venv
 1. `cd ./rusty-kaspa/x-kaspadbr`
