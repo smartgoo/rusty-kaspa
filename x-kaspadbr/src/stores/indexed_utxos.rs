@@ -1,5 +1,3 @@
-use crate::py_stores::utxo_index::PyUtxoEntry;
-
 use csv::Writer;
 use itertools::Itertools;
 use kaspa_addresses::Prefix;
@@ -134,7 +132,6 @@ pub trait UtxoSetByScriptPublicKeyStoreReader {
     fn get_utxos_from_script_public_keys(&self, script_public_keys: ScriptPublicKeys) -> StoreResult<UtxoSetByScriptPublicKey>;
     fn get_all_outpoints(&self) -> StoreResult<HashSet<TransactionOutpoint>>; // This can have a big memory footprint, so it should be used only for tests.
     fn export_all_outpoints(&self) -> i64;
-    fn iterate_all_outpoints(&self) -> Option<PyUtxoEntry>;
 }
 
 // Implementations:
@@ -280,9 +277,5 @@ impl DbUtxoSetByScriptPublicKeyStore {
         }
 
         utxo_count
-    }
-
-    pub fn get_utxo_set_iterator(&self) -> Box<dyn Iterator<Item = Result<(Box<[u8]>, CompactUtxoEntry), Box<dyn Error>>> + '_ + Send> {
-        Box::new(self.access.clone().iterator())
     }
 }

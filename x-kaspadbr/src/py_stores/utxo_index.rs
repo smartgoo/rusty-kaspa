@@ -62,48 +62,4 @@ impl PyUtxoIndexStore {
             verbose,
         ))
     }
-
-    #[pyo3(text_signature = "()")]
-    pub fn iterate(&self, py: Python) -> PyResult<Py<PyUtxoIterator>> {
-        let iterator = self.inner_store.get_utxo_set_iterator(); // Method to get the iterator
-        let utxo_iter = PyUtxoIterator { inner: iterator };
-        Py::new(py, utxo_iter)
-    }
-}
-
-#[pyclass]
-struct PyUtxoIterator {
-    inner: Box<dyn Iterator<Item = Result<(Box<[u8]>, CompactUtxoEntry), Box<dyn Error>>> + Send>
-}
-
-#[pymethods]
-impl PyUtxoIterator {
-    fn __iter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
-        slf
-    }
-
-    fn __next__(mut slf: PyRefMut<'_, Self>) -> Option<PyUtxoEntry> {
-        slf.inner.next().map(|utxo| {
-            let (key, value): (Box<[u8]>, CompactUtxoEntry) = utxo.unwrap();
-
-            PyUtxoEntry {
-                // transaction_id: utxo.transaction_id.to_string(),
-                // index: utxo.index,
-                // address: utxo.address,
-                daa_score: value.block_daa_score,
-                amount: value.amount,
-                is_coinbase: value.is_coinbase,
-            }
-        })
-    }
-}
-
-#[pyclass]
-pub struct PyUtxoEntry {
-    // transaction_id: String,
-    // index: u8,
-    // address: String,
-    daa_score: u64,
-    amount: u64,
-    is_coinbase: bool,
 }
