@@ -11,3 +11,5 @@ analyzer-target
 *.code-workspace
 /setup
 testing/integration/perflogs*
+
+x-kaspadbr/
