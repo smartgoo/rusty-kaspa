@@ -1,7 +1,7 @@
 from kaspadbr import Reader
 
 if __name__ == "__main__":
-    db = Reader(app_dir='/opt2/kaspad-appdir/rust')
+    db = Reader(app_dir='/data/rusty-kaspa')
 
     # Directories
     print('\n')

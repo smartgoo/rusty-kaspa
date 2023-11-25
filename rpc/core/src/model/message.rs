@@ -1,6 +1,7 @@
 use crate::model::*;
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use kaspa_consensus_core::block_count::BlockCount;
+use kaspa_core::debug;
 use kaspa_notify::subscription::{single::UtxosChangedSubscription, Command};
 use serde::{Deserialize, Serialize};
 use std::{
@@ -757,6 +758,30 @@ pub struct GetSyncStatusResponse {
     pub is_synced: bool,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize, BorshSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct GetDaaScoreTimestampEstimateRequest {
+    pub daa_scores: Vec<u64>,
+}
+
+impl GetDaaScoreTimestampEstimateRequest {
+    pub fn new(daa_scores: Vec<u64>) -> Self {
+        Self { daa_scores }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize, BorshSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct GetDaaScoreTimestampEstimateResponse {
+    pub timestamps: Vec<u64>,
+}
+
+impl GetDaaScoreTimestampEstimateResponse {
+    pub fn new(timestamps: Vec<u64>) -> Self {
+        Self { timestamps }
+    }
+}
+
 // ----------------------------------------------------------------------------
 // Subscriptions & notifications
 // ----------------------------------------------------------------------------
@@ -924,6 +949,7 @@ impl UtxosChangedNotification {
         } else {
             let added = Self::filter_utxos(&self.added, subscription);
             let removed = Self::filter_utxos(&self.removed, subscription);
+            debug!("CRPC, Creating UtxosChanged notifications with {} added and {} removed utxos", added.len(), removed.len());
             if added.is_empty() && removed.is_empty() {
                 None
             } else {

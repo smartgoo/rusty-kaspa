@@ -1,7 +1,7 @@
 from kaspadbr import DBReader
 
 if __name__ == "__main__":
-    db = DBReader(app_dir='/opt2/kaspad-appdir/rust')
+    db = DBReader(app_dir='/data/rusty-kaspa')
 
     stores = db.stores
     utxo_tips = stores.utxo_index_tips.get()
@@ -11,9 +11,9 @@ if __name__ == "__main__":
         print(h['hash'], h['timestamp'], h['daa_score'])
 
     # Export UTXO set to CSV file
-    # c = stores.utxo_index.export(filepath="/opt2/work/dev/test.csv", verbose=True)
-    # print(f'Exported {c} UTXO records to CSV.')
+    c = stores.utxo_index.export(filepath="/opt2/work/dev/test-kaspadbr.csv", verbose=True)
+    print(f'Exported {c} UTXO records to CSV.')
 
     # Export addresses to CSV file
-    c = stores.utxo_index.export_addresses(filepath="/opt2/work/dev/addrs.csv", verbose=True)
+    # c = stores.utxo_index.export_addresses(filepath="/opt2/work/dev/addrs.csv", verbose=True)
     print(c)

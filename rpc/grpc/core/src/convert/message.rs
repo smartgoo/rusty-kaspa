@@ -1,5 +1,6 @@
 use crate::protowire::{self, submit_block_response_message::RejectReason};
 use kaspa_consensus_core::network::NetworkId;
+use kaspa_core::debug;
 use kaspa_notify::subscription::Command;
 use kaspa_rpc_core::{
     RpcContextualPeerAddress, RpcError, RpcExtraData, RpcHash, RpcIpAddress, RpcNetworkType, RpcPeerAddress, RpcResult,
@@ -294,6 +295,7 @@ from!(item: &kaspa_rpc_core::GetUtxosByAddressesRequest, protowire::GetUtxosByAd
     Self { addresses: item.addresses.iter().map(|x| x.into()).collect() }
 });
 from!(item: RpcResult<&kaspa_rpc_core::GetUtxosByAddressesResponse>, protowire::GetUtxosByAddressesResponseMessage, {
+    debug!("GRPC, Creating GetUtxosByAddresses message with {} entries", item.entries.len());
     Self { entries: item.entries.iter().map(|x| x.into()).collect(), error: None }
 });
 
@@ -301,6 +303,7 @@ from!(item: &kaspa_rpc_core::GetBalanceByAddressRequest, protowire::GetBalanceBy
     Self { address: (&item.address).into() }
 });
 from!(item: RpcResult<&kaspa_rpc_core::GetBalanceByAddressResponse>, protowire::GetBalanceByAddressResponseMessage, {
+    debug!("GRPC, Creating GetBalanceByAddress messages");
     Self { balance: item.balance, error: None }
 });
 
@@ -308,6 +311,7 @@ from!(item: &kaspa_rpc_core::GetBalancesByAddressesRequest, protowire::GetBalanc
     Self { addresses: item.addresses.iter().map(|x| x.into()).collect() }
 });
 from!(item: RpcResult<&kaspa_rpc_core::GetBalancesByAddressesResponse>, protowire::GetBalancesByAddressesResponseMessage, {
+    debug!("GRPC, Creating GetUtxosByAddresses message with {} entries", item.entries.len());
     Self { entries: item.entries.iter().map(|x| x.into()).collect(), error: None }
 });
 
@@ -347,6 +351,15 @@ from!(
 from!(&kaspa_rpc_core::GetCoinSupplyRequest, protowire::GetCoinSupplyRequestMessage);
 from!(item: RpcResult<&kaspa_rpc_core::GetCoinSupplyResponse>, protowire::GetCoinSupplyResponseMessage, {
     Self { max_sompi: item.max_sompi, circulating_sompi: item.circulating_sompi, error: None }
+});
+
+from!(item: &kaspa_rpc_core::GetDaaScoreTimestampEstimateRequest, protowire::GetDaaScoreTimestampEstimateRequestMessage, {
+    Self {
+        daa_scores: item.daa_scores.clone()
+    }
+});
+from!(item: RpcResult<&kaspa_rpc_core::GetDaaScoreTimestampEstimateResponse>, protowire::GetDaaScoreTimestampEstimateResponseMessage, {
+    Self { timestamps: item.timestamps.clone(), error: None }
 });
 
 from!(&kaspa_rpc_core::PingRequest, protowire::PingRequestMessage);
@@ -709,6 +722,15 @@ try_from!(
 try_from!(&protowire::GetCoinSupplyRequestMessage, kaspa_rpc_core::GetCoinSupplyRequest);
 try_from!(item: &protowire::GetCoinSupplyResponseMessage, RpcResult<kaspa_rpc_core::GetCoinSupplyResponse>, {
     Self { max_sompi: item.max_sompi, circulating_sompi: item.circulating_sompi }
+});
+
+try_from!(item: &protowire::GetDaaScoreTimestampEstimateRequestMessage, kaspa_rpc_core::GetDaaScoreTimestampEstimateRequest , {
+    Self {
+        daa_scores: item.daa_scores.clone()
+    }
+});
+try_from!(item: &protowire::GetDaaScoreTimestampEstimateResponseMessage, RpcResult<kaspa_rpc_core::GetDaaScoreTimestampEstimateResponse>, {
+    Self { timestamps: item.timestamps.clone() }
 });
 
 try_from!(&protowire::PingRequestMessage, kaspa_rpc_core::PingRequest);
