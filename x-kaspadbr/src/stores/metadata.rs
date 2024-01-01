@@ -6,7 +6,7 @@ use kaspa_consensus::{
     model::stores::U64Key
 };
 use kaspa_database::{
-    prelude::{CachedDbAccess, CachedDbItem, DB},
+    prelude::{CachedDbAccess, CachedDbItem, CachePolicy, DB},
     registry::DatabaseStorePrefixes,
 };
 use serde::{Deserialize, Serialize};
@@ -42,7 +42,7 @@ impl MultiConsensusManagementStore {
     pub fn new(db: Arc<DB>) -> Self {
         Self {
             _db: db.clone(),
-            _entries: CachedDbAccess::new(db.clone(), 16, DatabaseStorePrefixes::ConsensusEntries.into()),
+            _entries: CachedDbAccess::new(db.clone(), CachePolicy::Empty, DatabaseStorePrefixes::ConsensusEntries.into()),
             metadata: CachedDbItem::new(db, DatabaseStorePrefixes::MultiConsensusMetadata.into()),
         }
     }

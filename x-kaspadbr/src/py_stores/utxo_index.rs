@@ -1,6 +1,6 @@
 use crate::stores::indexed_utxos::{DbUtxoSetByScriptPublicKeyStore};
 
-use kaspa_database::prelude::DB;
+use kaspa_database::prelude::{CachePolicy, DB};
 use kaspa_utxoindex::model::{CompactUtxoEntry};
 use pyo3::prelude::*;
 use std::{sync::Arc};
@@ -18,7 +18,7 @@ pub struct PyUtxoIndexStore {
 impl PyUtxoIndexStore {
     pub fn new(utxo_index_db: Arc<DB>) -> Self {
         // Init inner store
-        let inner_store = DbUtxoSetByScriptPublicKeyStore::new(utxo_index_db.clone(), 0);
+        let inner_store = DbUtxoSetByScriptPublicKeyStore::new(utxo_index_db.clone(), CachePolicy::Empty);
 
         PyUtxoIndexStore {
             db: utxo_index_db,

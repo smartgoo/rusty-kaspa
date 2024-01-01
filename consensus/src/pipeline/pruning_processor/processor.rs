@@ -45,7 +45,10 @@ use rocksdb::WriteBatch;
 use std::{
     collections::VecDeque,
     ops::Deref,
-    sync::Arc,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
     time::{Duration, Instant},
 };
 
@@ -76,6 +79,9 @@ pub struct PruningProcessor {
 
     // Config
     config: Arc<Config>,
+
+    // Signals
+    is_consensus_exiting: Arc<AtomicBool>,
 }
 
 impl Deref for PruningProcessor {
@@ -94,6 +100,7 @@ impl PruningProcessor {
         services: &Arc<ConsensusServices>,
         pruning_lock: SessionLock,
         config: Arc<Config>,
+        is_consensus_exiting: Arc<AtomicBool>,
     ) -> Self {
         Self {
             receiver,
@@ -105,6 +112,7 @@ impl PruningProcessor {
             pruning_proof_manager: services.pruning_proof_manager.clone(),
             pruning_lock,
             config,
+            is_consensus_exiting,
         }
     }
 
@@ -208,6 +216,7 @@ impl PruningProcessor {
     }
 
     fn assert_utxo_commitment(&self, pruning_point: Hash) {
+        info!("Verifying the new pruning point UTXO commitment (sanity test)");
         let commitment = self.headers_store.get_header(pruning_point).unwrap().utxo_commitment;
         let mut multiset = MuHash::new();
         let pruning_utxoset_read = self.pruning_utxoset_stores.read();
@@ -215,6 +224,7 @@ impl PruningProcessor {
             multiset.add_utxo(&outpoint, &entry);
         }
         assert_eq!(multiset.finalize(), commitment, "Updated pruning point utxo set does not match the header utxo commitment");
+        info!("Pruning point UTXO commitment was verified correctly (sanity test)");
     }
 
     fn prune(&self, new_pruning_point: Hash) {
@@ -291,6 +301,7 @@ impl PruningProcessor {
             let pruned_tips = tips_write
                 .get()
                 .unwrap()
+                .read()
                 .iter()
                 .copied()
                 .filter(|&h| !reachability_read.is_dag_ancestor_of_result(new_pruning_point, h).unwrap())
@@ -333,6 +344,12 @@ impl PruningProcessor {
             // If we have the lock for more than a few milliseconds, release and recapture to allow consensus progress during pruning
             if lock_acquire_time.elapsed() > Duration::from_millis(5) {
                 drop(reachability_read);
+                // An exit signal was received. Exit from this long running process.
+                if self.is_consensus_exiting.load(Ordering::Relaxed) {
+                    drop(prune_guard);
+                    info!("Header and Block pruning interrupted: Process is exiting");
+                    return;
+                }
                 prune_guard.blocking_yield();
                 lock_acquire_time = Instant::now();
                 reachability_read = self.reachability_store.upgradable_read();

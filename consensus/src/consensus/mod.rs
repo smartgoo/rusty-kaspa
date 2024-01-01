@@ -1,3 +1,4 @@
+pub mod cache_policy_builder;
 pub mod ctl;
 pub mod factory;
 pub mod services;
@@ -74,12 +75,15 @@ use kaspa_hashes::Hash;
 use kaspa_muhash::MuHash;
 use kaspa_txscript::caches::TxScriptCacheCounters;
 
-use std::thread::{self, JoinHandle};
 use std::{
     future::Future,
     iter::once,
     ops::Deref,
     sync::{atomic::Ordering, Arc},
+};
+use std::{
+    sync::atomic::AtomicBool,
+    thread::{self, JoinHandle},
 };
 use tokio::sync::oneshot;
 
@@ -122,6 +126,9 @@ pub struct Consensus {
 
     // Other
     creation_timestamp: u64,
+
+    // Signals
+    is_consensus_exiting: Arc<AtomicBool>,
 }
 
 impl Deref for Consensus {
@@ -144,6 +151,7 @@ impl Consensus {
     ) -> Self {
         let params = &config.params;
         let perf_params = &config.perf;
+        let is_consensus_exiting: Arc<AtomicBool> = Arc::new(AtomicBool::new(false));
 
         //
         // Storage layer
@@ -155,7 +163,13 @@ impl Consensus {
         // Services and managers
         //
 
-        let services = ConsensusServices::new(db.clone(), storage.clone(), config.clone(), tx_script_cache_counters);
+        let services = ConsensusServices::new(
+            db.clone(),
+            storage.clone(),
+            config.clone(),
+            tx_script_cache_counters,
+            is_consensus_exiting.clone(),
+        );
 
         //
         // Processor channels
@@ -249,8 +263,15 @@ impl Consensus {
             counters.clone(),
         ));
 
-        let pruning_processor =
-            Arc::new(PruningProcessor::new(pruning_receiver, db.clone(), &storage, &services, pruning_lock.clone(), config.clone()));
+        let pruning_processor = Arc::new(PruningProcessor::new(
+            pruning_receiver,
+            db.clone(),
+            &storage,
+            &services,
+            pruning_lock.clone(),
+            config.clone(),
+            is_consensus_exiting.clone(),
+        ));
 
         // Ensure the relations stores are initialized
         header_processor.init();
@@ -278,6 +299,7 @@ impl Consensus {
             counters,
             config,
             creation_timestamp,
+            is_consensus_exiting,
         }
     }
 
@@ -312,8 +334,8 @@ impl Consensus {
         (async { brx.await.unwrap() }, async { vrx.await.unwrap() })
     }
 
-    pub fn body_tips(&self) -> Arc<BlockHashSet> {
-        self.body_tips_store.read().get().unwrap()
+    pub fn body_tips(&self) -> BlockHashSet {
+        self.body_tips_store.read().get().unwrap().read().clone()
     }
 
     pub fn block_status(&self, hash: Hash) -> BlockStatus {
@@ -333,6 +355,7 @@ impl Consensus {
     }
 
     pub fn signal_exit(&self) {
+        self.is_consensus_exiting.store(true, Ordering::Relaxed);
         self.block_sender.send(BlockProcessingMessage::Exit).unwrap();
     }
 
@@ -566,6 +589,10 @@ impl ConsensusApi for Consensus {
         self.virtual_stores.read().state.get().unwrap().parents.iter().copied().collect()
     }
 
+    fn get_virtual_parents_len(&self) -> usize {
+        self.virtual_stores.read().state.get().unwrap().parents.len()
+    }
+
     fn get_virtual_utxos(
         &self,
         from_outpoint: Option<TransactionOutpoint>,
@@ -578,7 +605,11 @@ impl ConsensusApi for Consensus {
     }
 
     fn get_tips(&self) -> Vec<Hash> {
-        self.body_tips().iter().copied().collect_vec()
+        self.body_tips_store.read().get().unwrap().read().iter().copied().collect_vec()
+    }
+
+    fn get_tips_len(&self) -> usize {
+        self.body_tips_store.read().get().unwrap().read().len()
     }
 
     fn get_pruning_point_utxos(
@@ -759,8 +790,12 @@ impl ConsensusApi for Consensus {
         Ok((&*ghostdag).into())
     }
 
-    fn get_block_children(&self, hash: Hash) -> Option<Arc<Vec<Hash>>> {
-        self.services.relations_service.get_children(hash).unwrap_option()
+    fn get_block_children(&self, hash: Hash) -> Option<Vec<Hash>> {
+        self.services
+            .relations_service
+            .get_children(hash)
+            .unwrap_option()
+            .map(|children| children.read().iter().copied().collect_vec())
     }
 
     fn get_block_parents(&self, hash: Hash) -> Option<Arc<Vec<Hash>>> {

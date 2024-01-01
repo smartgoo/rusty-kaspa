@@ -4,7 +4,7 @@ use kaspa_addresses::Prefix;
 use kaspa_consensus_core::tx::{
     ScriptPublicKey, ScriptPublicKeyVersion, ScriptPublicKeys, ScriptVec, TransactionIndexType, TransactionOutpoint,
 };
-use kaspa_database::prelude::{CachedDbAccess, StoreResult, DB};
+use kaspa_database::prelude::{CachedDbAccess, CachePolicy, StoreResult, DB};
 use kaspa_database::registry::DatabaseStorePrefixes;
 use kaspa_hashes::Hash;
 use kaspa_txscript::extract_script_pub_key_address;
@@ -146,8 +146,8 @@ pub struct DbUtxoSetByScriptPublicKeyStore {
 }
 
 impl DbUtxoSetByScriptPublicKeyStore {
-    pub fn new(db: Arc<DB>, cache_size: u64) -> Self {
-        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_size, DatabaseStorePrefixes::UtxoIndex.into()) }
+    pub fn new(db: Arc<DB>, cache_policy: CachePolicy) -> Self {
+        Self { db: Arc::clone(&db), access: CachedDbAccess::new(db, cache_policy, DatabaseStorePrefixes::UtxoIndex.into()) }
     }
 }
 

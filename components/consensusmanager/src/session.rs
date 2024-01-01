@@ -222,6 +222,10 @@ impl ConsensusSessionOwned {
         self.clone().spawn_blocking(|c| c.get_virtual_parents()).await
     }
 
+    pub async fn async_get_virtual_parents_len(&self) -> usize {
+        self.clone().spawn_blocking(|c| c.get_virtual_parents_len()).await
+    }
+
     pub async fn async_get_virtual_utxos(
         &self,
         from_outpoint: Option<TransactionOutpoint>,
@@ -233,6 +237,10 @@ impl ConsensusSessionOwned {
 
     pub async fn async_get_tips(&self) -> Vec<Hash> {
         self.clone().spawn_blocking(|c| c.get_tips()).await
+    }
+
+    pub async fn async_get_tips_len(&self) -> usize {
+        self.clone().spawn_blocking(|c| c.get_tips_len()).await
     }
 
     pub async fn async_is_chain_ancestor_of(&self, low: Hash, high: Hash) -> ConsensusResult<bool> {
@@ -308,7 +316,7 @@ impl ConsensusSessionOwned {
         self.clone().spawn_blocking(move |c| c.get_ghostdag_data(hash)).await
     }
 
-    pub async fn async_get_block_children(&self, hash: Hash) -> Option<Arc<Vec<Hash>>> {
+    pub async fn async_get_block_children(&self, hash: Hash) -> Option<Vec<Hash>> {
         self.clone().spawn_blocking(move |c| c.get_block_children(hash)).await
     }
 

@@ -1,3 +1,4 @@
+use kaspa_utils::mem_size::MemSizeEstimator;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Debug)]
@@ -18,6 +19,12 @@ pub enum BlockStatus {
 
     /// StatusHeaderOnly indicates that the block transactions are not held (pruned or wasn't added yet)
     StatusHeaderOnly,
+}
+
+impl MemSizeEstimator for BlockStatus {
+    fn estimate_mem_units(&self) -> usize {
+        1
+    }
 }
 
 impl BlockStatus {
@@ -42,5 +49,9 @@ impl BlockStatus {
 
     pub fn is_valid(self) -> bool {
         self != BlockStatus::StatusInvalid
+    }
+
+    pub fn is_invalid(self) -> bool {
+        self == BlockStatus::StatusInvalid
     }
 }

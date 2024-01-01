@@ -1,6 +1,6 @@
 use crate::converters::ToPyDict;
 
-use kaspa_database::prelude::{DB, StoreError};
+use kaspa_database::prelude::{CachePolicy, DB, StoreError};
 use kaspa_consensus::model::stores::headers::{DbHeadersStore, HeaderStoreReader};
 use kaspa_consensus_core::Hash;
 use pyo3::prelude::*;
@@ -19,7 +19,7 @@ pub struct PyHeaderStore {
 
 impl PyHeaderStore {
     pub fn new(consensus_db: Arc<DB>) -> Self {
-        let inner_store = DbHeadersStore::new(consensus_db, 0);
+        let inner_store = DbHeadersStore::new(consensus_db, CachePolicy::Empty, CachePolicy::Empty);
 
         PyHeaderStore {
             inner_store,

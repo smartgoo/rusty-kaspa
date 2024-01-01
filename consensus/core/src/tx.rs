@@ -1,9 +1,10 @@
 mod script_public_key;
 
 use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
+use kaspa_utils::hex::ToHex;
+use kaspa_utils::mem_size::MemSizeEstimator;
 use kaspa_utils::{serde_bytes, serde_bytes_fixed_ref};
 pub use script_public_key::{scriptvec, ScriptPublicKey, ScriptPublicKeyVersion, ScriptPublicKeys, ScriptVec, SCRIPT_VECTOR_SIZE};
-
 use serde::{Deserialize, Serialize};
 use std::{
     fmt::Display,
@@ -44,6 +45,12 @@ impl UtxoEntry {
     }
 }
 
+impl MemSizeEstimator for UtxoEntry {
+    fn estimate_mem_units(&self) -> usize {
+        1
+    }
+}
+
 pub type TransactionIndexType = u32;
 
 /// Represents a Kaspa transaction outpoint
@@ -68,7 +75,7 @@ impl Display for TransactionOutpoint {
 }
 
 /// Represents a Kaspa transaction input
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, BorshSchema)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, BorshSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionInput {
     pub previous_outpoint: TransactionOutpoint,
@@ -81,6 +88,17 @@ pub struct TransactionInput {
 impl TransactionInput {
     pub fn new(previous_outpoint: TransactionOutpoint, signature_script: Vec<u8>, sequence: u64, sig_op_count: u8) -> Self {
         Self { previous_outpoint, signature_script, sequence, sig_op_count }
+    }
+}
+
+impl std::fmt::Debug for TransactionInput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TransactionInput")
+            .field("previous_outpoint", &self.previous_outpoint)
+            .field("signature_script", &self.signature_script.to_hex())
+            .field("sequence", &self.sequence)
+            .field("sig_op_count", &self.sig_op_count)
+            .finish()
     }
 }
 
@@ -99,7 +117,7 @@ impl TransactionOutput {
 }
 
 /// Represents a Kaspa transaction
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub version: u16,
