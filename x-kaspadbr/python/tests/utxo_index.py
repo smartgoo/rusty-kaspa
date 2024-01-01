@@ -11,7 +11,7 @@ if __name__ == "__main__":
         print(h['hash'], h['timestamp'], h['daa_score'])
 
     # Export UTXO set to CSV file
-    c = stores.utxo_index.export(filepath="/opt2/work/dev/test-kaspadbr.csv", verbose=True)
+    c = stores.utxo_index.export(filepath=f"/opt2/work/dev/utxo_set_of_{utxo_tips[0]}.csv", outpoint=True, verbose=True)
     print(f'Exported {c} UTXO records to CSV.')
 
     # Export addresses to CSV file
