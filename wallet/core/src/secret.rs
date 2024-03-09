@@ -6,6 +6,7 @@ use borsh::{BorshDeserialize, BorshSchema, BorshSerialize};
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroize;
 
+/// Secret container for sensitive data. Performs memory zeroization on drop.
 #[derive(Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize, BorshSchema)]
 pub struct Secret(Vec<u8>);
 
@@ -26,11 +27,13 @@ impl From<Vec<u8>> for Secret {
         Secret(vec)
     }
 }
+
 impl From<&[u8]> for Secret {
     fn from(slice: &[u8]) -> Self {
         Secret(slice.to_vec())
     }
 }
+
 impl From<&str> for Secret {
     fn from(s: &str) -> Self {
         Secret(s.trim().as_bytes().to_vec())

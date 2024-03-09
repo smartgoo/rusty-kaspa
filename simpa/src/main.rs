@@ -73,6 +73,10 @@ struct Args {
     #[arg(short = 'f', long, default_value_t = false)]
     headers_first: bool,
 
+    /// Applies a scale factor to memory allocation bounds
+    #[arg(long, default_value_t = 1.0)]
+    ram_scale: f64,
+
     /// Logging level for all subsystems {off, error, warn, info, debug, trace}
     ///  -- You may also specify <subsystem>=<level>,<subsystem2>=<level>,... to set the log level for individual subsystems
     #[arg(long = "loglevel", default_value = format!("info,{}=trace", env!("CARGO_PKG_NAME")))]
@@ -172,11 +176,14 @@ fn main_impl(mut args: Args) {
         );
     }
     args.bps = if args.testnet11 { Testnet11Bps::bps() as f64 } else { args.bps };
-    let params = if args.testnet11 { TESTNET11_PARAMS } else { DEVNET_PARAMS };
+    let mut params = if args.testnet11 { TESTNET11_PARAMS } else { DEVNET_PARAMS };
+    params.storage_mass_activation_daa_score = 400;
+    params.storage_mass_parameter = 10_000;
     let mut builder = ConfigBuilder::new(params)
         .apply_args(|config| apply_args_to_consensus_params(&args, &mut config.params))
         .apply_args(|config| apply_args_to_perf_params(&args, &mut config.perf))
         .adjust_perf_params_to_consensus_params()
+        .apply_args(|config| config.ram_scale = args.ram_scale)
         .skip_proof_of_work()
         .enable_sanity_checks();
     if !args.test_pruning {

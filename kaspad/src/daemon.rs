@@ -85,6 +85,12 @@ pub fn validate_args(args: &Args) -> ConfigResult<()> {
     if args.logdir.is_some() && args.no_log_files {
         return Err(ConfigError::MixedLogDirAndNoLogFiles);
     }
+    if args.ram_scale < 0.1 {
+        return Err(ConfigError::RamScaleTooLow);
+    }
+    if args.ram_scale > 10.0 {
+        return Err(ConfigError::RamScaleTooHigh);
+    }
     Ok(())
 }
 
@@ -342,7 +348,7 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
     let outbound_target = if connect_peers.is_empty() { args.outbound_target } else { 0 };
     let dns_seeders = if connect_peers.is_empty() && !args.disable_dns_seeding { config.dns_seeders } else { &[] };
 
-    let grpc_server_addr = args.rpclisten.unwrap_or(ContextualNetAddress::unspecified()).normalize(config.default_rpc_port());
+    let grpc_server_addr = args.rpclisten.unwrap_or(ContextualNetAddress::loopback()).normalize(config.default_rpc_port());
 
     let core = Arc::new(Core::new());
 
@@ -407,11 +413,11 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
     let (address_manager, port_mapping_extender_svc) = AddressManager::new(config.clone(), meta_db, tick_service.clone());
 
     let mining_monitor = Arc::new(MiningMonitor::new(mining_counters.clone(), tx_script_cache_counters.clone(), tick_service.clone()));
-    let mining_manager = MiningManagerProxy::new(Arc::new(MiningManager::new_with_spam_blocking_option(
-        network.is_mainnet(),
+    let mining_manager = MiningManagerProxy::new(Arc::new(MiningManager::new_with_extended_config(
         config.target_time_per_block,
         false,
         config.max_block_mass,
+        config.ram_scale,
         config.block_template_cache_lifetime,
         mining_counters,
     )));
@@ -452,8 +458,6 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
         p2p_tower_counters.clone(),
         grpc_tower_counters.clone(),
     ));
-    let grpc_service =
-        Arc::new(GrpcService::new(grpc_server_addr, config, rpc_core_service.clone(), args.rpc_max_clients, grpc_tower_counters));
 
     // Create an async runtime and register the top-level async services
     let async_runtime = Arc::new(AsyncRuntime::new(args.async_threads));
@@ -466,7 +470,11 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
         async_runtime.register(Arc::new(port_mapping_extender_svc))
     };
     async_runtime.register(rpc_core_service.clone());
-    async_runtime.register(grpc_service);
+    if !args.disable_grpc {
+        let grpc_service =
+            Arc::new(GrpcService::new(grpc_server_addr, config, rpc_core_service.clone(), args.rpc_max_clients, grpc_tower_counters));
+        async_runtime.register(grpc_service);
+    }
     async_runtime.register(p2p_service);
     async_runtime.register(consensus_monitor);
     async_runtime.register(mining_monitor);

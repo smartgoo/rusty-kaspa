@@ -17,7 +17,7 @@ use kaspa_consensus_notify::{
     notification::{Notification, PruningPointUtxoSetOverrideNotification},
     root::ConsensusNotificationRoot,
 };
-use kaspa_consensusmanager::{ConsensusInstance, ConsensusManager, ConsensusProxy};
+use kaspa_consensusmanager::{BlockProcessingBatch, ConsensusInstance, ConsensusManager, ConsensusProxy};
 use kaspa_core::{
     debug, info,
     kaspad_env::{name, version},
@@ -78,8 +78,6 @@ pub enum BlockLogEvent {
     Submit(Hash),
     /// Orphaned block with x missing roots
     Orphaned(Hash, usize),
-    /// Detected a known orphan with x missing roots
-    OrphanRoots(Hash, usize),
     /// Unorphaned x blocks with hash being a representative
     Unorphaned(Hash, usize),
 }
@@ -102,7 +100,7 @@ impl BlockEventLogger {
 
     /// Start the logger listener. Must be called from an async tokio context
     fn start(&self) {
-        let chunk_limit = self.bps * 4; // We prefer that the 1 sec timeout forces the log, but nonetheless still want a reasonable bound on each chunk
+        let chunk_limit = self.bps * 10; // We prefer that the 1 sec timeout forces the log, but nonetheless still want a reasonable bound on each chunk
         let receiver = self.receiver.lock().take().expect("expected to be called once");
         tokio::spawn(async move {
             let chunk_stream = UnboundedReceiverStream::new(receiver).chunks_timeout(chunk_limit, Duration::from_secs(1));
@@ -110,7 +108,7 @@ impl BlockEventLogger {
             while let Some(chunk) = chunk_stream.next().await {
                 #[derive(Default)]
                 struct LogSummary {
-                    // Representative
+                    // Representatives
                     relay_rep: Option<Hash>,
                     submit_rep: Option<Hash>,
                     orphan_rep: Option<Hash>,
@@ -176,9 +174,6 @@ impl BlockEventLogger {
                             summary.orphan_count += 1;
                             summary.orphan_rep = Some(hash)
                         }
-                        BlockLogEvent::OrphanRoots(_, roots_count) => {
-                            summary.orphan_roots_count += roots_count;
-                        }
                         BlockLogEvent::Unorphaned(hash, count) => {
                             summary.unorphan_count += count;
                             summary.unorphan_rep = Some(hash)
@@ -198,25 +193,15 @@ impl BlockEventLogger {
                     }
                 }
 
-                match (summary.unorphan_count, summary.orphan_count, summary.orphan_roots_count) {
-                    (0, 0, 0) => {}
-                    (1, 0, 0) => info!("Unorphaned block {}", summary.unorphan()),
-                    (n, 0, 0) => info!("Unorphaned {} block(s) ...{}", n, summary.unorphan()),
-                    (0, m, 0) => info!("Orphaned {} block(s) ...{}", m, summary.orphan()),
-                    (0, m, l) => info!("Orphaned {} block(s) ...{} and queued {} missing roots", m, summary.orphan(), l),
-                    (n, m, 0) => {
-                        info!("Unorphaned {} block(s) ...{}, orphaned {} block(s) ...{}", n, summary.unorphan(), m, summary.orphan(),)
-                    }
-                    (n, m, l) => {
-                        info!(
-                            "Unorphaned {} block(s) ...{}, orphaned {} block(s) ...{} and queued {} missing roots",
-                            n,
-                            summary.unorphan(),
-                            m,
-                            summary.orphan(),
-                            l
-                        )
-                    }
+                match (summary.orphan_count, summary.orphan_roots_count) {
+                    (0, 0) => {}
+                    (n, m) => info!("Orphaned {} block(s) ...{} and queued {} missing roots", n, summary.orphan(), m),
+                }
+
+                match summary.unorphan_count {
+                    0 => {}
+                    1 => info!("Unorphaned block {}", summary.unorphan()),
+                    n => info!("Unorphaned {} block(s) ...{}", n, summary.unorphan()),
                 }
             }
         });
@@ -454,7 +439,6 @@ impl FlowContext {
     }
 
     pub async fn add_orphan(&self, consensus: &ConsensusProxy, orphan_block: Block) -> Option<OrphanOutput> {
-        self.log_block_event(BlockLogEvent::Orphaned(orphan_block.hash(), 0));
         self.orphans_pool.write().await.add_orphan(consensus, orphan_block).await
     }
 
@@ -511,7 +495,7 @@ impl FlowContext {
         // Broadcast as soon as the block has been validated and inserted into the DAG
         self.hub.broadcast(make_message!(Payload::InvRelayBlock, InvRelayBlockMessage { hash: Some(hash.into()) })).await;
 
-        self.on_new_block(consensus, block, virtual_state_task).await;
+        self.on_new_block(consensus, Default::default(), block, virtual_state_task).await;
         self.log_block_event(BlockLogEvent::Submit(hash));
 
         Ok(())
@@ -524,11 +508,8 @@ impl FlowContext {
             match event {
                 BlockLogEvent::Relay(hash) => info!("Accepted block {} via relay", hash),
                 BlockLogEvent::Submit(hash) => info!("Accepted block {} via submit block", hash),
-                BlockLogEvent::Orphaned(orphan, _) => {
-                    info!("Received a block with missing parents, adding to orphan pool: {}", orphan)
-                }
-                BlockLogEvent::OrphanRoots(orphan, roots_count) => {
-                    info!("Block {} has {} missing ancestors. Adding them to the invs queue...", orphan, roots_count)
+                BlockLogEvent::Orphaned(orphan, roots_count) => {
+                    info!("Received a block with {} missing ancestors, adding to orphan pool: {}", roots_count, orphan)
                 }
                 _ => {}
             }
@@ -539,7 +520,13 @@ impl FlowContext {
     /// and possibly rebroadcast manually added transactions when not in IBD.
     ///
     /// _GO-KASPAD: OnNewBlock + broadcastTransactionsAfterBlockAdded_
-    pub async fn on_new_block(&self, consensus: &ConsensusProxy, block: Block, virtual_state_task: BlockValidationFuture) {
+    pub async fn on_new_block(
+        &self,
+        consensus: &ConsensusProxy,
+        ancestor_batch: BlockProcessingBatch,
+        block: Block,
+        virtual_state_task: BlockValidationFuture,
+    ) {
         let hash = block.hash();
         let mut blocks = self.unorphan_blocks(consensus, hash).await;
 
@@ -554,7 +541,7 @@ impl FlowContext {
         blocks.sort_by(|a, b| a.0.header.blue_work.partial_cmp(&b.0.header.blue_work).unwrap());
         // Use a ProcessQueue so we get rid of duplicates
         let mut transactions_to_broadcast = ProcessQueue::new();
-        for (block, virtual_state_task) in once((block, virtual_state_task)).chain(blocks.into_iter()) {
+        for (block, virtual_state_task) in ancestor_batch.zip().chain(once((block, virtual_state_task))).chain(blocks.into_iter()) {
             // We only care about waiting for virtual to process the block at this point, before proceeding with post-processing
             // actions such as updating the mempool. We know this will not err since `block_task` already completed w/o error
             let _ = virtual_state_task.await;
@@ -568,12 +555,13 @@ impl FlowContext {
             }
         }
 
-        // Don't relay transactions when in IBD
-        if self.is_ibd_running() {
+        // Transaction relay is disabled if the node is out of sync and thus not mining
+        if !consensus.async_is_nearly_synced().await {
             return;
         }
 
-        self.broadcast_transactions(transactions_to_broadcast).await;
+        // TODO: Throttle these transactions as well if needed
+        self.broadcast_transactions(transactions_to_broadcast, false).await;
 
         if self.should_run_mempool_scanning_task().await {
             // Spawn a task executing the removal of expired low priority transactions and, if time has come too,
@@ -593,7 +581,12 @@ impl FlowContext {
                         mining_manager.revalidate_high_priority_transactions(&consensus_clone, tx).await;
                     });
                     while let Some(transactions) = rx.recv().await {
-                        let _ = context.broadcast_transactions(transactions).await;
+                        let _ = context
+                            .broadcast_transactions(
+                                transactions,
+                                true, // We throttle high priority even when the network is not flooded since they will be rebroadcast if not accepted within reasonable time.
+                            )
+                            .await;
                     }
                 }
                 context.mempool_scanning_is_done().await;
@@ -627,7 +620,11 @@ impl FlowContext {
     ) -> Result<(), ProtocolError> {
         let accepted_transactions =
             self.mining_manager().clone().validate_and_insert_transaction(consensus, transaction, Priority::High, orphan).await?;
-        self.broadcast_transactions(accepted_transactions.iter().map(|x| x.id())).await;
+        self.broadcast_transactions(
+            accepted_transactions.iter().map(|x| x.id()),
+            false, // RPC transactions are considered high priority, so we don't want to throttle them
+        )
+        .await;
         Ok(())
     }
 
@@ -654,8 +651,8 @@ impl FlowContext {
     ///
     /// The broadcast itself may happen only during a subsequent call to this function since it is done at most
     /// after a predefined interval or when the queue length is larger than the Inv message capacity.
-    pub async fn broadcast_transactions<I: IntoIterator<Item = TransactionId>>(&self, transaction_ids: I) {
-        self.transactions_spread.write().await.broadcast_transactions(transaction_ids).await
+    pub async fn broadcast_transactions<I: IntoIterator<Item = TransactionId>>(&self, transaction_ids: I, should_throttle: bool) {
+        self.transactions_spread.write().await.broadcast_transactions(transaction_ids, should_throttle).await
     }
 }
 

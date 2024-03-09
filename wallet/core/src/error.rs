@@ -18,6 +18,7 @@ use workflow_rpc::client::error::Error as RpcError;
 use workflow_wasm::jserror::*;
 use workflow_wasm::printable::*;
 
+/// [`Error`](enum@Error) variants emitted by the wallet framework.
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("{0}")]
@@ -73,6 +74,9 @@ pub enum Error {
 
     #[error("No network selected. Please use `network (mainnet|testnet-10|testnet-11)` to select a network.")]
     MissingNetworkId,
+
+    #[error("RPC client version mismatch, please upgrade you client (needs: v{0}, connected to: v{1})")]
+    RpcApiVersion(String, String),
 
     #[error("Invalid or unsupported network id: {0}")]
     InvalidNetworkId(String),
@@ -186,7 +190,7 @@ pub enum Error {
     InvalidAccountKind,
 
     #[error("Insufficient funds")]
-    InsufficientFunds,
+    InsufficientFunds { additional_needed: u64, origin: &'static str },
 
     #[error(transparent)]
     Utf8Error(#[from] std::str::Utf8Error),
@@ -233,11 +237,20 @@ pub enum Error {
     #[error("Payment output address does not match supplied network type")]
     GeneratorPaymentOutputNetworkTypeMismatch,
 
+    #[error("Invalid transaction amount")]
+    GeneratorPaymentOutputZeroAmount,
+
     #[error("Priority fees can not be included into transactions with multiple outputs")]
     GeneratorIncludeFeesRequiresOneOutput,
 
-    #[error("Requested transaction is too heavy")]
+    #[error("Transaction outputs exceed the maximum allowed mass")]
+    GeneratorTransactionOutputsAreTooHeavy { mass: u64, kind: &'static str },
+
+    #[error("Transaction exceeds the maximum allowed mass")]
     GeneratorTransactionIsTooHeavy,
+
+    #[error("Storage mass exceeds maximum")]
+    StorageMassExceedsMaximumTransactionMass { storage_mass: u64 },
 
     #[error("Invalid range {0}..{1}")]
     InvalidRange(u64, u64),
@@ -265,6 +278,9 @@ pub enum Error {
 
     #[error("Missing RPC listener id (this may be a node connection issue)")]
     ListenerId,
+
+    #[error("Mass calculation error")]
+    MassCalculationError,
 }
 
 impl From<Aborted> for Error {

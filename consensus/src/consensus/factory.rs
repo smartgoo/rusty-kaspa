@@ -28,11 +28,7 @@ pub struct ConsensusEntry {
     creation_timestamp: u64,
 }
 
-impl MemSizeEstimator for ConsensusEntry {
-    fn estimate_mem_units(&self) -> usize {
-        1
-    }
-}
+impl MemSizeEstimator for ConsensusEntry {}
 
 impl ConsensusEntry {
     pub fn new(key: u64, directory_name: String, creation_timestamp: u64) -> Self {
@@ -63,7 +59,7 @@ pub struct MultiConsensusMetadata {
     version: u32,
 }
 
-const LATEST_DB_VERSION: u32 = 2;
+const LATEST_DB_VERSION: u32 = 3;
 impl Default for MultiConsensusMetadata {
     fn default() -> Self {
         Self {
