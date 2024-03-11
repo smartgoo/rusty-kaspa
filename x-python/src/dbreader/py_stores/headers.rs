@@ -1,4 +1,4 @@
-use crate::converters::ToPyDict;
+use crate::dbreader::converters::ToPyDict;
 
 use kaspa_database::prelude::{CachePolicy, DB, StoreError};
 use kaspa_consensus::model::stores::headers::{DbHeadersStore, HeaderStoreReader};

@@ -1,4 +1,4 @@
-from kaspadbr import DBReader
+from kaspapy import DBReader
 
 if __name__ == "__main__":
     db = DBReader(app_dir='/data/rusty-kaspa')

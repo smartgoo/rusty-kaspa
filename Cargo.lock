@@ -6627,7 +6627,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "x-kaspadbr"
+name = "x-python"
 version = "0.13.5"
 dependencies = [
  "chrono",
@@ -6635,6 +6635,7 @@ dependencies = [
  "dirs 4.0.0",
  "itertools 0.11.0",
  "kaspa-addresses",
+ "kaspa-bip32",
  "kaspa-consensus",
  "kaspa-consensus-core",
  "kaspa-database",

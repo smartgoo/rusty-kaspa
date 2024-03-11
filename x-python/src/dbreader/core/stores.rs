@@ -1,5 +1,5 @@
-use crate::core::dirs::Dirs;
-use crate::py_stores::{
+use crate::dbreader::core::dirs::Dirs;
+use crate::dbreader::py_stores::{
     circulating_supply::PyCirculatingSupplyStore,
     headers::PyHeaderStore,
     metadata::PyMetadataStore,

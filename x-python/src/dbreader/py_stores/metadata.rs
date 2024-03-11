@@ -1,4 +1,4 @@
-use crate::stores::metadata::MultiConsensusManagementStore;
+use crate::dbreader::stores::metadata::MultiConsensusManagementStore;
 
 use kaspa_database::prelude::DB;
 use pyo3::prelude::*;

@@ -1,4 +1,4 @@
-use crate::stores::indexed_utxos::{DbUtxoSetByScriptPublicKeyStore};
+use crate::dbreader::stores::indexed_utxos::{DbUtxoSetByScriptPublicKeyStore};
 
 use kaspa_database::prelude::{CachePolicy, DB};
 use kaspa_utxoindex::model::{CompactUtxoEntry};

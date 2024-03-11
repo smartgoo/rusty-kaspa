@@ -1,5 +1,5 @@
-use crate::core::dirs::Dirs;
-use crate::core::stores::Stores;
+use crate::dbreader::core::dirs::Dirs;
+use crate::dbreader::core::stores::Stores;
 
 use pyo3::prelude::*;
 use std::path::PathBuf;
