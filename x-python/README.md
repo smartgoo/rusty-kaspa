@@ -52,10 +52,10 @@ See `./x-python/python/tests/` and `./x-python/kaspapy.pyi` (which is most likel
 
 Package name: `kaspapy`
 
-Modules inside of `kaspapy` are `DBReader` and `grpc_client`. E.g:
+Modules inside of `kaspapy` are `DBReader` and `grpc`. E.g:
 
 - `from kaspapy import DBReader`
-- `from kaspapy.grpc_client import AioClient`
+- `from kaspapy.grpc import AioClient`
 
 ---
 

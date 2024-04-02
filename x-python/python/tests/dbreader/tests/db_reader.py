@@ -1,7 +1,7 @@
-from kaspadbr import Reader
+from kaspadbr import DBReader
 
 if __name__ == "__main__":
-    db = Reader(app_dir='/data/rusty-kaspa')
+    db = DBReader(app_dir='/data/rusty-kaspa')
 
     # Directories
     print('\n')
