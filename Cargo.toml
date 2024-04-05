@@ -200,7 +200,7 @@ paste = "1.0.14"
 pbkdf2 = "0.12.2"
 portable-atomic = { version = "1.5.1", features = ["float"] }
 prost = "0.12.1"
-pyo3 = {version = "0.19.2", features = ["extension-module"]}
+pyo3 = {version = "0.21", features = ["extension-module"]}
 rand = "0.8.5"
 rand_chacha = "0.3.1"
 rand_core = { version = "0.6.4", features = ["std"] }

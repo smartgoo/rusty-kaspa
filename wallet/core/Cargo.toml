@@ -56,6 +56,7 @@ kaspa-wrpc-client.workspace = true
 md-5.workspace = true
 pad.workspace = true
 pbkdf2.workspace = true
+pyo3.workspace = true
 rand.workspace = true
 regex.workspace = true
 ripemd.workspace = true

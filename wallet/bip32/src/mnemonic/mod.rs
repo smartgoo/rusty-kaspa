@@ -5,7 +5,7 @@
 
 mod bits;
 mod language;
-mod phrase;
+pub mod phrase;
 
 //#[cfg(feature = "bip39")]
 pub(crate) mod seed;

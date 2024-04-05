@@ -19,6 +19,7 @@ js-sys.workspace = true
 kaspa-utils.workspace = true
 once_cell.workspace = true
 pbkdf2.workspace = true
+pyo3.workspace = true
 rand_core.workspace = true
 rand.workspace = true
 ripemd.workspace = true

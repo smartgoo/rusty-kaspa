@@ -20,11 +20,11 @@ kaspa-hashes.workspace = true
 kaspa-math.workspace = true
 kaspa-utxoindex.workspace = true
 kaspa-txscript.workspace = true
-
-itertools.workspace = true
-serde.workspace = true
+kaspa-wallet-core.workspace = true
 
 chrono = "0.4"
 csv = "1.2"
 dirs = "4.0"
+itertools.workspace = true
+serde.workspace = true
 pyo3.workspace = true

@@ -27,4 +27,4 @@ author = "smartgoo <smartgoo@c5labs.dev>"
 
 [tool.maturin]
 name = "kaspapy"
-python-source = "python"
+# python-source = "python"
