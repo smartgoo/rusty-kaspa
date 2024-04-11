@@ -1,6 +1,4 @@
-# import kaspapy
 from kaspapy import Mnemonic
-import kaspapy
 
 if __name__ == "__main__":    
     m1 = Mnemonic.random()
