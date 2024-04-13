@@ -13,7 +13,7 @@ members = [
     "consensus/core",
     "consensus/notify",
     "consensus/pow",
-    # "consensus/python",
+    "consensus/python",
     "consensus/wasm",
     "kos",
     "kaspad",
@@ -86,6 +86,7 @@ kaspa-connectionmanager = { version = "0.13.6", path = "components/connectionman
 kaspa-consensus = { version = "0.13.6", path = "consensus" }
 kaspa-consensus-core = { version = "0.13.6", path = "consensus/core" }
 kaspa-consensus-notify = { version = "0.13.6", path = "consensus/notify" }
+kaspa-consensus-python = { version = "0.13.6", path = "consensus/python" }
 kaspa-consensus-wasm = { version = "0.13.6", path = "consensus/wasm" }
 kaspa-consensusmanager = { version = "0.13.6", path = "components/consensusmanager" }
 kaspa-core = { version = "0.13.6", path = "core" }

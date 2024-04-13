@@ -23,6 +23,7 @@ thiserror.workspace = true
 js-sys.workspace = true
 secp256k1.workspace = true
 faster-hex.workspace = true
+pyo3.workspace = true
 rand.workspace = true
 
 workflow-wasm.workspace = true

@@ -2428,6 +2428,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "kaspa-consensus-python"
+version = "0.13.6"
+dependencies = [
+ "faster-hex 0.6.1",
+ "js-sys",
+ "kaspa-addresses",
+ "kaspa-consensus-core",
+ "kaspa-hashes",
+ "kaspa-txscript",
+ "kaspa-utils",
+ "pyo3",
+ "rand 0.8.5",
+ "secp256k1",
+ "serde",
+ "serde-wasm-bindgen",
+ "serde_json",
+ "thiserror",
+ "wasm-bindgen",
+ "workflow-log",
+ "workflow-wasm",
+]
+
+[[package]]
 name = "kaspa-consensus-wasm"
 version = "0.13.6"
 dependencies = [
@@ -6781,7 +6804,7 @@ dependencies = [
 
 [[package]]
 name = "x-python"
-version = "0.13.5"
+version = "0.13.6"
 dependencies = [
  "chrono",
  "csv",
@@ -6791,6 +6814,7 @@ dependencies = [
  "kaspa-bip32",
  "kaspa-consensus",
  "kaspa-consensus-core",
+ "kaspa-consensus-python",
  "kaspa-database",
  "kaspa-hashes",
  "kaspa-math",
