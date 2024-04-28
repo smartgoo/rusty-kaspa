@@ -2,8 +2,9 @@ mod dbreader;
 
 use pyo3::prelude::*;
 
+use kaspa_addresses::Address;
 use kaspa_bip32::mnemonic::phrase::Mnemonic;
-use kaspa_consensus_python::keypair::PrivateKey;
+use kaspa_consensus_python::keypair::{Keypair, PrivateKey, PublicKey};
 use kaspa_wallet_core::python::utils::{
     kaspa_to_sompi,
     sompi_to_kaspa,
@@ -14,8 +15,11 @@ use kaspa_wallet_core::python::utils::{
 fn kaspapy(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // Classess
+    m.add_class::<Address>()?;
     m.add_class::<Mnemonic>()?;
+    m.add_class::<Keypair>()?;
     m.add_class::<PrivateKey>()?;
+    m.add_class::<PublicKey>()?;
     m.add_class::<dbreader::core::db_reader::DBReader>()?;
 
     // Functions
