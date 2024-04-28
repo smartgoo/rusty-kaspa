@@ -12,6 +12,7 @@ repository.workspace = true
 [dependencies]
 borsh.workspace = true
 js-sys.workspace = true
+pyo3.workspace = true
 serde.workspace = true
 smallvec.workspace = true
 thiserror.workspace = true

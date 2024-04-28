@@ -1,5 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use js_sys::Array;
+use pyo3::prelude::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smallvec::SmallVec;
 use std::fmt::{Display, Formatter};
@@ -179,6 +180,7 @@ pub type PayloadVec = SmallVec<[u8; PAYLOAD_VECTOR_SIZE]>;
 /// Kaspa `Address` struct that serializes to and from an address format string: `kaspa:qz0s...t8cv`.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Hash)]
 #[wasm_bindgen(inspectable)]
+#[pyclass]
 pub struct Address {
     #[wasm_bindgen(skip)]
     pub prefix: Prefix,
@@ -208,34 +210,45 @@ impl Address {
 }
 
 #[wasm_bindgen]
+#[pymethods]
 impl Address {
     #[wasm_bindgen(constructor)]
+    #[new]
     pub fn constructor(address: &str) -> Address {
         address.try_into().unwrap_or_else(|err| panic!("Address::constructor() - address error `{}`: {err}", address))
     }
 
     /// Convert an address to a string.
     #[wasm_bindgen(js_name = toString)]
+    #[pyo3(name = "to_string")]
     pub fn address_to_string(&self) -> String {
         self.into()
     }
 
     #[wasm_bindgen(getter, js_name = "version")]
+    #[getter]
+    #[pyo3(name = "version")]
     pub fn version_to_string(&self) -> String {
         self.version.to_string()
     }
 
+    #[getter]
+    #[pyo3(name = "prefix")]
     #[wasm_bindgen(getter, js_name = "prefix")]
     pub fn prefix_to_string(&self) -> String {
         self.prefix.to_string()
     }
 
     #[wasm_bindgen(setter, js_name = "setPrefix")]
+    #[setter]
+    #[pyo3(name = "set_prefix")]
     pub fn set_prefix_from_str(&mut self, prefix: &str) {
         self.prefix = Prefix::try_from(prefix).unwrap_or_else(|err| panic!("Address::prefix() - invalid prefix `{prefix}`: {err}"));
     }
 
     #[wasm_bindgen(getter, js_name = "payload")]
+    #[getter]
+    #[pyo3(name = "payload")]
     pub fn payload_to_string(&self) -> String {
         self.encode_payload()
     }
