@@ -16,6 +16,7 @@ mod derivation_path;
 mod error;
 pub mod mnemonic;
 mod prefix;
+pub mod python;
 mod result;
 pub mod types;
 pub mod wasm;
