@@ -19,7 +19,6 @@ mod prefix;
 pub mod python;
 mod result;
 pub mod types;
-pub mod wasm;
 
 pub use address_type::AddressType;
 pub use attrs::ExtendedKeyAttrs;
