@@ -15,13 +15,13 @@ kaspa-addresses.workspace = true
 kaspa-bip32.workspace = true
 kaspa-consensus.workspace = true
 kaspa-consensus-core.workspace = true
-kaspa-consensus-python.workspace = true
 kaspa-database.workspace = true
 kaspa-hashes.workspace = true
 kaspa-math.workspace = true
 kaspa-utxoindex.workspace = true
 kaspa-txscript.workspace = true
 kaspa-wallet-core.workspace = true
+kaspa-wallet-keys.workspace = true
 
 chrono = "0.4"
 csv = "1.2"

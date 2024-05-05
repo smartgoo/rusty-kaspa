@@ -29,6 +29,7 @@ kaspa-txscript-errors.workspace = true
 kaspa-txscript.workspace = true
 kaspa-utils.workspace = true
 kaspa-wasm-core.workspace = true
+pyo3.workspace = true
 rand.workspace = true
 ripemd.workspace = true
 secp256k1.workspace = true

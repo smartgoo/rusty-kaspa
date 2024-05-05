@@ -226,6 +226,7 @@ impl Address {
     }
 
     #[wasm_bindgen(js_name=validate)]
+    #[staticmethod]
     pub fn validate(address: &str) -> bool {
         Self::try_from(address).is_ok()
     }
@@ -244,9 +245,9 @@ impl Address {
         self.version.to_string()
     }
 
+    #[wasm_bindgen(getter, js_name = "prefix")]
     #[getter]
     #[pyo3(name = "prefix")]
-    #[wasm_bindgen(getter, js_name = "prefix")]
     pub fn prefix_to_string(&self) -> String {
         self.prefix.to_string()
     }
