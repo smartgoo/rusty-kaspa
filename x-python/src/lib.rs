@@ -5,6 +5,7 @@ use pyo3::prelude::*;
 use kaspa_addresses::Address;
 use kaspa_bip32::{
     mnemonic::phrase::Mnemonic,
+    // TODO these were done pre-0.14.1. Move them to kaspa_wallet_keys::python
     // python::{
     //     derivation_path::DerivationPath,
     //     xprv::XPrv,
@@ -26,7 +27,7 @@ use kaspa_wallet_core::python::utils::{
 fn kaspapy(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // Classes - Addresses
-    // m.add_class::<Address>()?;
+    m.add_class::<Address>()?;
     // m.add_class::<DerivationPath>()?;
     m.add_class::<Mnemonic>()?;
     m.add_class::<Keypair>()?;
