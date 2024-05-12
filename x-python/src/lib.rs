@@ -7,15 +7,16 @@ use kaspa_bip32::{
     mnemonic::phrase::Mnemonic,
     // TODO these were done pre-0.14.1. Move them to kaspa_wallet_keys::python
     // python::{
-    //     derivation_path::DerivationPath,
     //     xprv::XPrv,
     //     xpub::XPub,
     // },
 };
 use kaspa_wallet_keys::python::{
+    derivation_path::DerivationPath,
     keypair::Keypair,
     privatekey::PrivateKey,
     publickey::PublicKey,
+    xprv::XPrv
 };
 use kaspa_wallet_core::python::utils::{
     kaspa_to_sompi,
@@ -28,12 +29,12 @@ fn kaspapy(m: &Bound<'_, PyModule>) -> PyResult<()> {
 
     // Classes - Addresses
     m.add_class::<Address>()?;
-    // m.add_class::<DerivationPath>()?;
+    m.add_class::<DerivationPath>()?;
     m.add_class::<Mnemonic>()?;
     m.add_class::<Keypair>()?;
     m.add_class::<PrivateKey>()?;
     m.add_class::<PublicKey>()?;
-    // m.add_class::<XPrv>()?;
+    m.add_class::<XPrv>()?;
     // m.add_class::<XPub>()?;
 
     // Classes - Database

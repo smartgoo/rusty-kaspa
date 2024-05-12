@@ -1,5 +1,4 @@
 use crate::imports::*;
-use workflow_wasm::prelude::*;
 
 /// Key derivation path
 /// @category Wallet SDK

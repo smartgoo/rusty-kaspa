@@ -19,7 +19,7 @@ impl PublicKey {
             Ok(public_key) => Ok((&public_key).into()),
             Err(_e) => Ok(Self { 
                 xonly_public_key: secp256k1::XOnlyPublicKey::from_str(key)
-                    .map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?, 
+                    .map_err(|err| PyErr::new::<PyException, _>(format!("{}", err)))?,
                 public_key: None 
             }),
         }
@@ -77,3 +77,5 @@ impl From<&secp256k1::PublicKey> for PublicKey {
         Self { xonly_public_key, public_key: Some(*public_key) }
     }
 }
+
+// TODO XOnlyPublicKey

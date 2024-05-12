@@ -72,7 +72,7 @@ impl Keypair {
     pub fn from_private_key(secret_key: &PrivateKey) -> PyResult<Keypair> {
         let secp = Secp256k1::new();
         let secret_key = secp256k1::SecretKey::from_slice(&secret_key.secret_bytes())
-            .map_err(|e| { PyErr::new::<PyException, _>(format!("{e}"))} )?;
+            .map_err(|e| { PyErr::new::<PyException, _>(format!("{e}"))} )?; // TODO find better way to handle these errors
         let public_key = secp256k1::PublicKey::from_secret_key(&secp, &secret_key);
         let (xonly_public_key, _) = public_key.x_only_public_key();
         Ok(Keypair::new(secret_key, public_key, xonly_public_key))

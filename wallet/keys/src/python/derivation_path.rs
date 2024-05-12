@@ -1,4 +1,4 @@
-use crate::{ChildNumber};
+use kaspa_bip32::{ChildNumber, ExtendedPrivateKey, ExtendedPublicKey, SecretKey};
 use std::str::FromStr;
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
@@ -6,14 +6,14 @@ use pyo3::prelude::*;
 #[derive(Clone)]
 #[pyclass]
 pub struct DerivationPath {
-    inner: crate::DerivationPath,
+    inner: kaspa_bip32::DerivationPath,
 }
 
 #[pymethods]
 impl DerivationPath {
     #[new]
     pub fn new(path: &str) -> PyResult<DerivationPath> {
-        let inner = crate::DerivationPath::from_str(path).map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?;
+        let inner = kaspa_bip32::DerivationPath::from_str(path).map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?;
         Ok(Self { inner })
     }
 
@@ -41,8 +41,8 @@ impl DerivationPath {
     }
 }
 
-impl From<DerivationPath> for crate::DerivationPath {
-    fn from(value: DerivationPath) -> Self {
-        value.inner
+impl<'a> From<&'a DerivationPath> for &'a kaspa_bip32::DerivationPath {
+    fn from(value: &'a DerivationPath) -> Self {
+        &value.inner
     }
 }

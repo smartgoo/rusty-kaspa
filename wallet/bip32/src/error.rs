@@ -3,6 +3,7 @@
 use core::fmt::{self, Display};
 use core::str::Utf8Error;
 use std::sync::PoisonError;
+use pyo3::{PyErr, exceptions::PyException};
 use thiserror::Error;
 use wasm_bindgen::JsValue;
 
@@ -130,5 +131,11 @@ impl From<hmac::digest::InvalidLength> for Error {
 impl From<Error> for JsValue {
     fn from(value: Error) -> Self {
         JsValue::from(value.to_string())
+    }
+}
+
+impl From<Error> for PyErr {
+    fn from(value: Error) -> PyErr {
+        PyException::new_err(value.to_string())
     }
 }
