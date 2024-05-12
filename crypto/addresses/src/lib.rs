@@ -3,6 +3,7 @@ use pyo3::prelude::*;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use smallvec::SmallVec;
 use std::fmt::{Display, Formatter};
+use pyo3::{PyErr, exceptions::PyException};
 use thiserror::Error;
 use wasm_bindgen::prelude::*;
 use workflow_wasm::{
@@ -45,6 +46,12 @@ pub enum AddressError {
 impl From<workflow_wasm::error::Error> for AddressError {
     fn from(e: workflow_wasm::error::Error) -> Self {
         AddressError::WASM(e.to_string())
+    }
+}
+
+impl From<AddressError> for PyErr {
+    fn from(value: AddressError) -> PyErr {
+        PyException::new_err(value.to_string())
     }
 }
 

@@ -13,7 +13,7 @@ pub struct DerivationPath {
 impl DerivationPath {
     #[new]
     pub fn new(path: &str) -> PyResult<DerivationPath> {
-        let inner = kaspa_bip32::DerivationPath::from_str(path).map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?;
+        let inner = kaspa_bip32::DerivationPath::from_str(path)?;
         Ok(Self { inner })
     }
 
@@ -30,7 +30,7 @@ impl DerivationPath {
     }
 
     pub fn push(&mut self, child_number: u32, hardened: Option<bool>) -> PyResult<()> {
-        let child = ChildNumber::new(child_number, hardened.unwrap_or(false)).map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?;
+        let child = ChildNumber::new(child_number, hardened.unwrap_or(false))?;
         self.inner.push(child);
         Ok(())
     }

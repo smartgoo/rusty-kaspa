@@ -34,7 +34,7 @@ impl PrivateKey {
     // TODO return type Self or PrivateKey ?
     pub fn try_new(key: &str) -> PyResult<Self> {
         let secret_key = secp256k1::SecretKey::from_str(key)
-            .map_err(|e| PyErr::new::<PyException, _>(format!("Failed to parse secret key: {}", e)))?;
+            .map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?; // TODO get rid of map_err
         
         Ok(Self { inner: secret_key })
     }

@@ -43,7 +43,7 @@ impl Keypair {
     pub fn to_address(&self, network: &str) -> PyResult<Address> {
         let payload = &self.xonly_public_key.serialize();
         let address = Address::new(
-            network.try_into().map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?,
+            network.try_into()?,
             AddressVersion::PubKey, payload
         );
         Ok(address)
@@ -53,7 +53,7 @@ impl Keypair {
     pub fn to_address_ecdsa(&self, network: &str) -> PyResult<Address> {
         let payload = &self.public_key.serialize();
         let address = Address::new(
-            network.try_into().map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?,
+            network.try_into()?,
             AddressVersion::PubKeyECDSA, payload
         );
         Ok(address)
@@ -72,7 +72,7 @@ impl Keypair {
     pub fn from_private_key(secret_key: &PrivateKey) -> PyResult<Keypair> {
         let secp = Secp256k1::new();
         let secret_key = secp256k1::SecretKey::from_slice(&secret_key.secret_bytes())
-            .map_err(|e| { PyErr::new::<PyException, _>(format!("{e}"))} )?; // TODO find better way to handle these errors
+            .map_err(|e| { PyErr::new::<PyException, _>(format!("{e}"))} )?; // TODO get rid of map_err
         let public_key = secp256k1::PublicKey::from_secret_key(&secp, &secret_key);
         let (xonly_public_key, _) = public_key.x_only_public_key();
         Ok(Keypair::new(secret_key, public_key, xonly_public_key))
