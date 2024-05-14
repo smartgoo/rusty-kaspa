@@ -3,20 +3,15 @@ mod dbreader;
 use pyo3::prelude::*;
 
 use kaspa_addresses::Address;
-use kaspa_bip32::{
-    mnemonic::phrase::Mnemonic,
-    // TODO these were done pre-0.14.1. Move them to kaspa_wallet_keys::python
-    // python::{
-    //     xprv::XPrv,
-    //     xpub::XPub,
-    // },
-};
+use kaspa_bip32::mnemonic::phrase::Mnemonic;
 use kaspa_wallet_keys::python::{
     derivation_path::DerivationPath,
     keypair::Keypair,
     privatekey::PrivateKey,
     publickey::PublicKey,
-    xprv::XPrv
+    publickey::XOnlyPublicKey,
+    xprv::XPrv,
+    xpub::XPub,
 };
 use kaspa_wallet_core::python::utils::{
     kaspa_to_sompi,
@@ -34,8 +29,9 @@ fn kaspapy(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Keypair>()?;
     m.add_class::<PrivateKey>()?;
     m.add_class::<PublicKey>()?;
+    m.add_class::<XOnlyPublicKey>()?;
     m.add_class::<XPrv>()?;
-    // m.add_class::<XPub>()?;
+    m.add_class::<XPub>()?;
 
     // Classes - Database
     m.add_class::<dbreader::core::db_reader::DBReader>()?;

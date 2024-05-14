@@ -1,4 +1,8 @@
-use crate::python::keypair::Keypair;
+use crate::python::{
+    keypair::Keypair,
+    publickey::PublicKey,
+};
+pub use kaspa_addresses::{Address, Version as AddressVersion};
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 use std::str::FromStr;
@@ -45,24 +49,26 @@ impl PrivateKey {
         self.secret_bytes().to_vec().to_hex()
     }
 
-    // TODO implement once Keypair is done
     pub fn to_keypair(&self) -> PyResult<Keypair> {
         Keypair::from_private_key(self)
     }
 
-    // TODO implement once PublicKey is done
-    // pub fn to_public_key() -> PyResult<PublicKey> {}
+    pub fn to_public_key(&self) -> PyResult<PublicKey> {
+        Ok(PublicKey::from(secp256k1::PublicKey::from_secret_key_global(&self.inner)))
+    }
 
-    // TODO implement once Address is done
-    // pub fn to_address() -> PyResult<Address> {}
+    pub fn to_address(&self, network: &str) -> PyResult<Address> {
+        let public_key = secp256k1::PublicKey::from_secret_key_global(&self.inner);
+        let (x_only_public_key, _) = public_key.x_only_public_key();
+        let payload = x_only_public_key.serialize();
+        let address = Address::new(network.try_into()?, AddressVersion::PubKey, &payload);
+        Ok(address)
+    }
 
-    // TODO implement once Address is done
-    // pub fn to_address_ecdsa() -> PyResult<Address> {}
+    pub fn to_address_ecdsa(&self, network: &str) -> PyResult<Address> {
+        let public_key = secp256k1::PublicKey::from_secret_key_global(&self.inner);
+        let payload = public_key.serialize();
+        let address = Address::new(network.try_into()?, AddressVersion::PubKeyECDSA, &payload);
+        Ok(address)
+    }
 }
-
-// TODO
-// impl PrivateKey {
-//     pub fn try_from_slice(data: &[u8]) -> Result<PrivateKey> {
-//         Ok(Self { inner: secp256k1::SecretKey::from_slice(data)? })
-//     }
-// }
