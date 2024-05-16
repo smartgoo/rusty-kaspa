@@ -6,6 +6,7 @@ use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 use std::str::FromStr;
 
+#[derive(Clone)]
 #[pyclass]
 pub struct XPrv {
     inner: ExtendedPrivateKey<SecretKey>

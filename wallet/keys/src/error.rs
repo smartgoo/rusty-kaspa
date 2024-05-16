@@ -3,6 +3,8 @@
 //!
 
 use kaspa_bip32::Error as BIP32Error;
+use pyo3::exceptions::PyException;
+use pyo3::prelude::PyErr;
 use std::sync::PoisonError;
 use thiserror::Error;
 use wasm_bindgen::JsValue;
@@ -79,6 +81,12 @@ impl From<Error> for JsValue {
         }
     }
 }
+
+impl From<Error> for PyErr {
+    fn from(value: Error) -> Self {
+        PyException::new_err(value.to_string())
+    }
+}   
 
 impl<T> From<PoisonError<T>> for Error {
     fn from(err: PoisonError<T>) -> Self {
