@@ -1,4 +1,5 @@
-pub use kaspa_addresses::{Address, Version as AddressVersion};
+use crate::error::Error;
+use kaspa_addresses::{Address, Version as AddressVersion};
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 use std::str::FromStr;
@@ -51,7 +52,9 @@ impl PublicKey {
     }
 
     // TODO once XOnlyPublicKey implemented
-    // pub fn to_x_only_public_key(&self) -> XOnlyPublicKey {}
+    pub fn to_x_only_public_key(&self) -> XOnlyPublicKey {
+        self.xonly_public_key.into()
+    }
 }
 
 impl From<&secp256k1::PublicKey> for PublicKey {
@@ -68,7 +71,47 @@ impl From<secp256k1::PublicKey> for PublicKey {
     }
 }
 
-// TODO XOnlyPublicKey
+impl std::fmt::Display for PublicKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_string_impl())
+    }
+}
+
+impl From<PublicKey> for secp256k1::XOnlyPublicKey {
+    fn from(value: PublicKey) -> Self {
+        value.xonly_public_key
+    }
+}
+
+impl TryFrom<PublicKey> for secp256k1::PublicKey {
+    type Error = Error;
+    fn try_from(value: PublicKey) -> Result<Self, Self::Error> {
+        value.public_key.ok_or(Error::InvalidPublicKey)
+    }
+}
+
+// impl TryFrom<Vec<PublicKey>> for Vec<secp256k1::PublicKey> {
+//     type Error = Error;
+//     fn try_from(value: Vec<PublicKey>) -> Result<Self, Self::Error> {
+//         // Convert each KaspaPublicKey to Secp256k1PublicKey
+//         value.into_iter().map(|pk| pk.try_into()).collect()
+//     }
+// }
+
+pub trait ToSecp256k1Vec {
+    type Error;
+
+    fn to_secp256k1_vec(self) -> Result<Vec<secp256k1::PublicKey>, Self::Error>;
+}
+
+impl ToSecp256k1Vec for Vec<PublicKey> {
+    type Error = Error;
+
+    fn to_secp256k1_vec(self) -> Result<Vec<secp256k1::PublicKey>, Self::Error> {
+        self.into_iter().map(|pk| pk.try_into()).collect()
+    }
+}
+
 #[pyclass]
 pub struct XOnlyPublicKey {
     pub inner: secp256k1::XOnlyPublicKey,

@@ -1,4 +1,10 @@
-from kaspapy import PublicKey, PrivateKey, Keypair
+from kaspapy import (
+    PublicKey,
+    PublicKeyGenerator,
+    PrivateKey, 
+    Keypair,
+    create_address
+)
 
 def demo_generate_address_from_public_key_hex_string():
     # Compressed public key '02dff1d77f2a671c5f36183726db2341be58feae1da2deced843240f7b502ba659'
@@ -35,3 +41,24 @@ if __name__ == "__main__":
     demo_generate_address_from_public_key_hex_string()
     demo_generate_address_from_private_key_hex_string()
     demo_generate_random()
+
+    # HD Wallet style pub key gen
+    xpub = PublicKeyGenerator.from_master_xprv(
+        "kprv5y2qurMHCsXYrNfU3GCihuwG3vMqFji7PZXajMEqyBkNh9UZUJgoHYBLTKu1eM4MvUtomcXPQ3Sw9HZ5ebbM4byoUciHo1zrPJBQfqpLorQ",
+        False,
+        0
+    )
+    print(xpub.to_string())
+
+    # Generates the first 10 Receive Public Keys and their addresses
+    compressed_public_keys = xpub.receive_pubkeys(0, 10)
+    print('receive address compressed_public_keys', compressed_public_keys)
+    addresses = map(lambda k: create_address(k.to_string(), 'mainnet'), compressed_public_keys)
+    for a in addresses:
+        print(a.to_string())
+
+    # Generates the first 10 Change Public Keys and their addresses
+    compressed_public_keys = xpub.change_pubkeys(0, 10)
+    print('change address compressed_public_keys', compressed_public_keys)
+
+

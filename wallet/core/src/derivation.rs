@@ -7,6 +7,8 @@ use kaspa_wallet_keys::derivation::gen1::{PubkeyDerivationManager, WalletDerivat
 
 pub use kaspa_wallet_keys::derivation::traits::*;
 use kaspa_wallet_keys::publickey::{PublicKey, PublicKeyArrayT, PublicKeyT};
+use kaspa_wallet_keys::python::publickey::PublicKey as PublicKeyPython;
+use kaspa_wallet_keys::python::publickey::ToSecp256k1Vec;
 pub use kaspa_wallet_keys::types::*;
 
 use crate::account::create_private_keys;
@@ -19,6 +21,8 @@ use kaspa_consensus_core::network::NetworkType;
 use kaspa_txscript::{
     extract_script_pub_key_address, multisig_redeem_script, multisig_redeem_script_ecdsa, pay_to_script_hash_script,
 };
+use pyo3::exceptions::PyException;
+use pyo3::prelude::*;
 
 #[derive(Default, Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct AddressDerivationMeta([u32; 2]);
@@ -467,6 +471,24 @@ pub fn create_address_js(
     create_address(1, vec![public_key.as_ref().try_into()?], network_type.into(), ecdsa.unwrap_or(false), account_kind)
 }
 
+#[pyfunction]
+#[pyo3(name = "create_address")]
+pub fn create_address_py(
+    key: &str,
+    network_type: &str,
+    ecdsa: Option<bool>,
+    account_kind: Option<&str>
+) -> PyResult<Address> {
+    let public_key = PublicKeyPython::try_new(key)?;
+    let network_type = NetworkType::from_str(network_type).map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?;
+    let account_kind = match account_kind {
+        Some(kind) => Some(AccountKind::from_str(kind)
+            .map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?),
+        None => None,
+    };
+    Ok(create_address(1, vec![public_key.try_into()?], network_type.into(), ecdsa.unwrap_or(false), account_kind)?)
+}
+
 /// @category Wallet SDK
 #[wasm_bindgen(js_name=createMultisigAddress)]
 pub fn create_multisig_address_js(
@@ -477,6 +499,25 @@ pub fn create_multisig_address_js(
     account_kind: Option<AccountKind>,
 ) -> Result<Address> {
     create_address(minimum_signatures, keys.try_into()?, network_type.into(), ecdsa.unwrap_or(false), account_kind)
+}
+
+#[pyfunction]
+#[pyo3(name = "create_multisig_address")]
+pub fn create_multisig_address_py(
+    minimum_signatures: usize,
+    keys: Vec<PublicKeyPython>,
+    network_type: &str,
+    ecdsa: Option<bool>,
+    account_kind: Option<&str>,
+) -> PyResult<Address> {
+    let network_type = NetworkType::from_str(network_type).map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?;
+    let account_kind = match account_kind {
+        Some(kind) => Some(AccountKind::from_str(kind)
+            .map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?),
+        None => None,
+    };
+    let keys = keys.to_secp256k1_vec().map_err(|e| PyErr::new::<PyException, _>(format!("{}", e)))?;
+    Ok(create_address(minimum_signatures, keys.try_into()?, network_type.into(), ecdsa.unwrap_or(false), account_kind)?)
 }
 
 pub fn create_address(

@@ -6,7 +6,6 @@ pub use kaspa_addresses::{Address, Version as AddressVersion};
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 use std::str::FromStr;
-use std::error::Error;
 
 #[derive(Clone, Debug)]
 #[pyclass]

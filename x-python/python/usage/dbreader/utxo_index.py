@@ -1,7 +1,7 @@
-from kaspadbr import DBReader
+from kaspapy import DBReader
 
 if __name__ == "__main__":
-    db = DBReader(app_dir='/data/rusty-kaspa')
+    db = DBReader(app_dir='/Users/chuckievallone/.rusty-kaspa')
 
     stores = db.stores
     utxo_tips = stores.utxo_index_tips.get()
@@ -11,7 +11,7 @@ if __name__ == "__main__":
         print(h['hash'], h['timestamp'], h['daa_score'])
 
     # Export UTXO set to CSV file
-    c = stores.utxo_index.export(filepath=f"/opt2/work/dev/utxo_set_of_{utxo_tips[0]}.csv", outpoint=False, verbose=True)
+    c = stores.utxo_index.export(filepath=f"/Users/chuckievallone/utxo_set_of_{utxo_tips[0]}.csv", outpoint=False, verbose=True)
     print(f'Exported {c} UTXO records to CSV.')
 
     # Export addresses to CSV file

@@ -1,10 +1,8 @@
 use crate::dbreader::stores::indexed_utxos::{DbUtxoSetByScriptPublicKeyStore};
 
 use kaspa_database::prelude::{CachePolicy, DB};
-use kaspa_utxoindex::model::{CompactUtxoEntry};
 use pyo3::prelude::*;
 use std::{sync::Arc};
-use std::error::Error;
 
 #[derive(Clone)]
 #[pyclass]

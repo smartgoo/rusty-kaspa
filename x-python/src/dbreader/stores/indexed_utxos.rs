@@ -9,14 +9,12 @@ use kaspa_database::registry::DatabaseStorePrefixes;
 use kaspa_hashes::Hash;
 use kaspa_txscript::extract_script_pub_key_address;
 use kaspa_utxoindex::model::{CompactUtxoCollection, CompactUtxoEntry, UtxoSetByScriptPublicKey};
-use pyo3::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{
         HashSet,
         HashMap,
     },
-    error::Error,
     fmt::Display,
     fs::File,
     mem::size_of,
@@ -316,12 +314,12 @@ impl DbUtxoSetByScriptPublicKeyStore {
         let mut wtr = Writer::from_writer(file);
 
         // Write headers
-        wtr.write_record(&["address", "amount"]);
+        let _ = wtr.write_record(&["address", "amount"]);
 
         // Write summed amounts to CSV
         let mut addr_count = 0;
         for (key, sum) in addresses {
-            wtr.write_record(&[key, sum.to_string()]);
+            let _ = wtr.write_record(&[key, sum.to_string()]);
             addr_count += 1;
         }
 

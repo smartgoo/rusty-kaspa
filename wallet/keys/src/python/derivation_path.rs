@@ -1,6 +1,5 @@
-use kaspa_bip32::{ChildNumber, ExtendedPrivateKey, ExtendedPublicKey, SecretKey};
+use kaspa_bip32::{ChildNumber};
 use std::str::FromStr;
-use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 
 #[derive(Clone)]

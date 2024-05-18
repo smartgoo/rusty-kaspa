@@ -1,6 +1,6 @@
 use crate::python::derivation_path::DerivationPath;
 use crate::python::xpub::XPub;
-use kaspa_bip32::{ChildNumber, ExtendedPrivateKey, ExtendedPublicKey, SecretKey};
+use kaspa_bip32::{ChildNumber, ExtendedPrivateKey, SecretKey};
 use kaspa_utils::hex::*;
 use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
