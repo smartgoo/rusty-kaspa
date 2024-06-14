@@ -7,7 +7,7 @@ edition.workspace = true
 include.workspace = true
 
 [lib]
-name = "kaspapy"
+name = "kaspadbr"
 crate-type = ["cdylib"]
 
 [dependencies]
@@ -17,19 +17,19 @@ kaspa-consensus.workspace = true
 kaspa-consensus-core.workspace = true
 kaspa-database.workspace = true
 kaspa-hashes.workspace = true
-kaspa-grpc-python.workspace = true
 kaspa-math.workspace = true
 kaspa-utxoindex.workspace = true
 kaspa-txscript.workspace = true
 kaspa-wallet-core.workspace = true
 kaspa-wallet-keys.workspace = true
+kaspad.workspace = true
 
 chrono = "0.4"
 csv = "1.2"
 dirs = "4.0"
 itertools.workspace = true
 serde.workspace = true
-pyo3.workspace = true
+pyo3 = "0.20.0"
 
 [features]
 py-sdk = []

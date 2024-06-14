@@ -1,4 +1,4 @@
-mod indexed_utxos;
+pub mod indexed_utxos;
 pub mod store_manager;
-mod supply;
-mod tips;
+pub mod supply;
+pub mod tips;

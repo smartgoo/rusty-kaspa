@@ -18,7 +18,6 @@ pub trait UtxoEntryFullAccessKeyExt {
 
 impl UtxoEntryFullAccessKeyExt for UtxoEntryFullAccessKey {
     fn extract_script_public_key_bucket(&self) -> ScriptPublicKeyBucket {
-        // Extract the portion of the bytes that corresponds to the ScriptPublicKeyBucket
         let script_public_key_bucket_end = self.0.len() - TRANSACTION_OUTPOINT_KEY_SIZE;
         ScriptPublicKeyBucket(self.0[..script_public_key_bucket_end].to_vec())
     }
@@ -30,7 +29,6 @@ pub trait UtxoByScriptPublicKeyStoreExt {
 }
 
 impl UtxoByScriptPublicKeyStoreExt for DbUtxoSetByScriptPublicKeyStore {
-    // Export all outpoints to a local CSV file
     fn export_all_outpoints(
         &self,
         filepath: String,
@@ -105,7 +103,6 @@ impl UtxoByScriptPublicKeyStoreExt for DbUtxoSetByScriptPublicKeyStore {
                 }
 
                 if is_coinbase {
-                    // Convert is_coinbase to single char to reduce file size
                     let coinbase_value = if value.is_coinbase { "t" } else { "f" };
                     row.push(coinbase_value.to_string());
                 }

@@ -1,5 +1,5 @@
-use crate::dbreader::core::dirs::Dirs;
-use crate::dbreader::stores::py::{
+use crate::core::dirs::Dirs;
+use crate::stores::wrappers::{
     circulating_supply::PyCirculatingSupplyStore,
     headers::PyHeaderStore,
     metadata::PyMetadataStore,
@@ -18,7 +18,6 @@ pub struct Stores {
     #[pyo3(get)]
     headers: PyHeaderStore,
 
-    // Optional UTXO Index Stores
     #[pyo3(get)]
     circulating_supply: Option<PyCirculatingSupplyStore>,
 
@@ -34,7 +33,7 @@ impl Stores {
         // Construct meta DB and store
         let meta_db = kaspa_database::prelude::ConnBuilder::default()
             .with_db_path(dirs.meta_db_dir.clone())
-            .with_files_limit(10) // TODO
+            .with_files_limit(10) // TODO file limit
             .build_readonly()
             .unwrap();
         let metadata = PyMetadataStore::new(meta_db);
@@ -43,7 +42,7 @@ impl Stores {
         let current_consensus_key = metadata.current_consensus_key().unwrap();
         let consensus_db = kaspa_database::prelude::ConnBuilder::default()
             .with_db_path(dirs.consensus_db_dir.join(format!("consensus-{:0>3}", current_consensus_key)))
-            .with_files_limit(10) // TODO
+            .with_files_limit(10) // TODO file limit
             .build_readonly()
             .unwrap();
 
@@ -60,7 +59,7 @@ impl Stores {
             let utxo_index_db = kaspa_database::prelude::ConnBuilder
                 ::default()
                 .with_db_path(dirs.utxo_index_db_dir.clone().unwrap())
-                .with_files_limit(10) // TODO
+                .with_files_limit(10) // TODO file limit
                 .build_readonly()
                 .unwrap();
 

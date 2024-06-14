@@ -19,7 +19,7 @@ pub const VERSION_TYPE_SIZE: usize = size_of::<ScriptPublicKeyVersion>(); // Con
 /// [`ScriptPublicKeyBucket`].
 /// Consists of 2 bytes of little endian [VersionType] bytes, followed by a variable size of [ScriptVec].
 #[derive(Eq, Hash, PartialEq, Debug, Clone)]
-struct ScriptPublicKeyBucket(Vec<u8>);
+pub struct ScriptPublicKeyBucket(pub Vec<u8>);
 
 impl From<&ScriptPublicKey> for ScriptPublicKeyBucket {
     fn from(script_public_key: &ScriptPublicKey) -> Self {
@@ -92,7 +92,7 @@ impl AsRef<[u8]> for TransactionOutpointKey {
 /// Full [CompactUtxoEntry] access key.
 /// Consists of variable amount of bytes of [ScriptPublicKeyBucket], and 36 bytes of [TransactionOutpointKey]
 #[derive(Eq, Hash, PartialEq, Debug, Clone, Serialize, Deserialize)]
-struct UtxoEntryFullAccessKey(Arc<Vec<u8>>);
+pub struct UtxoEntryFullAccessKey(pub Arc<Vec<u8>>);
 
 impl Display for UtxoEntryFullAccessKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -145,7 +145,7 @@ pub trait UtxoSetByScriptPublicKeyStore: UtxoSetByScriptPublicKeyStoreReader {
 #[derive(Clone)]
 pub struct DbUtxoSetByScriptPublicKeyStore {
     db: Arc<DB>,
-    access: CachedDbAccess<UtxoEntryFullAccessKey, CompactUtxoEntry>,
+    pub access: CachedDbAccess<UtxoEntryFullAccessKey, CompactUtxoEntry>,
 }
 
 impl DbUtxoSetByScriptPublicKeyStore {

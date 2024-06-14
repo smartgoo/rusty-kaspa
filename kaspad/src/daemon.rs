@@ -46,10 +46,10 @@ pub const MINIMUM_DAEMON_SOFT_FD_LIMIT: u64 = 4 * 1024;
 
 use crate::args::Args;
 
-const DEFAULT_DATA_DIR: &str = "datadir";
-const CONSENSUS_DB: &str = "consensus";
-const UTXOINDEX_DB: &str = "utxoindex";
-const META_DB: &str = "meta";
+pub const DEFAULT_DATA_DIR: &str = "datadir";
+pub const CONSENSUS_DB: &str = "consensus";
+pub const UTXOINDEX_DB: &str = "utxoindex";
+pub const META_DB: &str = "meta";
 const META_DB_FILE_LIMIT: i32 = 5;
 const DEFAULT_LOG_DIR: &str = "logs";
 

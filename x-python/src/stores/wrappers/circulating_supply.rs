@@ -15,7 +15,6 @@ pub struct PyCirculatingSupplyStore {
 
 impl PyCirculatingSupplyStore {
     pub fn new(utxo_index_db: Arc<DB>) -> Self {
-        // Init inner store
         let inner_store = DbCirculatingSupplyStore::new(utxo_index_db);
 
         PyCirculatingSupplyStore {

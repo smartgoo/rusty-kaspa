@@ -3,11 +3,10 @@ requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
 [project]
-name = "kaspapy"
+name = "kaspadbr"
 version = "0.0.1"
-description = "A Python package for Kaspa development"
+description = "Kaspa Database Reader"
 license = "ISC"
-authors = [{name = "smartgoo", email = "smartgoo@c5labs.dev"}]
 # readme = "README.md"
 # documentation = "https://your_documentation_link"
 repository = "https://github.com/smartgoo/kaspadbr"
@@ -15,16 +14,12 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Rust",
 ]
-dependencies = [
-    "grpcio",
-    "grpcio-tools",
-]
+dependencies = []
 
 [package.metadata.maturin]
-name = "kaspapy"
-description = "A Python package for Kaspa development"
-author = "smartgoo <smartgoo@c5labs.dev>"
+name = "kaspadbr"
+description = "Kaspa Database Reader"
 
 [tool.maturin]
-name = "kaspapy"
+name = "kaspadbr"
 # python-source = "python"

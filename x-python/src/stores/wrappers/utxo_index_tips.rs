@@ -12,7 +12,6 @@ pub struct PyUtxoIndexTipsStore {
 
 impl PyUtxoIndexTipsStore {
     pub fn new(utxo_index_db: Arc<DB>) -> Self {
-        // Init inner store
         let inner_store = DbUtxoIndexTipsStore::new(utxo_index_db.clone());
 
         PyUtxoIndexTipsStore { inner_store }
@@ -22,7 +21,6 @@ impl PyUtxoIndexTipsStore {
 #[pymethods]
 impl PyUtxoIndexTipsStore {
     pub fn get(&self) -> PyResult<Vec<String>> {
-        // Get tips from store
         let utxo_tips = self.inner_store.get().unwrap();
 
         // Return as Vec<String> (rather than BlockHashSet) for ease of type conversion w/ PyO3
