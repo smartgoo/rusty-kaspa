@@ -1,7 +1,5 @@
 # Overview
-An experimental project to build a (comprehensive) Kaspa Python SDK natively from rusty-kaspa.
-
-The Python module is built from rust source code that lives in the `x-python` crate. There are additional files modified or added throughout other crates.
+An experimental Python package for reading from Rusty Kaspa Rocks DB. Built from rust source.
 
 
 # Building from Rust
@@ -12,46 +10,31 @@ This project uses [PyO3](https://pyo3.rs/v0.20.0/) and [Maturin](https://www.mat
 # Getting Started
 
 ## Project Layout
-The Python package `kaspapy` is built from the `x-python` crate. As such, the `kaspapy` struct in `x-python/src/lib.rs` is a good starting point. This struct uses PyO3 to add functionality (structs and functions throughout the various rusty-kaspa crates). The Maturin build tool then builds a Python module from the `kaspapy` struct, including all functionality.
+The Python package `kaspadbr` is built from the `x-python` crate (with dependencies on other creates in the workspace). 
+
+A good starting point the `kaspadbr` struct in `x-python/src/lib.rs`, and the `DBReader` struct in `x-python/src/core/db_reader.rs`.
 
 
 ## Development Process:
-The process to develop locally is:
+To develop locally:
 
 1. Get a copy of this code
 2. Develop as desired
-3. Use `maturin develop` to build and install the Python package in the active local virtual env:
-    - `cd ./x-python`
-    - `source env/bin/activate` (create venv first if necessary and `pip install maturin`)
-    - `maturin develop --release` to build and install in the active Python venv
-4. Test the built Python package from within the same venv. Refer to code in `./x-python/python/usage/`
+3. `cd ./x-python`
+4. Create/activate python virtual environment, install maturin (`pip install maturin`)
+5. Use `maturin develop` to build and install the Python package in the active virtual env: `maturin develop --release`
+6. Test the built Python package from within the same venv. Refer to code in `./x-python/python/usage/`
 
-## Build Wheel & Install in Another Python venv
+## Build Wheel & Install in Another Python Env
 To build a wheel for installation:
 
 1. `cd ./x-python`
-2. Use `maturin build` to build the Python package:
-    - `cd ./x-python`
-    - `source env/bin/activate` (create venv first if necessary and `pip install maturin`)
-    - `maturin build --release` to build
-3. Copy the wheel filepath output by the command above: `📦 Built wheel for CPython <version> to <filepath>`.
-4. Switch to the desired local venv. `pip install <filepath>`
+2. Create/activate python virtual environment, install maturin (`pip install maturin`)
+3. Use `maturin build` to build wheel: `maturin build --release`
+4. Copy the wheel filepath output by the command above: `📦 Built wheel for CPython <version> to <filepath>`.
+5. Switch to the desired local venv. `pip install <filepath>`
 
 ## How to use from Python
-Package name: `kaspapy`
+Package name: `kaspadbr`
 
 See `./x-python/python/usage/`
-
----
-
-# TODO
-A lot of things, as well as the following
-- [ ] Find right structure for `x-python` crate
-- [ ] Update `kaspapy.pyi`
-- [ ] Get `pyproject.toml` setup right
-- [ ] Get `Cargo.toml` setup right
-- [ ] gRPC client
-
-`DBReader`:
-- [ ] Merge DBReader into this
-- [ ] Add other RocksDB stores to `DBReader` that are currently not exposed via RPC

@@ -1,4 +1,4 @@
-use crate::dbreader::converters::ToPyDict;
+use crate::converters::ToPyDict;
 use kaspa_consensus::model::stores::headers::{DbHeadersStore, HeaderStoreReader};
 use kaspa_consensus_core::Hash;
 use kaspa_database::prelude::{CachePolicy, StoreError, DB};
@@ -24,14 +24,12 @@ impl PyHeaderStore {
 #[pymethods]
 impl PyHeaderStore {
     pub fn get(&self, py: Python, block_hash: String) -> PyResult<PyObject> {
-        // Convert block_hash from String to Hash
         let block_hash = Hash::from_str(&block_hash).unwrap();
     
-        // Attempt to get header and handle error cases
         match self.inner_store.get_header(block_hash) {
             Ok(header) => Ok(header.to_py_dict(py).to_object(py)),
             Err(StoreError::KeyNotFound(_)) => Ok(py.None()),
-            _ => todo!(), // TODO: Handle other StoreError cases
+            _ => todo!(),
         }
     }
 }
@@ -66,7 +64,6 @@ impl PyHeaderStore {
 //         None
 //     };
 
-//     // Create a binding to the unwrapped header to extend its lifetime
 //     let unwrapped_header = header.unwrap();
 //     let header_dict = unwrapped_header.to_py_dict(py);
 

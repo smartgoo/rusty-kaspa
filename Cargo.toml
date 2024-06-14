@@ -59,6 +59,7 @@ members = [
     "metrics/core",
     "metrics/perf_monitor",
     "utils/alloc",
+    "x-python"
 ]
 
 [workspace.package]

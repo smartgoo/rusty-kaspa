@@ -12,13 +12,8 @@ use kaspa_txscript::extract_script_pub_key_address;
 // ./rusty-kaspa/consensus/core/src/subnets.rs
 impl ToPy for SubnetworkId {
     fn to_py(&self, py: Python) -> PyObject {        
-        // Create a String to hold the formatted SubnetworkId.
         let mut hex_string = String::new();
-
-        // Use the `write!` macro to write the formatted SubnetworkId to the String.
         write!(hex_string, "{}", self).expect("Formatting failed");
-
-        // `hex_string` contains the SubnetworkId as a hexadecimal string.
         hex_string.into_py(py)
     }
 }
@@ -84,7 +79,6 @@ impl ToPyDict for Transaction {
 pub fn transactions_to_py_list(py: Python, transactions: Vec<Transaction>) -> Py<PyList> {
     let py_transactions = PyList::new(py, transactions.iter().map(|transaction| {
 
-        // Convert each transaction to a Python dictionary
         transaction.to_py_dict(py).to_object(py)
     }));
 

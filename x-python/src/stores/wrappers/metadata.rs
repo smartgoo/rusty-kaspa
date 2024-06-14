@@ -1,4 +1,4 @@
-use crate::dbreader::stores::extended::metadata::MultiConsensusManagementStoreExt;
+use crate::stores::extensions::metadata::MultiConsensusManagementStoreExt;
 use kaspa_consensus::consensus::factory::MultiConsensusManagementStore;
 use kaspa_database::prelude::DB;
 use pyo3::prelude::*;
@@ -14,7 +14,6 @@ pub struct PyMetadataStore {
 
 impl PyMetadataStore {
     pub fn new(meta_db: Arc<DB>) -> Self {
-        // Init inner store
         let inner_store = MultiConsensusManagementStore::new(meta_db);
 
         PyMetadataStore { inner_store }

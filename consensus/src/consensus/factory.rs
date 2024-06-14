@@ -47,7 +47,7 @@ pub enum ConsensusEntryType {
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct MultiConsensusMetadata {
-    current_consensus_key: Option<u64>,
+    pub current_consensus_key: Option<u64>,
     staging_consensus_key: Option<u64>,
     /// Max key used for a consensus entry
     max_key_used: u64,
@@ -76,8 +76,8 @@ impl Default for MultiConsensusMetadata {
 #[derive(Clone)]
 pub struct MultiConsensusManagementStore {
     db: Arc<DB>,
-    entries: CachedDbAccess<U64Key, ConsensusEntry>,
-    metadata: CachedDbItem<MultiConsensusMetadata>,
+    pub entries: CachedDbAccess<U64Key, ConsensusEntry>,
+    pub metadata: CachedDbItem<MultiConsensusMetadata>,
 }
 
 impl MultiConsensusManagementStore {

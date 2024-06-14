@@ -6,8 +6,6 @@ pub trait ToPy {
     fn to_py(&self, py: Python) -> PyObject;
 }
 
-// Conversions for custom types
-
 // Converts Hash to String
 // ./rusty-kaspa/crypto/hashes/src/lib.rs
 impl ToPy for Hash {
@@ -35,7 +33,6 @@ impl ToPy for Vec<Vec<Hash>> {
 // Uint192 defined in: ./rusty-kaspa/crypto/hashes/src/lib.rs
 impl ToPy for Uint192 {
     // TODO convert to int
-    // Using string temporarily because concerned about precision after conversion
     fn to_py(&self, py: Python) -> PyObject {
         format!("{:x}", self).into_py(py)
     }
