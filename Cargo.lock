@@ -3687,6 +3687,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "kaspa-consensus-core",
  "kaspa-rpc-core",
+ "kaspa-rpc-macros",
  "kaspa-wrpc-client",
  "pyo3",
  "pyo3-asyncio-0-21",
