@@ -3134,6 +3134,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "kaspa-python-macros"
+version = "0.15.1"
+dependencies = [
+ "convert_case 0.6.0",
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "syn 1.0.109",
+]
+
+[[package]]
 name = "kaspa-rpc-core"
 version = "0.15.1"
 dependencies = [
@@ -3686,24 +3698,8 @@ version = "0.15.1"
 dependencies = [
  "cfg-if 1.0.0",
  "kaspa-consensus-core",
+ "kaspa-python-macros",
  "kaspa-rpc-core",
- "kaspa-wrpc-client",
- "pyo3",
- "pyo3-asyncio-0-21",
- "serde_json",
- "thiserror",
- "workflow-core",
- "workflow-rpc",
-]
-
-[[package]]
-name = "kaspa-wrpc-python"
-version = "0.15.1"
-dependencies = [
- "cfg-if 1.0.0",
- "kaspa-consensus-core",
- "kaspa-rpc-core",
- "kaspa-rpc-macros",
  "kaspa-wrpc-client",
  "pyo3",
  "pyo3-asyncio-0-21",
