@@ -3177,6 +3177,7 @@ dependencies = [
  "pyo3",
  "rand 0.8.5",
  "serde",
+ "serde-pyobject",
  "serde-wasm-bindgen",
  "serde_json",
  "smallvec",
@@ -3712,8 +3713,12 @@ dependencies = [
 name = "kaspa-wrpc-python"
 version = "0.14.1"
 dependencies = [
+ "ahash 0.8.11",
  "cfg-if 1.0.0",
+ "futures",
+ "kaspa-addresses",
  "kaspa-consensus-core",
+ "kaspa-notify",
  "kaspa-python-macros",
  "kaspa-rpc-core",
  "kaspa-rpc-macros",
@@ -3724,6 +3729,7 @@ dependencies = [
  "serde_json",
  "thiserror",
  "workflow-core",
+ "workflow-log",
  "workflow-rpc",
 ]
 
