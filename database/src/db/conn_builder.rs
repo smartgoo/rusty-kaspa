@@ -126,6 +126,19 @@ impl ConnBuilder<PathBuf, false, Unspecified, i32> {
         ));
         Ok(db)
     }
+
+    pub fn build_secondary_read_only(self) -> Result<Arc<DB>, kaspa_utils::fd_budget::Error> {
+        let mut opts = rocksdb::Options::default();
+        opts.set_max_open_files(-1);
+        opts.create_if_missing(false);
+        let guard = kaspa_utils::fd_budget::acquire_guard(self.files_limit)?;
+
+        let db = Arc::new(DB::new(
+            <DBWithThreadMode<MultiThreaded>>::open_for_read_only(&opts, self.db_path.to_str().unwrap(), false).unwrap(),
+            guard,
+        ));
+        Ok(db)
+    }
 }
 
 impl ConnBuilder<PathBuf, true, Unspecified, i32> {
