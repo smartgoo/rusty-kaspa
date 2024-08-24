@@ -25,7 +25,7 @@ pub use kaspa_database::prelude::DB;
 use std::fmt::Display;
 
 #[derive(PartialEq, Eq, Clone, Copy, Hash)]
-pub(crate) struct U64Key([u8; size_of::<u64>()]);
+pub struct U64Key([u8; size_of::<u64>()]);
 
 impl From<u64> for U64Key {
     fn from(value: u64) -> Self {

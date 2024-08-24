@@ -32,9 +32,9 @@ pub trait SelectedChainStore: SelectedChainStoreReader {
 #[derive(Clone)]
 pub struct DbSelectedChainStore {
     db: Arc<DB>,
-    access_hash_by_index: CachedDbAccess<U64Key, Hash>,
-    access_index_by_hash: CachedDbAccess<Hash, u64>,
-    access_highest_index: CachedDbItem<u64>,
+    pub access_hash_by_index: CachedDbAccess<U64Key, Hash>,
+    pub access_index_by_hash: CachedDbAccess<Hash, u64>,
+    pub access_highest_index: CachedDbItem<u64>,
 }
 
 impl DbSelectedChainStore {
