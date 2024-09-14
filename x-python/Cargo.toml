@@ -29,7 +29,7 @@ csv = "1.2"
 dirs = "4.0"
 itertools.workspace = true
 serde.workspace = true
-pyo3 = "0.20.0"
+pyo3 = { version = "0.20.0", features = ["extension-module"] }
 
 [features]
 py-sdk = []
