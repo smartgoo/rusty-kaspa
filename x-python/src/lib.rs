@@ -1,12 +1,18 @@
-mod converters;
-mod core;
-mod stores;
+use cfg_if::cfg_if;
 
-use pyo3::prelude::*;
+cfg_if! {
+    if #[cfg(feature = "py-sdk")] {
+        mod converters;
+        mod core;
+        mod stores;
 
-#[pymodule]
-fn kaspadbr(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_class::<core::db_reader::DBReader>()?;
+        use pyo3::prelude::*;
 
-    Ok(())
+        #[pymodule]
+        fn kaspadbr(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+            m.add_class::<core::db_reader::DBReader>()?;
+
+            Ok(())
+        }
+    }
 }
