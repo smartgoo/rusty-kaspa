@@ -3140,7 +3140,7 @@ dependencies = [
 
 [[package]]
 name = "kaspa-python-macros"
-version = "0.14.5"
+version = "0.15.1"
 dependencies = [
  "convert_case 0.6.0",
  "proc-macro-error",
@@ -3702,7 +3702,7 @@ dependencies = [
 
 [[package]]
 name = "kaspa-wrpc-python"
-version = "0.14.5"
+version = "0.15.1"
 dependencies = [
  "ahash",
  "cfg-if 1.0.0",
@@ -4907,54 +4907,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "quinn"
-version = "0.11.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c7c5fdde3cdae7203427dc4f0a68fe0ed09833edc525a03456b153b79828684"
-dependencies = [
- "bytes",
- "pin-project-lite",
- "quinn-proto",
- "quinn-udp",
- "rustc-hash 2.0.0",
- "rustls 0.23.12",
- "socket2 0.5.7",
- "thiserror",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "quinn-proto"
-version = "0.11.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fadfaed2cd7f389d0161bb73eeb07b7b78f8691047a6f3e73caaeae55310a4a6"
-dependencies = [
- "bytes",
- "rand 0.8.5",
- "ring",
- "rustc-hash 2.0.0",
- "rustls 0.23.12",
- "slab",
- "thiserror",
- "tinyvec",
- "tracing",
-]
-
-[[package]]
-name = "quinn-udp"
-version = "0.5.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fe68c2e9e1a1234e218683dbdf9f9dfcb094113c5ac2b938dfcb9bab4c4140b"
-dependencies = [
- "libc",
- "once_cell",
- "socket2 0.5.7",
- "tracing",
- "windows-sys 0.59.0",
-]
-
-[[package]]
 name = "pyo3"
 version = "0.21.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5045,7 +4997,7 @@ dependencies = [
 
 [[package]]
 name = "python"
-version = "0.14.5"
+version = "0.15.1"
 dependencies = [
  "cfg-if 1.0.0",
  "kaspa-addresses",
@@ -5056,6 +5008,54 @@ dependencies = [
  "kaspa-wallet-keys",
  "kaspa-wrpc-python",
  "pyo3",
+]
+
+[[package]]
+name = "quinn"
+version = "0.11.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8c7c5fdde3cdae7203427dc4f0a68fe0ed09833edc525a03456b153b79828684"
+dependencies = [
+ "bytes",
+ "pin-project-lite",
+ "quinn-proto",
+ "quinn-udp",
+ "rustc-hash 2.0.0",
+ "rustls 0.23.12",
+ "socket2 0.5.7",
+ "thiserror",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "quinn-proto"
+version = "0.11.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fadfaed2cd7f389d0161bb73eeb07b7b78f8691047a6f3e73caaeae55310a4a6"
+dependencies = [
+ "bytes",
+ "rand 0.8.5",
+ "ring",
+ "rustc-hash 2.0.0",
+ "rustls 0.23.12",
+ "slab",
+ "thiserror",
+ "tinyvec",
+ "tracing",
+]
+
+[[package]]
+name = "quinn-udp"
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4fe68c2e9e1a1234e218683dbdf9f9dfcb094113c5ac2b938dfcb9bab4c4140b"
+dependencies = [
+ "libc",
+ "once_cell",
+ "socket2 0.5.7",
+ "tracing",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
