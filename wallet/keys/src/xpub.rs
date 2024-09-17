@@ -133,7 +133,6 @@ impl XPub {
     }
 }
 
-
 impl From<ExtendedPublicKey<secp256k1::PublicKey>> for XPub {
     fn from(inner: ExtendedPublicKey<secp256k1::PublicKey>) -> Self {
         Self { inner }

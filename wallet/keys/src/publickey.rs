@@ -119,6 +119,34 @@ impl PublicKey {
     }
 }
 
+// PY-NOTE: Python specific fn implementations
+#[cfg(feature = "py-sdk")]
+#[pymethods]
+impl PublicKey {
+    #[new]
+    pub fn try_new_py(key: &str) -> Result<PublicKey> {
+        match secp256k1::PublicKey::from_str(key) {
+            Ok(public_key) => Ok((&public_key).into()),
+            Err(_e) => Ok(Self { xonly_public_key: secp256k1::XOnlyPublicKey::from_str(key)?, public_key: None }),
+        }
+    }
+
+    #[pyo3(name = "to_string")]
+    pub fn to_string_impl_py(&self) -> String {
+        self.public_key.as_ref().map(|pk| pk.to_string()).unwrap_or_else(|| self.xonly_public_key.to_string())
+    }
+
+    #[pyo3(name = "to_address")]
+    pub fn to_address_py(&self, network: &str) -> Result<Address> {
+        self.to_address(NetworkType::from_str(network)?)
+    }
+
+    #[pyo3(name = "to_address_ecdsa")]
+    pub fn to_address_ecdsa_py(&self, network: &str) -> Result<Address> {
+        self.to_address_ecdsa(NetworkType::from_str(network)?)
+    }
+}
+
 impl PublicKey {
     #[inline]
     pub fn to_address(&self, network_type: NetworkType) -> Result<Address> {
