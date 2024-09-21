@@ -3140,7 +3140,7 @@ dependencies = [
 
 [[package]]
 name = "kaspa-python-macros"
-version = "0.15.1"
+version = "0.15.2"
 dependencies = [
  "convert_case 0.6.0",
  "proc-macro-error",
@@ -3702,7 +3702,7 @@ dependencies = [
 
 [[package]]
 name = "kaspa-wrpc-python"
-version = "0.15.1"
+version = "0.15.2"
 dependencies = [
  "ahash",
  "cfg-if 1.0.0",
@@ -4997,7 +4997,7 @@ dependencies = [
 
 [[package]]
 name = "python"
-version = "0.15.1"
+version = "0.15.2"
 dependencies = [
  "cfg-if 1.0.0",
  "kaspa-addresses",
