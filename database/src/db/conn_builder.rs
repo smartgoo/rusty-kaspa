@@ -131,7 +131,12 @@ impl ConnBuilder<PathBuf, false, Unspecified, i32> {
         let (mut opts, guard) = default_opts!(self)?;
         opts.set_max_open_files(-1);
         let db = Arc::new(DB::new(
-            <DBWithThreadMode<MultiThreaded>>::open_as_secondary(&opts, self.db_path.to_str().unwrap(), secondary_path.to_str().unwrap()).unwrap(),
+            <DBWithThreadMode<MultiThreaded>>::open_as_secondary(
+                &opts,
+                self.db_path.to_str().unwrap(),
+                secondary_path.to_str().unwrap(),
+            )
+            .unwrap(),
             guard,
         ));
         Ok(db)
