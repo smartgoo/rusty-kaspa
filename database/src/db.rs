@@ -1,4 +1,4 @@
-use rocksdb::{DBWithThreadMode, MultiThreaded};
+use rocksdb::{DBWithThreadMode, Error, MultiThreaded};
 use std::ops::{Deref, DerefMut};
 use std::path::PathBuf;
 
