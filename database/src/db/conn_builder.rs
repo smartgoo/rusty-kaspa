@@ -130,6 +130,7 @@ impl ConnBuilder<PathBuf, false, Unspecified, i32> {
     pub fn build_secondary(self, secondary_path: PathBuf) -> Result<Arc<DB>, kaspa_utils::fd_budget::Error> {
         let (mut opts, guard) = default_opts!(self)?;
         opts.set_max_open_files(-1);
+        opts.set_log_level(rocksdb::LogLevel::Debug);
         let db = Arc::new(DB::new(
             <DBWithThreadMode<MultiThreaded>>::open_as_secondary(
                 &opts,
