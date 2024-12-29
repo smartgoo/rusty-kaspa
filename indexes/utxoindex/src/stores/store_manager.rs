@@ -20,9 +20,9 @@ use crate::{
 
 #[derive(Clone)]
 pub struct Store {
-    utxoindex_tips_store: DbUtxoIndexTipsStore,
-    circulating_supply_store: DbCirculatingSupplyStore,
-    utxos_by_script_public_key_store: DbUtxoSetByScriptPublicKeyStore,
+    pub utxoindex_tips_store: DbUtxoIndexTipsStore,
+    pub circulating_supply_store: DbCirculatingSupplyStore,
+    pub utxos_by_script_public_key_store: DbUtxoSetByScriptPublicKeyStore,
 }
 
 impl Store {
