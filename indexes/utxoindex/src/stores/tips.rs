@@ -21,7 +21,7 @@ pub trait UtxoIndexTipsStore: UtxoIndexTipsStoreReader {
 #[derive(Clone)]
 pub struct DbUtxoIndexTipsStore {
     db: Arc<DB>,
-    access: CachedDbItem<Arc<BlockHashSet>>,
+    pub access: CachedDbItem<Arc<BlockHashSet>>,
 }
 
 impl DbUtxoIndexTipsStore {

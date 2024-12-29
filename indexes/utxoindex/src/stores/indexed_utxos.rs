@@ -143,7 +143,7 @@ pub trait UtxoSetByScriptPublicKeyStore: UtxoSetByScriptPublicKeyStoreReader {
 #[derive(Clone)]
 pub struct DbUtxoSetByScriptPublicKeyStore {
     db: Arc<DB>,
-    access: CachedDbAccess<UtxoEntryFullAccessKey, CompactUtxoEntry>,
+    pub access: CachedDbAccess<UtxoEntryFullAccessKey, CompactUtxoEntry>,
 }
 
 impl DbUtxoSetByScriptPublicKeyStore {
