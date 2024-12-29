@@ -1,6 +1,6 @@
 pub mod core; //all things visible to the outside
 mod index;
-mod stores;
+pub mod stores;
 mod update_container;
 
 #[cfg(test)]
