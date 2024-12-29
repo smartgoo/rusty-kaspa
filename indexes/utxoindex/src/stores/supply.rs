@@ -22,7 +22,7 @@ pub trait CirculatingSupplyStore: CirculatingSupplyStoreReader {
 #[derive(Clone)]
 pub struct DbCirculatingSupplyStore {
     db: Arc<DB>,
-    access: CachedDbItem<u64>,
+    pub access: CachedDbItem<u64>,
 }
 
 impl DbCirculatingSupplyStore {
