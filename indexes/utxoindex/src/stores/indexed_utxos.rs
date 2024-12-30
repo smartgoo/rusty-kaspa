@@ -18,7 +18,7 @@ pub const VERSION_TYPE_SIZE: usize = size_of::<ScriptPublicKeyVersion>(); // Con
 /// [`ScriptPublicKeyBucket`].
 /// Consists of 2 bytes of little endian [VersionType] bytes, followed by a variable size of [ScriptVec].
 #[derive(Eq, Hash, PartialEq, Debug, Clone)]
-pub struct ScriptPublicKeyBucket(Vec<u8>);
+pub struct ScriptPublicKeyBucket(pub Vec<u8>);
 
 impl From<&ScriptPublicKey> for ScriptPublicKeyBucket {
     fn from(script_public_key: &ScriptPublicKey) -> Self {
