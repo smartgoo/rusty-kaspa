@@ -90,7 +90,7 @@ impl AsRef<[u8]> for TransactionOutpointKey {
 /// Full [CompactUtxoEntry] access key.
 /// Consists of variable amount of bytes of [ScriptPublicKeyBucket], and 36 bytes of [TransactionOutpointKey]
 #[derive(Eq, Hash, PartialEq, Debug, Clone, Serialize, Deserialize)]
-pub struct UtxoEntryFullAccessKey(Arc<Vec<u8>>);
+pub struct UtxoEntryFullAccessKey(pub Arc<Vec<u8>>);
 
 impl Display for UtxoEntryFullAccessKey {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
