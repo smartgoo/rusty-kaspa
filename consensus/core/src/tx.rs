@@ -9,6 +9,7 @@
 mod script_public_key;
 
 use borsh::{BorshDeserialize, BorshSerialize};
+use kaspa_hashes::Hash;
 use kaspa_utils::hex::ToHex;
 use kaspa_utils::mem_size::MemSizeEstimator;
 use kaspa_utils::{serde_bytes, serde_bytes_fixed_ref};
@@ -533,6 +534,31 @@ impl MutableTransaction {
 /// Alias for a fully mutable and owned transaction which can be populated with external data
 /// and can also be modified internally and signed etc.
 pub type SignableTransaction = MutableTransaction<Transaction>;
+
+
+/// used to locate a transaction in the DAG
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum TransactionLocator {
+    ByAcceptance(&TransactionAcceptanceLocator),
+    ByInclusion(&TransactionInclusionLocator),
+}
+
+/// Represents a Kaspa transaction location querable by accepting chain block. 
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionAcceptanceLocator {
+    pub chain_block: Hash,
+    pub transaction_ids: Vec<TransactionId>,
+}
+
+/// Represents a Kaspa transaction location querable by inclusion within a block.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionInclusionLocator {
+    pub block_hash: Hash,
+    pub indices_within_block: Vec<TransactionIndexType>,
+}
 
 #[cfg(test)]
 mod tests {

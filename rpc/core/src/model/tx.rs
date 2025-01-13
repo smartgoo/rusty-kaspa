@@ -1,14 +1,15 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use kaspa_addresses::Address;
 use kaspa_consensus_core::tx::{
-    ScriptPublicKey, ScriptVec, TransactionId, TransactionIndexType, TransactionInput, TransactionOutpoint, TransactionOutput,
-    UtxoEntry,
+    ScriptPublicKey, ScriptVec, Transaction, TransactionId, TransactionIndexType, TransactionInput, TransactionOutpoint, TransactionOutput, UtxoEntry
 };
 use kaspa_utils::{hex::ToHex, serde_bytes_fixed_ref};
 use serde::{Deserialize, Serialize};
 use workflow_serializer::prelude::*;
 
 use crate::prelude::{RpcHash, RpcScriptClass, RpcSubnetworkId};
+
+use super::RpcAddress;
 
 /// Represents the ID of a Kaspa transaction
 pub type RpcTransactionId = TransactionId;
@@ -52,6 +53,7 @@ impl From<RpcUtxoEntry> for UtxoEntry {
         }
     }
 }
+
 
 impl Serializer for RpcUtxoEntry {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
@@ -201,7 +203,9 @@ impl Deserializer for RpcTransactionInput {
 /// Represent Kaspa transaction input verbose data
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RpcTransactionInputVerboseData {}
+pub struct RpcTransactionInputVerboseData {
+    pub utxo_entry: Option<RpcUtxoEntry>,
+}
 
 impl Serializer for RpcTransactionInputVerboseData {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
@@ -397,4 +401,408 @@ impl Deserializer for RpcTransactionVerboseData {
 pub struct RpcAcceptedTransactionIds {
     pub accepting_block_hash: RpcHash,
     pub accepted_transaction_ids: Vec<RpcTransactionId>,
+}
+
+
+/// Represents a transaction locator
+
+#[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum RpcTransactionLocator {
+    ByAcceptance(&RpcTransactionAcceptanceLocator),
+    ByInclusion(&RpcTransactionInclusionLocator)
+}
+
+impl Serialize for RpcTransactionLocator {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u8, &1, writer)?;
+        store!(u8, &match self {
+            RpcTransactionLocator::ByAcceptance(_) => 1,
+            RpcTransactionLocator::ByInclusion(_) => 2,
+        }, writer)?;
+
+        match *self {
+            RpcTransactionLocator::ByAcceptance(locator) => {
+                serialize!(RpcTransactionLocatorByAcceptance, locator, writer)?;
+            }
+            RpcTransactionLocator::ByInclusion(locator) => {
+                store!(u8, &2, writer)?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl Deserialize for RpcTransactionLocator {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let version = load!(u8, reader)?;
+        let enum_type = load!(u8, reader)?;
+        match enum_type {
+            1 => {
+                let locator = deserialize!(RpcTransactionLocatorByAcceptance, reader)?;
+                Ok(RpcTransactionLocator::ByAcceptance(locator))
+            }
+            2 => {
+                let locator = deserialize!(RpcTransactionLocatorByInclusion, reader)?;
+                Ok(RpcTransactionLocator::ByInclusion(locator))
+            }
+            _ => Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid enum_type for RpcTransactionLocator"))
+        }
+    }
+}
+#[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcTransactionAcceptanceLocator {
+    pub chain_block: RpcHash,
+    pub transaction_ids: Vec<RpcTransactionId>,
+}
+
+impl RpcTransactionAcceptanceLocator {
+    pub fn new(chain_block: RpcHash, transaction_ids: Vec<RpcTransactionId>) -> Self {
+        Self { chain_block, transaction_ids }
+    }
+}
+
+impl Serializer for RpcTransactionAcceptanceLocator {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u8, &1, writer)?;
+        store!(RpcHash, &self.chain_block, writer)?;
+        store!(Vec<RpcTransactionId>, &self.transaction_ids, writer)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializer for RpcTransactionAcceptanceLocator {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u8, reader)?;
+        let chain_block = load!(RpcHash, reader)?;
+        let transaction_ids = load!(Vec<RpcTransactionId>, reader)?;
+
+        Ok(Self { chain_block, transaction_ids })
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcTransactionInclusionLocator {
+    pub block_hash: RpcHash,
+    pub indices_within_block: Vec<TransactionIndexType>,
+}
+
+impl RpcTransactionInclusionLocator {
+    pub fn new(block_hash: RpcHash, indices_within_block: Vec<TransactionIndexType>) -> Self {
+        Self { block_hash, indices_within_block }
+    }
+}
+
+impl Serializer for RpcTransactionInclusionLocator {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u8, &1, writer)?;
+        store!(RpcHash, &self.block_hash, writer)?;
+        store!(Vec<TransactionIndexType>, &self.indexes_within_block, writer)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializer for RpcTransactionInclusionLocator {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u8, reader)?;
+        let block_hash = load!(RpcHash, reader)?;
+        let indexes_within_block = load!(Vec<TransactionIndexType>, reader)?;
+
+        Ok(Self { block_hash, indexes_within_block })
+    }
+}
+
+/// Verbosity switches
+
+// RpcUtxoEntryVerbosity
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcUtxoEntryVerbosity {
+    pub include_amount: bool,
+    pub include_script_public_key: bool,
+    pub include_block_daa_score: bool,
+    pub include_is_coinbase: bool,
+}
+
+impl RpcUtxoEntryVerbosity {
+    pub fn new(include_amount: bool, include_script_public_key: bool, include_block_daa_score: bool, include_is_coinbase: bool) -> Self {
+        Self { include_amount, include_script_public_key, include_block_daa_score, include_is_coinbase }
+    }   
+}
+
+impl Serializer for RpcUtxoEntryVerbosity {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u8, &1, writer)?;
+        store!(bool, &self.include_amount, writer)?;
+        store!(bool, &self.include_script_public_key, writer)?;
+        store!(bool, &self.include_block_daa_score, writer)?;
+        store!(bool, &self.include_is_coinbase, writer)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializer for RpcUtxoEntryVerbosity {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u8, reader)?;
+
+        let include_amount = load!(bool, reader)?;
+        let include_script_public_key = load!(bool, reader)?;
+        let include_block_daa_score = load!(bool, reader)?;
+        let include_is_coinbase = load!(bool, reader)?;
+
+        Ok(Self { include_amount, include_script_public_key, include_block_daa_score, include_is_coinbase })
+    }
+}
+
+// RpcTransactionInputVerbosity
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcTransactionInputVerbosity{
+    pub include_signature_script: bool,
+    pub include_sequence: bool,
+    pub include_sig_op_count: bool,
+    pub verbose_data_verbosity: Option<RpcTransactionInputVerboseDataVerbosity>,
+}
+
+impl RpcTransactionInputVerbosity {
+    pub fn new(include_signature_script: bool, include_sequence: bool, include_sig_op_count: bool, verbose_data_verbosity: Option<RpcTransactionInputVerboseDataVerbosity>) -> Self {
+        Self { include_signature_script, include_sequence, include_sig_op_count, verbose_data_verbosity }
+    }
+}
+
+impl Serializer for RpcTransactionInputVerbosity {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u8, &1, writer)?;
+        store!(bool, &self.include_signature_script, writer)?;
+        store!(bool, &self.include_sequence, writer)?;
+        store!(bool, &self.include_sig_op_count, writer)?;
+        serialize!(Option<RpcTransactionInputVerboseDataVerbosity>, &self.include_verbose_data, writer)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializer for RpcTransactionInputVerbosity {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u8, reader)?;
+
+        let include_signature_script = load!(bool, reader)?;
+        let include_sequence = load!(bool, reader)?;
+        let include_sig_op_count = load!(bool, reader)?;
+        let verbose_data_verbosity = deserialize!(Option<RpcTransactionInputVerboseDataVerbosity>, reader)?;
+
+        Ok(Self { include_signature_script, include_sequence, include_sig_op_count, verbose_data_verbosity })
+    }
+}
+
+// RpcTransactionInputVerboseDataVerbosity
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcTransactionInputVerboseDataVerbosity{
+    pub utxo_entry_verbosity: Option<RpcUtxoEntryVerbosity>,
+}
+
+impl RpcTransactionInputVerboseDataVerbosity {
+    pub fn new(utxo_entry_verbosity: Option<RpcUtxoEntryVerbosity>) -> Self {
+        Self { utxo_entry_verbosity }
+    }
+}
+
+impl Serializer for RpcTransactionInputVerboseDataVerbosity {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u8, &1, writer)?;
+        serialize!(Option<RpcUtxoEntryVerbosity>, &self.utxo_entry_verbosity, writer)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializer for RpcTransactionInputVerboseDataVerbosity {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u8, reader)?;
+        let utxo_entry_verbosity = deserialize!(Option<RpcUtxoEntryVerbosity>, reader)?;
+
+        Ok(Self { utxo_entry_verbosity })
+    }
+}
+
+// RpcTransactionOutputVerbosity
+
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcTransactionOutputVerbosity{
+    pub include_value: bool,
+    pub include_script_public_key: bool,
+    pub verbose_data_verbosity: Option<RpcTransactionOutputVerboseDataVerbosity>,
+}
+
+impl RpcTransactionOutputVerbosity {
+    pub fn new(include_value: bool, include_script_public_key: bool, verbose_data_verbosity: Option<RpcTransactionOutputVerboseDataVerbosity>) -> Self {
+        Self { include_value, include_script_public_key, verbose_data_verbosity }
+    }
+}
+
+impl Serializer for RpcTransactionOutputVerbosity {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u8, &1, writer)?;
+        store!(bool, &self.include_value, writer)?;
+        store!(bool, &self.include_script_public_key, writer)?;
+        serialize!(Option<RpcTransactionOutputVerboseDataVerbosity>, &self.include_verbose_data, writer)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializer for RpcTransactionOutputVerbosity {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u8, reader)?;
+
+        let include_value = load!(bool, reader)?;
+        let include_script_public_key = load!(bool, reader)?;
+        let verbose_data_verbosity = deserialize!(Option<RpcTransactionOutputVerboseDataVerbosity>, reader)?;
+
+        Ok(Self { include_value, include_script_public_key, verbose_data_verbosity })
+    }
+}
+
+// RpcTransactionOutputVerboseDataVerbosity
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcTransactionOutputVerboseDataVerbosity{
+    pub include_script_public_key_type: bool,
+    pub include_script_public_key_address: bool,
+}
+
+impl RpcTransactionOutputVerboseDataVerbosity {
+    pub fn new(include_script_public_key_type: bool, include_script_public_key_address: bool) -> Self {
+        Self { include_script_public_key_type, include_script_public_key_address }
+    }
+}
+
+impl Serializer for RpcTransactionOutputVerboseDataVerbosity {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u8, &1, writer)?;
+        store!(bool, &self.include_script_public_key_type, writer)?;
+        store!(bool, &self.include_script_public_key_address, writer)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializer for RpcTransactionOutputVerboseDataVerbosity {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u8, reader)?;
+
+        let include_script_public_key_type = load!(bool, reader)?;
+        let include_script_public_key_address = load!(bool, reader)?;
+
+        Ok(Self { include_script_public_key_type, include_script_public_key_address })
+    }
+}
+
+// RpcTransactionVerbosity
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcTransactionVerbosity{
+    pub include_version: bool,
+    pub inputs_verbosity: Option<RpcTransactionInputVerbosity>,
+    pub outputs_verbosity: Option<RpcTransactionOutputVerbosity>,
+    pub include_lock_time: bool,
+    pub include_subnetwork_id: bool,
+    pub include_gas: bool,
+    pub include_payload: bool,
+    pub include_mass: bool,
+    pub include_verbose_data: Option<RpcTransactionVerboseDataVerbosity>,
+}
+
+impl RpcTransactionVerbosity {
+    pub fn new(include_version: bool, inputs_verbosity: Option<RpcTransactionInputVerbosity>, outputs_verbosity: Option<RpcTransactionOutputVerbosity>, include_lock_time: bool, include_subnetwork_id: bool, include_gas: bool, include_payload: bool, include_mass: bool, include_verbose_data: Option<RpcTransactionVerboseDataVerbosity>) -> Self {
+        Self { include_version, inputs_verbosity, outputs_verbosity, include_lock_time, include_subnetwork_id, include_gas, include_payload, include_mass, include_verbose_data }
+    }
+}
+
+impl Serializer for RpcTransactionVerbosity {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u8, &1, writer)?;
+        store!(bool, &self.include_version, writer)?;
+        serialize!(Option<RpcTransactionInputVerbosity>, &self.inputs_verbosity, writer)?;
+        serialize!(Option<RpcTransactionOutputVerbosity>, &self.outputs_verbosity, writer)?;
+        store!(bool, &self.include_lock_time, writer)?;
+        store!(bool, &self.include_subnetwork_id, writer)?;
+        store!(bool, &self.include_gas, writer)?;
+        store!(bool, &self.include_payload, writer)?;
+        store!(bool, &self.include_mass, writer)?;
+        serialize!(Option<RpcTransactionVerboseDataVerbosity>, &self.include_verbose_data, writer)?;
+
+        Ok(())
+    }
+}
+
+
+impl Deserializer for RpcTransactionVerbosity {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u8, reader)?;
+
+        let include_version = load!(bool, reader)?;
+        let inputs_verbosity = deserialize!(Option<RpcTransactionInputVerbosity>, reader)?;
+        let outputs_verbosity = deserialize!(Option<RpcTransactionOutputVerbosity>, reader)?;
+        let include_lock_time = load!(bool, reader)?;
+        let include_subnetwork_id = load!(bool, reader)?;
+        let include_gas = load!(bool, reader)?;
+        let include_payload = load!(bool, reader)?;
+        let include_mass = load!(bool, reader)?;
+        let include_verbose_data = deserialize!(Option<RpcTransactionVerboseDataVerbosity>, reader)?;
+
+        Ok(Self { include_version, inputs_verbosity, outputs_verbosity, include_lock_time, include_subnetwork_id, include_gas, include_payload, include_mass, include_verbose_data })
+    }
+}
+
+// RpcTransactionVerboseDataVerbosity
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcTransactionVerboseDataVerbosity{
+    pub include_transaction_id: bool,
+    pub include_hash: bool,
+    pub include_compute_mass: bool,
+    pub include_block_hash: bool,
+    pub include_block_time: bool,
+}
+
+impl RpcTransactionVerboseDataVerbosity {
+    pub fn new(include_transaction_id: bool, include_hash: bool, include_compute_mass: bool, include_block_hash: bool, include_block_time: bool) -> Self {
+        Self { include_transaction_id, include_hash, include_compute_mass, include_block_hash, include_block_time }
+    }
+}
+
+impl Serializer for RpcTransactionVerboseDataVerbosity {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u8, &1, writer)?;
+        store!(bool, &self.include_transaction_id, writer)?;
+        store!(bool, &self.include_hash, writer)?;
+        store!(bool, &self.include_compute_mass, writer)?;
+        store!(bool, &self.include_block_hash, writer)?;
+        store!(bool, &self.include_block_time, writer)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializer for RpcTransactionVerboseDataVerbosity {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u8, reader)?;
+
+        let include_transaction_id = load!(bool, reader)?;
+        let include_hash = load!(bool, reader)?;
+        let include_compute_mass = load!(bool, reader)?;
+        let include_block_hash = load!(bool, reader)?;
+        let include_block_time = load!(bool, reader)?;
+
+        Ok(Self { include_transaction_id, include_hash, include_compute_mass, include_block_hash, include_block_time })
+    }
 }

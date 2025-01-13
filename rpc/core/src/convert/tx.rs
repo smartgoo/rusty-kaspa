@@ -1,7 +1,7 @@
 //! Conversion of Transaction related types
 
-use crate::{RpcError, RpcResult, RpcTransaction, RpcTransactionInput, RpcTransactionOutput};
-use kaspa_consensus_core::tx::{Transaction, TransactionInput, TransactionOutput};
+use crate::{RpcError, RpcResult, RpcTransaction, RpcTransactionAcceptanceLocator, RpcTransactionInput, RpcTransactionLocator, RpcTransactionLocatorByAcceptance, RpcTransactionOutput};
+use kaspa_consensus_core::tx::{Transaction, TransactionAcceptanceLocator, TransactionInclusionLocator, TransactionInput, TransactionLocator, TransactionOutput};
 
 // ----------------------------------------------------------------------------
 // consensus_core to rpc_core
@@ -48,6 +48,36 @@ impl From<&TransactionInput> for RpcTransactionInput {
     }
 }
 
+impl From<TransactionLocator> for RpcTransactionLocator {
+    #[inline(always)]
+    fn from(item: TransactionLocator) -> Self {
+        match item {
+            TransactionLocator::ByAcceptance(transaction_acceptance_locator) => RpcTransactionLocator::ByAcceptance(transaction_acceptance_locator.into()),
+            TransactionLocator::ByInclusion(transaction_inclusion_locator) => RpcTransactionLocator::ByInclusion(transaction_inclusion_locator.into()),
+        }
+    }
+}
+
+impl From<&TransactionAcceptanceLocator> for RpcTransactionAcceptanceLocator {
+    #[inline(always)]
+    fn from(item: TransactionAcceptanceLocator) -> Self {
+        Self {
+            chain_block: item.chain_block,
+            transaction_ids: item.transaction_ids,
+        }
+    }
+}
+
+impl From<&TransactionInclusionLocator> for RpcTransactionInclusionLocator {
+    #[inline(always)]
+    fn from(item: TransactionInclusionLocator) -> Self {
+        Self {
+            block_hash: item.block_hash,
+            indices_within_block: item.indices_within_block,
+        }
+    }
+}
+
 // ----------------------------------------------------------------------------
 // rpc_core to consensus_core
 // ----------------------------------------------------------------------------
@@ -86,5 +116,35 @@ impl TryFrom<RpcTransactionInput> for TransactionInput {
     type Error = RpcError;
     fn try_from(item: RpcTransactionInput) -> RpcResult<Self> {
         Ok(Self::new(item.previous_outpoint.into(), item.signature_script, item.sequence, item.sig_op_count))
+    }
+}
+
+impl TryFrom<RpcTransactionLocator> for TransactionLocator {
+    type Error = RpcError;
+    fn try_from(item: RpcTransactionLocator) -> RpcResult<Self> {
+        match item {
+            RpcTransactionLocator::ByAcceptance(transaction_acceptance_locator) => Ok(TransactionLocator::ByAcceptance(transaction_acceptance_locator.into())),
+            RpcTransactionLocator::ByInclusion(transaction_inclusion_locator) => Ok(TransactionLocator::ByInclusion(transaction_inclusion_locator.into())),
+        }
+    }
+}
+
+impl TryFrom<RpcTransactionAcceptanceLocator> for TransactionAcceptanceLocator {
+    type Error = RpcError;
+    fn try_from(item: RpcTransactionAcceptanceLocator) -> RpcResult<Self> {
+        Ok(Self {
+            chain_hash: item.chain_block,
+            transaction_ids: item.accepted_transaction_ids,
+        })
+    }
+}
+
+impl TryFrom<RpcTransactionInclusionLocator> for TransactionInclusionLocator {
+    type Error = RpcError;
+    fn try_from(item: RpcTransactionInclusionLocator) -> RpcResult<Self> {
+        Ok(Self {
+            block_hash: item.block_hash,
+            indices_within_block: item.indices_within_block,
+        })
     }
 }

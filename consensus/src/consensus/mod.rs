@@ -66,7 +66,7 @@ use kaspa_consensus_core::{
     network::NetworkType,
     pruning::{PruningPointProof, PruningPointTrustedData, PruningPointsList, PruningProofMetadata},
     trusted::{ExternalGhostdagData, TrustedBlock},
-    tx::{MutableTransaction, Transaction, TransactionOutpoint, UtxoEntry},
+    tx::{MutableTransaction, Transaction, TransactionIndexType, TransactionOutpoint, UtxoEntry},
     BlockHashSet, BlueWorkType, ChainPath, HashMapCustomHasher,
 };
 use kaspa_consensus_notify::root::ConsensusNotificationRoot;
@@ -882,6 +882,18 @@ impl ConsensusApi for Consensus {
             header: self.headers_store.get_header(hash).unwrap_option().ok_or(ConsensusError::BlockNotFound(hash))?,
             transactions: self.block_transactions_store.get(hash).unwrap_option().ok_or(ConsensusError::BlockNotFound(hash))?,
         })
+    }
+
+    fn get_block_transactions(&self, hash: Hash, indices: Option<Vec<TransactionIndexType>>) -> ConsensusResult<Arc<Vec<Transaction>>> {
+        let transactions = self.block_transactions_store.get(hash).unwrap_option().ok_or(ConsensusError::BlockNotFound(hash))?;
+        if let Some(indices) = indices {
+            if transactions.len() < indices.len() {
+                return Err(ConsensusError::TransactionQueryTooLarge(indices.len(), hash, transactions.len()));
+            }
+            Ok(Arc::new(indices.into_iter().map(|index| *transactions.get(index as usize).unwrap_or(ConsensusError::TransactionIndexOutOfBounds(index, transactions.len(), hash))?).collect_vec()))
+        } else {
+            Ok(transactions)
+        }
     }
 
     fn get_block_even_if_header_only(&self, hash: Hash) -> ConsensusResult<Block> {
