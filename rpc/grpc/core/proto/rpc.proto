@@ -878,7 +878,7 @@ message GetDaaScoreTimestampEstimateRequestMessage {
   repeated uint64 daaScores = 1;
 }
 
-message GetDaaScoreTimestampEstimateResponseMessage{
+message GetDaaScoreTimestampEstimateResponseMessage {
   repeated uint64 timestamps = 1;
   RPCError error = 1000;
 }
@@ -939,13 +939,13 @@ message GetFeeEstimateExperimentalResponseMessage {
   RPCError error = 1000;
 }
 
-message GetCurrentBlockColorRequestMessage {
-  string hash = 1;
+message GetUtxoReturnAddressRequestMessage {
+  string txid = 1;
+  uint64 accepting_block_daa_score = 2;
 }
 
-message GetCurrentBlockColorResponseMessage {
-  bool blue = 1;
-
+message GetUtxoReturnAddressResponseMessage {
+  string return_address = 1;
   RPCError error = 1000;
 }
 
@@ -1094,59 +1094,5 @@ message GetVirtualChainFromBlockV2ResponseMessage{
   // Will be filled dependent on the supplied RpcAcceptanceDataVerbosity.
   repeated RpcAcceptanceData addedAcceptanceData = 3;
 
-  RPCError error = 1000;
-}
-
-// NotifyVirtualChainChangedRequestV2Message registers this connection for virtualChainChangedV2 notifications.
-//
-// See: VirtualChainChangedNotificationMessage
-message NotifyVirtualChainChangedV2RequestMessage{
-  optional RpcAcceptanceDataVerbosity acceptanceDataVerbosity = 1; // holds switches for the verbosity of the acceptance data, if null only added & removed chain blocks will be retrieved.
-  
-  RpcNotifyCommand command = 101;
-}
-
-message NotifyVirtualChainChangedV2ResponseMessage{
-  RPCError error = 1000;
-}
-
-// VirtualChainChangedNotificationMessage is sent whenever the DAG's selected parent
-// chain had changed.
-//
-// See: NotifyVirtualChainChangedRequestMessage
-message VirtualChainChangedV2NotificationMessage{
-  // The chain blocks that were removed, in high-to-low order
-  repeated string removedChainBlockHashes = 1;
-
-  // The chain blocks that were added, in low-to-high order
-  repeated string addedChainBlockHashes = 2;
-
-  // The mergeset data accepted by each block in addedChainBlockHashes.
-  // Will be filled dependent on the supplied RpcAcceptanceDataVerbosity.
-  repeated RpcAcceptanceData addedAcceptanceData = 3;
-}
-
-// ### messages for new GetTransaction endpoint ###
-message TransactionAcceptanceLocator {
-  repeated string transactionIds = 1;
-  string acceptingChainBlock = 2;
-}
-
-message TransactionInclusionLocator {
-  string includingBlockHash = 1;
-  repeated uint32 indicesWithinBlock = 2;
-}
-
-message GetTransactionsRequestMessage {
-  oneof transactionLocator {
-    TransactionAcceptanceLocator byAcceptance = 1;
-    TransactionInclusionLocator byInclusition = 2;
-  }
-  RpcTransactionVerbosity verbosity = 3;
-}
-
-message GetTransactionsResponseMessage {
-  repeated RpcTransaction transaction = 1;
-  
   RPCError error = 1000;
 }
