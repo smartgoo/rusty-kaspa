@@ -86,6 +86,26 @@ where
         })
     }
 
+    pub fn iterator_read_only(&self) -> impl Iterator<Item = KeyDataResult<TData>> + '_
+    where
+        TKey: Clone + AsRef<[u8]>,
+        TData: DeserializeOwned, // We need `DeserializeOwned` since the slice coming from `db.get_pinned` has short lifetime
+    {
+        let prefix_key = DbKey::prefix_only(&self.prefix);
+        let mut read_opts = ReadOptions::default();
+        read_opts.set_iterate_range(rocksdb::PrefixRange(prefix_key.as_ref()));
+        read_opts.set_verify_checksums(false);
+        self.db.iterator_opt(IteratorMode::From(prefix_key.as_ref(), Direction::Forward), read_opts).map(move |iter_result| {
+            match iter_result {
+                Ok((key, data_bytes)) => match bincode::deserialize(&data_bytes) {
+                    Ok(data) => Ok((key[prefix_key.prefix_len()..].into(), data)),
+                    Err(e) => Err(e.into()),
+                },
+                Err(e) => Err(e.into()),
+            }
+        })
+    }
+
     pub fn write(&self, mut writer: impl DbWriter, key: TKey, data: TData) -> Result<(), StoreError>
     where
         TKey: Clone + AsRef<[u8]>,
