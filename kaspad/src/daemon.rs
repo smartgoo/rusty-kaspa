@@ -300,16 +300,16 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
                 let headers_store = DbHeadersStore::new(consensus_db, CachePolicy::Empty, CachePolicy::Empty);
 
                 if headers_store.has(config.genesis.hash).unwrap() {
-                    info!("Genesis is found in active consensus DB. No action needed.");
+                    debug!("Genesis is found in active consensus DB. No action needed.");
                 } else {
-                    let msg = "Genesis not found in active consensus DB. This happens when Testnet 11 is restarted and your database needs to be fully deleted. Do you confirm the delete? (y/n)";
+                    let msg = "Genesis not found in active consensus DB. This happens when Testnets are restarted and your database needs to be fully deleted. Do you confirm the delete? (y/n)";
                     get_user_approval_or_exit(msg, args.yes);
 
                     is_db_reset_needed = true;
                 }
             }
             None => {
-                info!("Consensus not initialized yet. Skipping genesis check.");
+                debug!("Consensus not initialized yet. Skipping genesis check.");
             }
         }
     }
@@ -454,8 +454,9 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
     let connect_peers = args.connect_peers.iter().map(|x| x.normalize(config.default_p2p_port())).collect::<Vec<_>>();
     let add_peers = args.add_peers.iter().map(|x| x.normalize(config.default_p2p_port())).collect();
     let p2p_server_addr = args.listen.unwrap_or(ContextualNetAddress::unspecified()).normalize(config.default_p2p_port());
-    // connect_peers means no DNS seeding and no outbound peers
+    // connect_peers means no DNS seeding and no outbound/inbound peers
     let outbound_target = if connect_peers.is_empty() { args.outbound_target } else { 0 };
+    let inbound_limit = if connect_peers.is_empty() { args.inbound_limit } else { 0 };
     let dns_seeders = if connect_peers.is_empty() && !args.disable_dns_seeding { config.dns_seeders } else { &[] };
 
     let grpc_server_addr = args.rpclisten.unwrap_or(ContextualNetAddress::loopback()).normalize(config.default_rpc_port());
@@ -527,15 +528,20 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
     let (address_manager, port_mapping_extender_svc) = AddressManager::new(config.clone(), meta_db, tick_service.clone());
 
     let mining_manager = MiningManagerProxy::new(Arc::new(MiningManager::new_with_extended_config(
-        config.target_time_per_block,
+        config.target_time_per_block(),
         false,
         config.max_block_mass,
         config.ram_scale,
         config.block_template_cache_lifetime,
         mining_counters.clone(),
     )));
-    let mining_monitor =
-        Arc::new(MiningMonitor::new(mining_manager.clone(), mining_counters, tx_script_cache_counters.clone(), tick_service.clone()));
+    let mining_monitor = Arc::new(MiningMonitor::new(
+        mining_manager.clone(),
+        consensus_manager.clone(),
+        mining_counters,
+        tx_script_cache_counters.clone(),
+        tick_service.clone(),
+    ));
 
     let flow_context = Arc::new(FlowContext::new(
         consensus_manager.clone(),
@@ -551,7 +557,7 @@ do you confirm? (answer y/n or pass --yes to the Kaspad command line to confirm 
         add_peers,
         p2p_server_addr,
         outbound_target,
-        args.inbound_limit,
+        inbound_limit,
         dns_seeders,
         config.default_p2p_port(),
         p2p_tower_counters.clone(),
