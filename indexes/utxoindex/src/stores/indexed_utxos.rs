@@ -60,7 +60,7 @@ pub const TRANSACTION_OUTPOINT_KEY_SIZE: usize = kaspa_hashes::HASH_SIZE + size_
 /// [TransactionOutpoint] key which references the [CompactUtxoEntry] within a [ScriptPublicKeyBucket]
 /// Consists of 32 bytes of [TransactionId], followed by 4 bytes of little endian [TransactionIndexType]
 #[derive(Eq, Hash, PartialEq, Debug, Copy, Clone)]
-struct TransactionOutpointKey([u8; TRANSACTION_OUTPOINT_KEY_SIZE]);
+pub struct TransactionOutpointKey([u8; TRANSACTION_OUTPOINT_KEY_SIZE]);
 
 impl From<TransactionOutpointKey> for TransactionOutpoint {
     fn from(key: TransactionOutpointKey) -> Self {

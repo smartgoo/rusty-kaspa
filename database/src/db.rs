@@ -17,6 +17,12 @@ impl DB {
     pub fn new(inner: DBWithThreadMode<MultiThreaded>, fd_guard: FDGuard) -> Self {
         Self { inner, _fd_guard: fd_guard }
     }
+
+    pub fn try_catchup_with_primary(&self) -> Result<(), Error> {
+        self.inner.try_catch_up_with_primary()?;
+
+        Ok(())
+    }
 }
 
 impl DerefMut for DB {

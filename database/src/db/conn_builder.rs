@@ -119,9 +119,7 @@ impl ConnBuilder<PathBuf, false, Unspecified, i32> {
     }
 
     pub fn build_readonly(self) -> Result<Arc<DB>, kaspa_utils::fd_budget::Error> {
-        let (mut opts, guard) = default_opts!(self)?;
-        opts.create_if_missing(false);
-
+        let (opts, guard) = default_opts!(self)?;
         let db = Arc::new(DB::new(
             <DBWithThreadMode<MultiThreaded>>::open_for_read_only(&opts, self.db_path.to_str().unwrap(), false).unwrap(),
             guard,
