@@ -88,6 +88,8 @@ pub enum KaspadPayloadOps {
     GetFeeEstimateExperimental,
     GetCurrentBlockColor,
     GetUtxoReturnAddress,
+    GetVirtualChainFromBlockV2,
+    GetTransactions,
 
     // Subscription commands for starting/stopping notifications
     NotifyBlockAdded,
@@ -98,6 +100,7 @@ pub enum KaspadPayloadOps {
     NotifyPruningPointUtxoSetOverride,
     NotifyVirtualDaaScoreChanged,
     NotifyVirtualChainChanged,
+    NotifyVirtualChainChangedV2,
 
     // Legacy stop subscription commands
     StopNotifyingUtxosChanged,

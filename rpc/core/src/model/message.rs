@@ -2729,6 +2729,123 @@ impl Deserializer for GetUtxoReturnAddressResponse {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetVirtualChainFromBlockV2Request {
+    pub start_hash: RpcHash,
+    pub acceptance_data_verbosity: Option<RpcAcceptanceDataVerbosity>,
+}
+
+impl GetVirtualChainFromBlockV2Request {
+    pub fn new(start_hash: RpcHash, acceptance_data_verbosity: Option<RpcAcceptanceDataVerbosity>) -> Self {
+        Self { start_hash, acceptance_data_verbosity }
+    }
+}
+
+impl Serializer for GetVirtualChainFromBlockV2Request {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u16, &1, writer)?;
+        store!(RpcHash, &self.start_hash, writer)?;
+        serialize!(Option<RpcAcceptanceDataVerbosity>, &self.acceptance_data_verbosity, writer)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializer for GetVirtualChainFromBlockV2Request {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u16, reader)?;
+        let start_hash = load!(RpcHash, reader)?;
+        let acceptance_data_verbosity = deserialize!(Option<RpcAcceptanceDataVerbosity>, reader)?;
+
+        Ok(Self { start_hash, acceptance_data_verbosity })
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetVirtualChainFromBlockV2Response {
+    pub removed_chain_block_hashes: Arc<Vec<RpcHash>>,
+    pub added_chain_block_hashes: Arc<Vec<RpcHash>>,
+    pub added_acceptance_data: Arc<Vec<RpcAcceptanceData>>,
+}
+
+impl Serializer for GetVirtualChainFromBlockV2Response {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u16, &1, writer)?;
+        store!(Vec<RpcHash>, &self.removed_chain_block_hashes, writer)?;
+        store!(Vec<RpcHash>, &self.added_chain_block_hashes, writer)?;
+        serialize!(Vec<RpcAcceptanceData>, &self.added_acceptance_data, writer)?;
+        Ok(())
+    }
+}
+
+impl Deserializer for GetVirtualChainFromBlockV2Response {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u16, reader)?;
+        let removed_chain_block_hashes = load!(Vec<RpcHash>, reader)?;
+        let added_chain_block_hashes = load!(Vec<RpcHash>, reader)?;
+        let added_acceptance_data = deserialize!(Vec<RpcAcceptanceData>, reader)?;
+        Ok(Self {
+            removed_chain_block_hashes: removed_chain_block_hashes.into(),
+            added_chain_block_hashes: added_chain_block_hashes.into(),
+            added_acceptance_data: added_acceptance_data.into(),
+        })
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetTransactionsRequest {
+    pub transaction_locator: RpcTransactionLocator,
+    pub transaction_verbosity: Option<RpcTransactionVerbosity>,
+}
+
+impl GetTransactionsRequest {
+    pub fn new(transaction_locator: RpcTransactionLocator, transaction_verbosity: Option<RpcTransactionVerbosity>) -> Self {
+        Self { transaction_locator, transaction_verbosity }
+    }
+}
+
+impl Serializer for GetTransactionsRequest {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u16, &1, writer)?;
+        serialize!(RpcTransactionLocator, &self.transaction_locator, writer)?;
+        serialize!(Option<RpcTransactionVerbosity>, &self.transaction_verbosity, writer)?;
+        Ok(())
+    }
+}
+
+impl Deserializer for GetTransactionsRequest {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u16, reader)?;
+        let transaction_locator = deserialize!(RpcTransactionLocator, reader)?;
+        let transaction_verbosity = deserialize!(Option<RpcTransactionVerbosity>, reader)?;
+        Ok(Self { transaction_locator, transaction_verbosity })
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GetTransactionsResponse {
+    pub transactions: Arc<Vec<RpcTransaction>>,
+}
+
+impl Serializer for GetTransactionsResponse {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u16, &1, writer)?;
+        serialize!(Vec<RpcTransaction>, &self.transactions, writer)?;
+        Ok(())
+    }
+}
+
+impl Deserializer for GetTransactionsResponse {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u16, reader)?;
+        let transactions = deserialize!(Vec<RpcTransaction>, reader)?;
+        Ok(Self { transactions: transactions.into() })
+    }
+}
 // ----------------------------------------------------------------------------
 // Subscriptions & notifications
 // ----------------------------------------------------------------------------
@@ -3458,6 +3575,86 @@ impl Deserializer for NewBlockTemplateNotification {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u16, reader)?;
         Ok(Self {})
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NotifyVirtualChainChangedV2Request {
+    pub acceptance_data_verbosity: Option<RpcAcceptanceDataVerbosity>,
+    pub command: Command,
+}
+
+impl NotifyVirtualChainChangedV2Request {
+    pub fn new(acceptance_data_verbosity: Option<RpcAcceptanceDataVerbosity>, command: Command) -> Self {
+        Self { acceptance_data_verbosity, command }
+    }
+}
+
+impl Serializer for NotifyVirtualChainChangedV2Request {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u16, &1, writer)?;
+        serialize!(Option<RpcAcceptanceDataVerbosity>, &self.acceptance_data_verbosity, writer)?;
+        store!(Command, &self.command, writer)?;
+        Ok(())
+    }
+}
+
+impl Deserializer for NotifyVirtualChainChangedV2Request {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u16, reader);
+        let acceptance_data_verbosity = deserialize!(Option<RpcAcceptanceDataVerbosity>, reader)?;
+        let command = load!(Command, reader)?;
+        Ok(Self { acceptance_data_verbosity, command })
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NotifyVirtualChainChangedV2Response {}
+
+impl Serializer for NotifyVirtualChainChangedV2Response {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u16, &1, writer)
+    }
+}
+
+impl Deserializer for NotifyVirtualChainChangedV2Response {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u16, reader);
+        Ok(Self {})
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VirtualChainChangedV2Notification {
+    pub removed_chain_block_hashes: Arc<Vec<RpcHash>>,
+    pub added_chain_block_hashes: Arc<Vec<RpcHash>>,
+    pub added_acceptance_data: Arc<Vec<RpcAcceptanceData>>,
+}
+
+impl Serializer for VirtualChainChangedV2Notification {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u16, &1, writer)?;
+        store!(Vec<RpcHash>, &self.removed_chain_block_hashes, writer)?;
+        store!(Vec<RpcHash>, &self.added_chain_block_hashes, writer)?;
+        serialize!(Vec<RpcAcceptanceData>, &self.added_acceptance_data, writer)?;
+        Ok(())
+    }
+}
+
+impl Deserializer for VirtualChainChangedV2Notification {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u16, reader)?;
+        let removed_chain_block_hashes = load!(Vec<RpcHash>, reader)?;
+        let added_chain_block_hashes = load!(Vec<RpcHash>, reader)?;
+        let added_acceptance_data = deserialize!(Vec<RpcAcceptanceData>, reader)?;
+        Ok(Self {
+            removed_chain_block_hashes: removed_chain_block_hashes.into(),
+            added_chain_block_hashes: added_chain_block_hashes.into(),
+            added_acceptance_data: added_acceptance_data.into(),
+        })
     }
 }
 

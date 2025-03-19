@@ -1,13 +1,9 @@
-use kaspa_consensus_client::{Header, Transaction};
-use kaspa_consensus_core::acceptance_data::{AcceptanceData, MergesetBlockAcceptanceData};
-use kaspa_hashes::Hash;
 use serde::{Deserialize, Serialize};
 use workflow_serializer::prelude::*;
-use crate::prelude::{RpcBlockHeader, RpcTransaction};
 
-use super::{RpcBlockHeaderVerbosity, RpcTransactionVerbosity};
+use super::{RpcHash, RpcHeader, RpcHeaderVerbosity, RpcTransaction, RpcTransactionVerbosity};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct RpcAcceptanceData {
     pub accepting_blue_score: Option<u64>,
@@ -15,181 +11,142 @@ pub struct RpcAcceptanceData {
 }
 
 impl RpcAcceptanceData {
-    pub fn new(
-        accepting_blue_score: Option<u64>,
-        mergeset_block_acceptance_data: Vec<RpcMergesetBlockAcceptanceData>,
-    ) -> Self {
-        Self {
-            accepting_blue_score,
-            mergeset_block_acceptance_data,
-        }
+    pub fn new(accepting_blue_score: Option<u64>, mergeset_block_acceptance_data: Vec<RpcMergesetBlockAcceptanceData>) -> Self {
+        Self { accepting_blue_score, mergeset_block_acceptance_data }
     }
 }
 
-impl Serialize for RpcAcceptanceData {
+impl Serializer for RpcAcceptanceData {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        store!(u8, &1, writer);
-        store!(Option<u64>, &self.accepting_blue_score, writer);
-        store!(Option<RpcBlockHeader>, &self.accepting_chain_block_header, writer);
-        store!(Vec<RpcMergesetBlockAcceptanceData>, &self.mergeset_block_acceptance_data, writer);
+        store!(u8, &1, writer)?;
+        store!(Option<u64>, &self.accepting_blue_score, writer)?;
+        serialize!(Vec<RpcMergesetBlockAcceptanceData>, &self.mergeset_block_acceptance_data, writer)?;
 
         Ok(())
     }
 }
 
-impl Deserialize for RpcAcceptanceData {
+impl Deserializer for RpcAcceptanceData {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u8, reader);
         let accepting_blue_score = load!(Option<u64>, reader)?;
-        let accepting_chain_block_header = load!(Option<RpcBlockHeader>, reader)?;
-        let mergeset_block_acceptance_data = load!(Vec<RpcMergesetBlockAcceptanceData>, reader)?;
+        let mergeset_block_acceptance_data = deserialize!(Vec<RpcMergesetBlockAcceptanceData>, reader)?;
 
-        Ok(Self {
-            accepting_blue_score,
-            mergeset_block_acceptance_data,
-        })
+        Ok(Self { accepting_blue_score, mergeset_block_acceptance_data })
     }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpcMergesetBlockAcceptanceData {
-    pub hash: Option<String>,
-    pub header: Option<RpcBlockHeader>,
+    pub hash: Option<RpcHash>,
+    pub header: Option<RpcHeader>,
     pub accepted_transactions: Vec<RpcTransaction>,
 }
 
 impl RpcMergesetBlockAcceptanceData {
     #[inline(always)]
-    pub fn new(
-        hash: Option<String>,
-        header: Option<RpcBlockHeader>,
-        accepted_transactions: Vec<RpcTransaction>,
-    ) -> Self {
-        Self {
-            hash,
-            header,
-            accepted_transactions,
-        }
+    pub fn new(hash: Option<RpcHash>, header: Option<RpcHeader>, accepted_transactions: Vec<RpcTransaction>) -> Self {
+        Self { hash, header, accepted_transactions }
     }
 }
 
-impl Serialize for RpcMergesetBlockAcceptanceData {
+impl Serializer for RpcMergesetBlockAcceptanceData {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        store(u8, &1, writer);
+        store!(u8, &1, writer)?;
 
-        store!(Option<String>, &self.hash, writer);
-        store!(Option<RpcBlockHeader>, &self.header, writer);
-        store!(Vec<RpcTransaction>, &self.accepted_transactions, writer);
+        store!(Option<RpcHash>, &self.hash, writer)?;
+        store!(Option<RpcHeader>, &self.header, writer)?;
+        serialize!(Vec<RpcTransaction>, &self.accepted_transactions, writer)?;
 
         Ok(())
     }
 }
 
-impl Deserialize for RpcMergesetBlockAcceptanceData {
+impl Deserializer for RpcMergesetBlockAcceptanceData {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u8, reader);
 
-        let hash = load!(Option<String>, reader)?;
-        let header = load!(Option<RpcBlockHeader>, reader)?;
-        let accepted_transactions = load!(Vec<RpcTransaction>, reader)?;
+        let hash = load!(Option<RpcHash>, reader)?;
+        let header = load!(Option<RpcHeader>, reader)?;
+        let accepted_transactions = deserialize!(Vec<RpcTransaction>, reader)?;
 
-        Ok(Self {
-            hash,
-            header,
-            accepted_transactions,
-        })
+        Ok(Self { hash, header, accepted_transactions })
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RpcAcceptanceDataVerbosity {
-    pub include_accepting_blue_score: bool,
-    pub accepting_chain_block_header_verbosity: Option<RpcBlockHeaderVerbosity>,
-    pub mergeset_block_acceptance_verbosity: Option<RpcMergesetBlockAcceptanceVerbosity>,
+    pub include_accepting_blue_score: Option<bool>,
+    pub mergeset_block_acceptance_data_verbosity: Option<RpcMergesetBlockAcceptanceDataVerbosity>,
 }
 
 impl RpcAcceptanceDataVerbosity {
     pub fn new(
-        include_accepting_blue_score: bool,
-        accepting_chain_block_header_verbosity: Option<RpcBlockHeaderVerbosity>,
-        mergeset_block_acceptance_verbosity: Option<RpcMergesetBlockAcceptanceVerbosity>,
+        include_accepting_blue_score: Option<bool>,
+        mergeset_block_acceptance_data_verbosity: Option<RpcMergesetBlockAcceptanceDataVerbosity>,
     ) -> Self {
-        Self {
-            include_accepting_blue_score,
-            accepting_chain_block_header_verbosity,
-            mergeset_block_acceptance_verbosity,
-        }
+        Self { include_accepting_blue_score, mergeset_block_acceptance_data_verbosity }
     }
 }
 
-impl Serialize for RpcAcceptanceDataVerbosity {
+impl Serializer for RpcAcceptanceDataVerbosity {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        store!(u8, &1, writer);
-        store!(bool, &self.include_accepting_blue_score, writer);
-        serialize!(Option<RpcBlockHeaderVerbosity>, &self.accepting_chain_block_header_verbosity, writer);
-        serialize!(Option<RpcMergesetBlockAcceptanceVerbosity>, &self.mergeset_block_acceptance_verbosity, writer);
+        store!(u8, &1, writer)?;
+        store!(Option<bool>, &self.include_accepting_blue_score, writer)?;
+        serialize!(Option<RpcMergesetBlockAcceptanceDataVerbosity>, &self.mergeset_block_acceptance_data_verbosity, writer)?;
 
         Ok(())
     }
 }
 
-impl Deserialize for RpcAcceptanceDataVerbosity {
+impl Deserializer for RpcAcceptanceDataVerbosity {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u8, reader);
-        let include_accepting_blue_score = load!(bool, reader)?;
-        let accepting_chain_block_header_verbosity = deserialize!(Option<RpcBlockHeaderVerbosity>, reader)?;
-        let mergeset_block_acceptance_verbosity = deserialize!(Option<RpcMergesetBlockAcceptanceVerbosity>, reader)?;
+        let include_accepting_blue_score = load!(Option<bool>, reader)?;
+        let mergeset_block_acceptance_data_verbosity = deserialize!(Option<RpcMergesetBlockAcceptanceDataVerbosity>, reader)?;
 
-        Ok(Self {
-            include_accepting_blue_score,
-            accepting_chain_block_header_verbosity,
-            mergeset_block_acceptance_verbosity,
-        })
+        Ok(Self { include_accepting_blue_score, mergeset_block_acceptance_data_verbosity })
     }
 }
 
-pub struct RpcMergesetBlockAcceptanceVerbosity {
-    pub include_hash: bool,
-    pub header_verbosity: Option<RpcBlockHeaderVerbosity>,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcMergesetBlockAcceptanceDataVerbosity {
+    pub include_hash: Option<bool>,
+    pub header_verbosity: Option<RpcHeaderVerbosity>,
     pub accepted_transactions_verbosity: Option<RpcTransactionVerbosity>,
 }
 
-impl RpcMergesetBlockAcceptanceVerbosity {
+impl RpcMergesetBlockAcceptanceDataVerbosity {
     pub fn new(
-        include_hash: bool,
-        header_verbosity: Option<RpcBlockHeaderVerbosity>,
+        include_hash: Option<bool>,
+        header_verbosity: Option<RpcHeaderVerbosity>,
         accepted_transactions_verbosity: Option<RpcTransactionVerbosity>,
     ) -> Self {
-        Self {
-            include_hash,
-            header_verbosity,
-            accepted_transactions_verbosity,
-        }
+        Self { include_hash, header_verbosity, accepted_transactions_verbosity }
     }
 }
 
-impl Serialize for RpcMergesetBlockAcceptanceVerbosity {
+impl Serializer for RpcMergesetBlockAcceptanceDataVerbosity {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        store!(u8, &1, writer);
-        store!(bool, &self.include_hash, writer);
-        serialize!(Option<RpcBlockHeaderVerbosity>, &self.header_verbosity, writer);
-        serialize!(Option<RpcTransactionVerbosity>, &self.accepted_transactions_verbosity, writer);
+        store!(u8, &1, writer)?;
+        store!(Option<bool>, &self.include_hash, writer)?;
+        serialize!(Option<RpcHeaderVerbosity>, &self.header_verbosity, writer)?;
+        serialize!(Option<RpcTransactionVerbosity>, &self.accepted_transactions_verbosity, writer)?;
 
         Ok(())
     }
 }
 
-impl Deserialize for RpcMergesetBlockAcceptanceVerbosity {
+impl Deserializer for RpcMergesetBlockAcceptanceDataVerbosity {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
-        let _version = load!(u8, reader);
-        let include_hash = load!(bool, reader)?;
-        let header_verbosity = deserialize!(Option<RpcBlockHeaderVerbosity>, reader)?;
+        let _version = load!(u8, reader)?;
+        let include_hash = load!(Option<bool>, reader)?;
+        let header_verbosity = deserialize!(Option<RpcHeaderVerbosity>, reader)?;
         let accepted_transactions_verbosity = deserialize!(Option<RpcTransactionVerbosity>, reader)?;
 
-        Ok(Self {
-            include_hash,
-            header_verbosity,
-            accepted_transactions_verbosity,
-        })
+        Ok(Self { include_hash, header_verbosity, accepted_transactions_verbosity })
     }
 }

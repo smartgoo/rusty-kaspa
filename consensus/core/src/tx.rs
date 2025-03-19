@@ -535,21 +535,20 @@ impl MutableTransaction {
 /// and can also be modified internally and signed etc.
 pub type SignableTransaction = MutableTransaction<Transaction>;
 
-
 /// used to locate a transaction in the DAG
-#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum TransactionLocator {
-    ByAcceptance(&TransactionAcceptanceLocator),
-    ByInclusion(&TransactionInclusionLocator),
+    ByAcceptance(TransactionAcceptanceLocator),
+    ByInclusion(TransactionInclusionLocator),
 }
 
-/// Represents a Kaspa transaction location querable by accepting chain block. 
+/// Represents a Kaspa transaction location querable by accepting chain block.
 #[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionAcceptanceLocator {
-    pub chain_block: Hash,
-    pub transaction_ids: Vec<TransactionId>,
+    pub accepting_chain_block: Hash,
+    pub transaction_ids: Option<Vec<TransactionId>>,
 }
 
 /// Represents a Kaspa transaction location querable by inclusion within a block.
@@ -557,7 +556,7 @@ pub struct TransactionAcceptanceLocator {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionInclusionLocator {
     pub block_hash: Hash,
-    pub indices_within_block: Vec<TransactionIndexType>,
+    pub indices_within_block: Option<Vec<TransactionIndexType>>,
 }
 
 #[cfg(test)]

@@ -28,7 +28,7 @@ use kaspa_rpc_core::{
     SubmitBlockRejectReason, SubmitBlockReport,
 };
 use kaspa_utils::hex::*;
-use std::str::FromStr;
+use std::{str::FromStr, sync::Arc};
 
 macro_rules! from {
     // Response capture
@@ -264,10 +264,11 @@ from!(item: RpcResult<&kaspa_rpc_core::GetSubnetworkResponse>, protowire::GetSub
     Self { gas_limit: item.gas_limit, error: None }
 });
 
-// ~~~
-
 from!(item: &kaspa_rpc_core::GetVirtualChainFromBlockRequest, protowire::GetVirtualChainFromBlockRequestMessage, {
-    Self { start_hash: item.start_hash.to_string(), include_accepted_transaction_ids: item.include_accepted_transaction_ids }
+    Self {
+        start_hash: item.start_hash.to_string(),
+        include_accepted_transaction_ids: item.include_accepted_transaction_ids
+    }
 });
 from!(item: RpcResult<&kaspa_rpc_core::GetVirtualChainFromBlockResponse>, protowire::GetVirtualChainFromBlockResponseMessage, {
     Self {
@@ -518,6 +519,33 @@ from!(item: RpcResult<&kaspa_rpc_core::GetSyncStatusResponse>, protowire::GetSyn
     }
 });
 
+from!(item: &kaspa_rpc_core::GetVirtualChainFromBlockV2Request, protowire::GetVirtualChainFromBlockV2RequestMessage, {
+    Self {
+        start_hash: item.start_hash.to_string(),
+        acceptance_data_verbosity: item.acceptance_data_verbosity.as_ref().map(|x| x.into())
+    }
+});
+
+from!(item: RpcResult<&kaspa_rpc_core::GetVirtualChainFromBlockV2Response>, protowire::GetVirtualChainFromBlockV2ResponseMessage, {
+    Self {
+        removed_chain_block_hashes: item.removed_chain_block_hashes.iter().map(|x| x.to_string()).collect(),
+        added_chain_block_hashes: item.added_chain_block_hashes.iter().map(|x| x.to_string()).collect(),
+        added_acceptance_data: item.added_acceptance_data.iter().map(|x| x.into()).collect(),
+        error: None,
+    }
+});
+
+from!(item: &kaspa_rpc_core::GetTransactionsRequest, protowire::GetTransactionsRequestMessage, {
+    Self { transaction_locator: Some((&item.transaction_locator).into()), transaction_verbosity: item.transaction_verbosity.as_ref().map(|x| x.into()) }
+});
+
+from!(item: RpcResult<&kaspa_rpc_core::GetTransactionsResponse>, protowire::GetTransactionsResponseMessage, {
+    Self {
+        transactions: item.transactions.iter().map(|x| x.into()).collect(),
+        error: None,
+    }
+});
+
 from!(item: &kaspa_rpc_core::NotifyUtxosChangedRequest, protowire::NotifyUtxosChangedRequestMessage, {
     Self { addresses: item.addresses.iter().map(|x| x.into()).collect(), command: item.command.into() }
 });
@@ -559,6 +587,12 @@ from!(item: &kaspa_rpc_core::NotifySinkBlueScoreChangedRequest, protowire::Notif
     Self { command: item.command.into() }
 });
 from!(RpcResult<&kaspa_rpc_core::NotifySinkBlueScoreChangedResponse>, protowire::NotifySinkBlueScoreChangedResponseMessage);
+
+from!(item: &kaspa_rpc_core::NotifyVirtualChainChangedV2Request, protowire::NotifyVirtualChainChangedV2RequestMessage, {
+    Self { acceptance_data_verbosity: item.acceptance_data_verbosity.as_ref().map(|x| x.into()), command: item.command.into() }
+});
+
+from!(RpcResult<&kaspa_rpc_core::NotifyVirtualChainChangedV2Response>, protowire::NotifyVirtualChainChangedV2ResponseMessage);
 
 // ----------------------------------------------------------------------------
 // protowire to rpc_core
@@ -768,6 +802,32 @@ try_from!(item: &protowire::GetVirtualChainFromBlockResponseMessage, RpcResult<k
             .collect::<Result<Vec<_>, _>>()?,
         added_chain_block_hashes: item.added_chain_block_hashes.iter().map(|x| RpcHash::from_str(x)).collect::<Result<Vec<_>, _>>()?,
         accepted_transaction_ids: item.accepted_transaction_ids.iter().map(|x| x.try_into()).collect::<Result<Vec<_>, _>>()?,
+    }
+});
+
+try_from!(item: &protowire::GetVirtualChainFromBlockV2RequestMessage, kaspa_rpc_core::GetVirtualChainFromBlockV2Request, {
+    Self {
+        start_hash: RpcHash::from_str(&item.start_hash)?,
+        acceptance_data_verbosity: item.acceptance_data_verbosity.as_ref().map(|x| x.try_into()).transpose()?,
+    }
+});
+try_from!(item: &protowire::GetVirtualChainFromBlockV2ResponseMessage, RpcResult<kaspa_rpc_core::GetVirtualChainFromBlockV2Response>, {
+    Self {
+        removed_chain_block_hashes: Arc::new(item.removed_chain_block_hashes.iter().map(|x| RpcHash::from_str(x)).collect::<Result<Vec<_>, _>>()?),
+        added_chain_block_hashes: Arc::new(item.added_chain_block_hashes.iter().map(|x| RpcHash::from_str(x)).collect::<Result<Vec<_>, _>>()?),
+        added_acceptance_data: Arc::new(item.added_acceptance_data.iter().map(|x| x.try_into()).collect::<Result<Vec<_>, _>>()?),
+    }
+});
+
+try_from!(item: &protowire::GetTransactionsRequestMessage, kaspa_rpc_core::GetTransactionsRequest, {
+    Self {
+        transaction_locator: item.transaction_locator.as_ref().ok_or(RpcError::MissingRpcFieldError("GetTransactionsRequestMessage".to_string(), "transaction_locator".to_string()))?.try_into()?,
+        transaction_verbosity: item.transaction_verbosity.as_ref().map(|x| x.try_into()).transpose()?,
+    }
+});
+try_from!(item: &protowire::GetTransactionsResponseMessage, RpcResult<kaspa_rpc_core::GetTransactionsResponse>, {
+    Self {
+        transactions: Arc::new(item.transactions.iter().map(|x| x.try_into()).collect::<Result<Vec<_>, _>>()?),
     }
 });
 
@@ -1060,6 +1120,15 @@ try_from!(item: &protowire::NotifySinkBlueScoreChangedRequestMessage, kaspa_rpc_
     Self { command: item.command.into() }
 });
 try_from!(&protowire::NotifySinkBlueScoreChangedResponseMessage, RpcResult<kaspa_rpc_core::NotifySinkBlueScoreChangedResponse>);
+
+try_from!(item: &protowire::NotifyVirtualChainChangedV2RequestMessage, kaspa_rpc_core::NotifyVirtualChainChangedV2Request, {
+    Self {
+        acceptance_data_verbosity: item.acceptance_data_verbosity.as_ref().map(|x| x.try_into()).transpose()?,
+        command: item.command.into()
+    }
+});
+
+try_from!(&protowire::NotifyVirtualChainChangedV2ResponseMessage, RpcResult<kaspa_rpc_core::NotifyVirtualChainChangedV2Response>);
 
 // ----------------------------------------------------------------------------
 // Unit tests

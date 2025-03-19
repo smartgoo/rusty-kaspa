@@ -45,6 +45,7 @@ pub enum Scope {
     VirtualDaaScoreChanged,
     PruningPointUtxoSetOverride,
     NewBlockTemplate,
+    VirtualChainChangedV2,
 }
 }
 
@@ -264,5 +265,20 @@ impl Deserializer for NewBlockTemplateScope {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u16, reader)?;
         Ok(Self {})
+    }
+}
+
+#[derive(Clone, Display, Debug, Default, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+pub struct VirtualChainChangedV2Scope {} //TODO: Implement
+
+impl Serializer for VirtualChainChangedV2Scope {
+    fn serialize<W: std::io::Write>(&self, _writer: &mut W) -> std::io::Result<()> {
+        unimplemented!()
+    }
+}
+
+impl Deserializer for VirtualChainChangedV2Scope {
+    fn deserialize<R: std::io::Read>(_reader: &mut R) -> std::io::Result<Self> {
+        unimplemented!()
     }
 }

@@ -64,6 +64,8 @@ impl kaspad_request::Payload {
                     command: command.into(),
                 })
             }
+
+            Scope::VirtualChainChangedV2(_) => unimplemented!(),
         }
     }
 
@@ -79,6 +81,7 @@ impl kaspad_request::Payload {
                 | Payload::NotifyVirtualDaaScoreChangedRequest(_)
                 | Payload::NotifyPruningPointUtxoSetOverrideRequest(_)
                 | Payload::NotifyNewBlockTemplateRequest(_)
+                | Payload::NotifyVirtualChainChangedV2Request(_)
                 | Payload::StopNotifyingUtxosChangedRequest(_)
                 | Payload::StopNotifyingPruningPointUtxoSetOverrideRequest(_)
         )
@@ -108,6 +111,7 @@ impl kaspad_response::Payload {
             Payload::VirtualDaaScoreChangedNotification(_) => true,
             Payload::PruningPointUtxoSetOverrideNotification(_) => true,
             Payload::NewBlockTemplateNotification(_) => true,
+            Payload::VirtualChainChangedV2Notification(_) => true,
             _ => false,
         }
     }

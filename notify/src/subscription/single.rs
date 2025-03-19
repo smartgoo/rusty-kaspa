@@ -172,6 +172,40 @@ impl Subscription for VirtualChainChangedSubscription {
     }
 }
 
+/// Subscription to VirtualChainChangedV2 notifications
+#[derive(Eq, PartialEq, Hash, Clone, Debug, Default)]
+pub struct VirtualChainChangedV2Subscription {
+    //TODO: implement
+}
+
+impl Subscription for VirtualChainChangedV2Subscription {
+    #[inline(always)]
+    fn event_type(&self) -> EventType {
+        EventType::VirtualChainChangedV2
+    }
+
+    #[inline(always)]
+    fn active(&self) -> bool {
+        unimplemented!()
+    }
+
+    fn scope(&self, _context: &SubscriptionContext) -> Scope {
+        unimplemented!()
+    }
+}
+
+impl Single for VirtualChainChangedV2Subscription {
+    fn apply_mutation(
+        &self,
+        _: &Arc<dyn Single>,
+        _: Mutation,
+        _: MutationPolicies,
+        _: &SubscriptionContext,
+    ) -> Result<MutationOutcome> {
+        unimplemented!()
+    }
+}
+
 static UTXOS_CHANGED_SUBSCRIPTIONS: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

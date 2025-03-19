@@ -802,23 +802,30 @@ NOTE: This error usually indicates an RPC conversion error between the node and 
     ) -> RpcResult<GetUtxoReturnAddressResponse> {
         let session = self.consensus_manager.consensus().session().await;
 
-        match session.async_get_populated_transaction(request.txid, request.accepting_block_daa_score).await {
-            Ok(tx) => {
-                if tx.tx.inputs.is_empty() || tx.entries.is_empty() {
-                    return Err(RpcError::UtxoReturnAddressNotFound(UtxoInquirerError::TxFromCoinbase));
+        match session
+            .async_get_populated_transactions_by_accepting_daa_score(Some(vec![request.txid]), request.accepting_block_daa_score)
+            .await
+        {
+            Ok(txs) => {
+                if txs.is_empty() {
+                    return Err(RpcError::ConsensusError(UtxoInquirerError::TransactionNotFound.into()));
+                };
+
+                if txs[0].tx.inputs.is_empty() || txs[0].entries.is_empty() {
+                    return Err(RpcError::ConsensusError(UtxoInquirerError::TxFromCoinbase.into()));
                 }
 
-                if let Some(utxo_entry) = &tx.entries[0] {
+                if let Some(utxo_entry) = &txs[0].entries[0] {
                     if let Ok(address) = extract_script_pub_key_address(&utxo_entry.script_public_key, self.config.prefix()) {
                         Ok(GetUtxoReturnAddressResponse { return_address: address })
                     } else {
-                        Err(RpcError::UtxoReturnAddressNotFound(UtxoInquirerError::NonStandard))
+                        Err(RpcError::ConsensusError(UtxoInquirerError::NonStandard.into()))
                     }
                 } else {
-                    Err(RpcError::UtxoReturnAddressNotFound(UtxoInquirerError::UnfilledUtxoEntry))
+                    Err(RpcError::ConsensusError(UtxoInquirerError::UnfilledUtxoEntry.into()))
                 }
             }
-            Err(error) => return Err(RpcError::UtxoReturnAddressNotFound(error)),
+            Err(error) => Err(error.into()),
         }
     }
 
@@ -1142,6 +1149,22 @@ NOTE: This error usually indicates an RPC conversion error between the node and 
         let session = self.consensus_manager.consensus().unguarded_session();
         let is_synced: bool = self.has_sufficient_peer_connectivity() && session.async_is_nearly_synced().await;
         Ok(GetSyncStatusResponse { is_synced })
+    }
+
+    async fn get_virtual_chain_from_block_v_2_call(
+        &self,
+        _connection: Option<&DynRpcConnection>,
+        _request: GetVirtualChainFromBlockV2Request,
+    ) -> RpcResult<GetVirtualChainFromBlockV2Response> {
+        unimplemented!()
+    }
+
+    async fn get_transactions_call(
+        &self,
+        _connection: Option<&DynRpcConnection>,
+        _request: GetTransactionsRequest,
+    ) -> RpcResult<GetTransactionsResponse> {
+        unimplemented!()
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

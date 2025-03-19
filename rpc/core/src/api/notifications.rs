@@ -9,7 +9,7 @@ use kaspa_notify::{
     notification::{full_featured, Notification as NotificationTrait},
     subscription::{
         context::SubscriptionContext,
-        single::{OverallSubscription, UtxosChangedSubscription, VirtualChainChangedSubscription},
+        single::{OverallSubscription, UtxosChangedSubscription, VirtualChainChangedSubscription, VirtualChainChangedV2Subscription},
         Subscription,
     },
 };
@@ -22,7 +22,7 @@ use workflow_wasm::serde::to_value;
 full_featured! {
 #[derive(Clone, Debug, Display, Serialize, Deserialize)]
 pub enum Notification {
-    #[display(fmt = "BlockAdded notification: block hash {}", "_0.block.header.hash")]
+    #[display(fmt = "BlockAdded notification: block hash {}", "_0.block.header.as_ref().map(|header| header.hash).expect(\"expected header to be `Some()`\")")]
     BlockAdded(BlockAddedNotification),
 
     #[display(fmt = "VirtualChainChanged notification: {} removed blocks, {} added blocks, {} accepted transactions", "_0.removed_chain_block_hashes.len()", "_0.added_chain_block_hashes.len()", "_0.accepted_transaction_ids.len()")]
@@ -48,6 +48,9 @@ pub enum Notification {
 
     #[display(fmt = "NewBlockTemplate notification")]
     NewBlockTemplate(NewBlockTemplateNotification),
+
+    #[display(fmt = "VirtualChainChanged notification: {} removed blocks, {} added blocks", "_0.removed_chain_block_hashes.len()", "_0.added_chain_block_hashes.len()")]
+    VirtualChainChangedV2(VirtualChainChangedV2Notification),
 }
 }
 
@@ -64,6 +67,7 @@ impl Notification {
             Notification::VirtualDaaScoreChanged(v) => to_value(&v),
             Notification::SinkBlueScoreChanged(v) => to_value(&v),
             Notification::VirtualChainChanged(v) => to_value(&v),
+            Notification::VirtualChainChangedV2(_v) => unimplemented!(),
         }
     }
 }
@@ -74,6 +78,14 @@ impl NotificationTrait for Notification {
             true => Some(self.clone()),
             false => None,
         }
+    }
+
+    fn apply_virtual_chain_changed_v2_subscription(
+        &self,
+        _subscription: &VirtualChainChangedV2Subscription,
+        _context: &SubscriptionContext,
+    ) -> Option<Self> {
+        unimplemented!()
     }
 
     fn apply_virtual_chain_changed_subscription(
@@ -156,6 +168,10 @@ impl Serializer for Notification {
             Notification::NewBlockTemplate(notification) => {
                 store!(u16, &8, writer)?;
                 serialize!(NewBlockTemplateNotification, notification, writer)?;
+            }
+            Notification::VirtualChainChangedV2(notification) => {
+                store!(u16, &9, writer)?;
+                serialize!(VirtualChainChangedV2Notification, notification, writer)?;
             }
         }
         Ok(())

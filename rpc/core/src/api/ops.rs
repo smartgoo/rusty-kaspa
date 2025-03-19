@@ -40,6 +40,7 @@ pub enum RpcApiOps {
     NotifyVirtualDaaScoreChanged = 16,
     NotifyVirtualChainChanged = 17,
     NotifySinkBlueScoreChanged = 18,
+    NotifyVirtualChainChangedV2 = 19,
 
     // Notification ops required by wRPC
 
@@ -54,6 +55,7 @@ pub enum RpcApiOps {
     VirtualDaaScoreChangedNotification = 66,
     PruningPointUtxoSetOverrideNotification = 67,
     NewBlockTemplateNotification = 68,
+    VirtualChainChangedV2Notification = 69,
 
     // RPC methods
     /// Ping the node to check if connection is alive
@@ -138,6 +140,12 @@ pub enum RpcApiOps {
     GetCurrentBlockColor = 149,
     /// Get UTXO Return Addresses
     GetUtxoReturnAddress = 150,
+
+    // Get Virtual Chain from Block V2
+    GetVirtualChainFromBlockV2 = 151,
+
+    // Get Transactions
+    GetTransactions = 152,
 }
 
 impl RpcApiOps {
@@ -153,6 +161,7 @@ impl RpcApiOps {
                 | RpcApiOps::NotifyFinalityConflictResolved
                 | RpcApiOps::NotifySinkBlueScoreChanged
                 | RpcApiOps::NotifyVirtualDaaScoreChanged
+                | RpcApiOps::NotifyVirtualChainChangedV2
                 | RpcApiOps::Subscribe
                 | RpcApiOps::Unsubscribe
         )
@@ -179,6 +188,7 @@ impl From<EventType> for RpcApiOps {
             EventType::VirtualDaaScoreChanged => RpcApiOps::VirtualDaaScoreChangedNotification,
             EventType::PruningPointUtxoSetOverride => RpcApiOps::PruningPointUtxoSetOverrideNotification,
             EventType::NewBlockTemplate => RpcApiOps::NewBlockTemplateNotification,
+            EventType::VirtualChainChangedV2 => RpcApiOps::VirtualChainChangedV2Notification,
         }
     }
 }

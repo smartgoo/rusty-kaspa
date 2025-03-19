@@ -6,7 +6,7 @@ use kaspa_notify::{
     notification::Notification as NotificationTrait,
     subscription::{
         context::SubscriptionContext,
-        single::{OverallSubscription, UtxosChangedSubscription, VirtualChainChangedSubscription},
+        single::{OverallSubscription, UtxosChangedSubscription, VirtualChainChangedSubscription, VirtualChainChangedV2Subscription},
         Subscription,
     },
 };
@@ -37,6 +37,14 @@ impl NotificationTrait for Notification {
         _context: &SubscriptionContext,
     ) -> Option<Self> {
         Some(self.clone())
+    }
+
+    fn apply_virtual_chain_changed_v2_subscription(
+        &self,
+        _subscription: &VirtualChainChangedV2Subscription,
+        _context: &SubscriptionContext,
+    ) -> Option<Self> {
+        unimplemented!()
     }
 
     fn apply_utxos_changed_subscription(

@@ -51,10 +51,11 @@ event_type_enum! {
         VirtualDaaScoreChanged,
         PruningPointUtxoSetOverride,
         NewBlockTemplate,
+        VirtualChainChangedV2,
     }
 }
 
-pub const EVENT_COUNT: usize = 9;
+pub const EVENT_COUNT: usize = 10;
 
 impl FromStr for EventType {
     type Err = Error;

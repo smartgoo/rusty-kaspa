@@ -12,8 +12,7 @@ use kaspa_consensus_core::{
     header::Header,
     pruning::{PruningPointProof, PruningPointTrustedData, PruningPointsList},
     trusted::{ExternalGhostdagData, TrustedBlock},
-    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionOutpoint, UtxoEntry},
-    utxo::utxo_inquirer::UtxoInquirerError,
+    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionOutpoint, UtxoEntry},
     BlockHashSet, BlueWorkType, ChainPath, Hash,
 };
 use kaspa_utils::sync::rwlock::*;
@@ -314,12 +313,26 @@ impl ConsensusSessionOwned {
         self.clone().spawn_blocking(|c| c.get_chain_block_samples()).await
     }
 
-    pub async fn async_get_populated_transaction(
+    pub async fn async_get_populated_transactions_by_accepting_daa_score(
         &self,
-        txid: Hash,
+        tx_ids: Option<Vec<TransactionId>>,
         accepting_block_daa_score: u64,
-    ) -> Result<SignableTransaction, UtxoInquirerError> {
-        self.clone().spawn_blocking(move |c| c.get_populated_transaction(txid, accepting_block_daa_score)).await
+    ) -> ConsensusResult<Vec<SignableTransaction>> {
+        self.clone()
+            .spawn_blocking(move |c| c.get_populated_transactions_by_accepting_daa_score(tx_ids, accepting_block_daa_score))
+            .await
+    }
+
+    pub async fn async_get_populated_transactions_by_accepting_block(
+        &self,
+        tx_ids: Option<Vec<TransactionId>>,
+        accepting_block_hash: Hash,
+    ) -> ConsensusResult<Vec<SignableTransaction>> {
+        self.clone().spawn_blocking(move |c| c.get_populated_transactions_by_accepting_block(tx_ids, accepting_block_hash)).await
+    }
+
+    pub async fn async_get_transactions_by_accepting_block(&self, accepting_block_hash: Hash) -> ConsensusResult<Vec<Transaction>> {
+        self.clone().spawn_blocking(move |c| c.get_transactions_by_accepting_block(accepting_block_hash)).await
     }
 
     /// Returns the antipast of block `hash` from the POV of `context`, i.e. `antipast(hash) ∩ past(context)`.
@@ -365,6 +378,14 @@ impl ConsensusSessionOwned {
 
     pub async fn async_get_block(&self, hash: Hash) -> ConsensusResult<Block> {
         self.clone().spawn_blocking(move |c| c.get_block(hash)).await
+    }
+
+    pub async fn async_get_block_transactions(
+        &self,
+        hash: Hash,
+        indices: Option<Vec<TransactionIndexType>>,
+    ) -> ConsensusResult<Vec<Transaction>> {
+        self.clone().spawn_blocking(move |c| c.get_block_transactions(hash, indices)).await
     }
 
     pub async fn async_get_block_even_if_header_only(&self, hash: Hash) -> ConsensusResult<Block> {

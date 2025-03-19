@@ -205,7 +205,7 @@ mod mockery {
 
     impl Mock for RpcTransactionInputVerboseData {
         fn mock() -> Self {
-            RpcTransactionInputVerboseData {}
+            RpcTransactionInputVerboseData { utxo_entry: mock() }
         }
     }
 
@@ -245,6 +245,100 @@ mod mockery {
         }
     }
 
+    impl Mock for RpcTransactionAcceptanceLocator {
+        fn mock() -> Self {
+            RpcTransactionAcceptanceLocator { accepting_chain_block: mock(), transaction_ids: mock() }
+        }
+    }
+
+    impl Mock for RpcTransactionInclusionLocator {
+        fn mock() -> Self {
+            RpcTransactionInclusionLocator { block_hash: mock(), indices_within_block: mock() }
+        }
+    }
+
+    impl Mock for RpcTransactionLocator {
+        fn mock() -> Self {
+            // randomly choose between acceptance and inclusion
+            match rand::random::<bool>() {
+                true => RpcTransactionLocator::ByAcceptance(mock()),
+                false => RpcTransactionLocator::ByInclusion(mock()),
+            }
+        }
+    }
+
+    impl Mock for RpcUtxoEntryVerbosity {
+        fn mock() -> Self {
+            RpcUtxoEntryVerbosity {
+                include_amount: mock(),
+                include_script_public_key: mock(),
+                include_block_daa_score: mock(),
+                include_is_coinbase: mock(),
+            }
+        }
+    }
+
+    impl Mock for RpcTransactionInputVerboseDataVerbosity {
+        fn mock() -> Self {
+            RpcTransactionInputVerboseDataVerbosity { utxo_entry_verbosity: mock() }
+        }
+    }
+
+    impl Mock for RpcTransactionInputVerbosity {
+        fn mock() -> Self {
+            RpcTransactionInputVerbosity {
+                include_previous_outpoint: mock(),
+                include_signature_script: mock(),
+                include_sequence: mock(),
+                include_sig_op_count: mock(),
+                verbose_data_verbosity: mock(),
+            }
+        }
+    }
+
+    impl Mock for RpcTransactionOutputVerbosity {
+        fn mock() -> Self {
+            RpcTransactionOutputVerbosity { include_amount: mock(), include_script_public_key: mock(), verbose_data_verbosity: mock() }
+        }
+    }
+
+    impl Mock for RpcTransactionOutputVerboseDataVerbosity {
+        fn mock() -> Self {
+            RpcTransactionOutputVerboseDataVerbosity {
+                include_script_public_key_type: mock(),
+                include_script_public_key_address: mock(),
+            }
+        }
+    }
+
+    impl Mock for RpcTransactionVerboseDataVerbosity {
+        fn mock() -> Self {
+            RpcTransactionVerboseDataVerbosity {
+                include_transaction_id: mock(),
+                include_hash: mock(),
+                include_compute_mass: mock(),
+                include_block_hash: mock(),
+                include_block_time: mock(),
+            }
+        }
+    }
+
+    impl Mock for RpcTransactionVerbosity {
+        fn mock() -> Self {
+            RpcTransactionVerbosity {
+                include_version: mock(),
+                input_verbosity: mock(),
+                output_verbosity: mock(),
+                include_lock_time: mock(),
+                include_subnetwork_id: mock(),
+                include_gas: mock(),
+                include_payload: mock(),
+                include_mass: mock(),
+                verbose_data_verbosity: mock(),
+            }
+        }
+    }
+
     impl Mock for RpcTransaction {
         fn mock() -> Self {
             RpcTransaction {
@@ -258,6 +352,18 @@ mod mockery {
                 mass: mock(),
                 verbose_data: mock(),
             }
+        }
+    }
+
+    impl Mock for RpcMergesetBlockAcceptanceData {
+        fn mock() -> Self {
+            RpcMergesetBlockAcceptanceData { hash: mock(), header: mock(), accepted_transactions: mock() }
+        }
+    }
+
+    impl Mock for RpcAcceptanceData {
+        fn mock() -> Self {
+            RpcAcceptanceData { accepting_blue_score: mock(), mergeset_block_acceptance_data: mock() }
         }
     }
 
@@ -1064,6 +1170,42 @@ mod mockery {
 
     test!(GetDaaScoreTimestampEstimateResponse);
 
+    impl Mock for GetVirtualChainFromBlockV2Request {
+        fn mock() -> Self {
+            GetVirtualChainFromBlockV2Request { start_hash: mock(), acceptance_data_verbosity: None }
+        }
+    }
+
+    test!(GetVirtualChainFromBlockV2Request);
+
+    impl Mock for GetVirtualChainFromBlockV2Response {
+        fn mock() -> Self {
+            GetVirtualChainFromBlockV2Response {
+                removed_chain_block_hashes: mock(),
+                added_chain_block_hashes: mock(),
+                added_acceptance_data: mock(),
+            }
+        }
+    }
+
+    test!(GetVirtualChainFromBlockV2Response);
+
+    impl Mock for GetTransactionsRequest {
+        fn mock() -> Self {
+            GetTransactionsRequest { transaction_locator: mock(), transaction_verbosity: mock() }
+        }
+    }
+
+    test!(GetTransactionsRequest);
+
+    impl Mock for GetTransactionsResponse {
+        fn mock() -> Self {
+            GetTransactionsResponse { transactions: mock() }
+        }
+    }
+
+    test!(GetTransactionsResponse);
+
     impl Mock for NotifyBlockAddedRequest {
         fn mock() -> Self {
             NotifyBlockAddedRequest { command: Command::Start }
@@ -1115,6 +1257,34 @@ mod mockery {
     }
 
     test!(VirtualChainChangedNotification);
+
+    impl Mock for NotifyVirtualChainChangedV2Request {
+        fn mock() -> Self {
+            NotifyVirtualChainChangedV2Request { acceptance_data_verbosity: None, command: Command::Start }
+        }
+    }
+
+    test!(NotifyVirtualChainChangedV2Request);
+
+    impl Mock for NotifyVirtualChainChangedV2Response {
+        fn mock() -> Self {
+            NotifyVirtualChainChangedV2Response {}
+        }
+    }
+
+    test!(NotifyVirtualChainChangedV2Response);
+
+    impl Mock for VirtualChainChangedV2Notification {
+        fn mock() -> Self {
+            VirtualChainChangedV2Notification {
+                removed_chain_block_hashes: mock(),
+                added_chain_block_hashes: mock(),
+                added_acceptance_data: mock(),
+            }
+        }
+    }
+
+    test!(VirtualChainChangedV2Notification);
 
     impl Mock for NotifyFinalityConflictRequest {
         fn mock() -> Self {

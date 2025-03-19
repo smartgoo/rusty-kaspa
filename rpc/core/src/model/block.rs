@@ -8,14 +8,14 @@ use workflow_serializer::prelude::*;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpcRawBlock {
-    pub header: RpcRawHeader,
+    pub header: Option<RpcRawHeader>,
     pub transactions: Vec<RpcTransaction>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpcBlock {
-    pub header: RpcHeader,
+    pub header: Option<RpcHeader>,
     pub transactions: Vec<RpcTransaction>,
     pub verbose_data: Option<RpcBlockVerboseData>,
 }
@@ -23,7 +23,7 @@ pub struct RpcBlock {
 impl Serializer for RpcBlock {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         store!(u16, &1, writer)?;
-        serialize!(RpcHeader, &self.header, writer)?;
+        serialize!(Option<RpcHeader>, &self.header, writer)?;
         serialize!(Vec<RpcTransaction>, &self.transactions, writer)?;
         serialize!(Option<RpcBlockVerboseData>, &self.verbose_data, writer)?;
 
@@ -34,7 +34,7 @@ impl Serializer for RpcBlock {
 impl Deserializer for RpcBlock {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u16, reader)?;
-        let header = deserialize!(RpcHeader, reader)?;
+        let header = deserialize!(Option<RpcHeader>, reader)?;
         let transactions = deserialize!(Vec<RpcTransaction>, reader)?;
         let verbose_data = deserialize!(Option<RpcBlockVerboseData>, reader)?;
 
@@ -45,7 +45,7 @@ impl Deserializer for RpcBlock {
 impl Serializer for RpcRawBlock {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         store!(u16, &1, writer)?;
-        serialize!(RpcRawHeader, &self.header, writer)?;
+        serialize!(Option<RpcRawHeader>, &self.header, writer)?;
         serialize!(Vec<RpcTransaction>, &self.transactions, writer)?;
 
         Ok(())
@@ -55,7 +55,7 @@ impl Serializer for RpcRawBlock {
 impl Deserializer for RpcRawBlock {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u16, reader)?;
-        let header = deserialize!(RpcRawHeader, reader)?;
+        let header = deserialize!(Option<RpcRawHeader>, reader)?;
         let transactions = deserialize!(Vec<RpcTransaction>, reader)?;
 
         Ok(Self { header, transactions })

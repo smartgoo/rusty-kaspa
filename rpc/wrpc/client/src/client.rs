@@ -76,6 +76,7 @@ impl Inner {
             RpcApiOps::VirtualDaaScoreChangedNotification,
             RpcApiOps::PruningPointUtxoSetOverrideNotification,
             RpcApiOps::NewBlockTemplateNotification,
+            RpcApiOps::VirtualChainChangedV2Notification,
         ]
         .into_iter()
         .for_each(|notification_op| {
@@ -647,6 +648,8 @@ impl RpcApi for KaspaRpcClient {
             GetUtxoReturnAddress,
             GetUtxosByAddresses,
             GetVirtualChainFromBlock,
+            GetVirtualChainFromBlockV2,
+            GetTransactions,
             ResolveFinalityConflict,
             Shutdown,
             SubmitBlock,

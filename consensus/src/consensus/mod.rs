@@ -66,8 +66,7 @@ use kaspa_consensus_core::{
     network::NetworkType,
     pruning::{PruningPointProof, PruningPointTrustedData, PruningPointsList, PruningProofMetadata},
     trusted::{ExternalGhostdagData, TrustedBlock},
-    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionOutpoint, UtxoEntry, TransactionIndexType},
-    utxo::utxo_inquirer::UtxoInquirerError,
+    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionOutpoint, UtxoEntry},
     BlockHashSet, BlueWorkType, ChainPath, HashMapCustomHasher,
 };
 use kaspa_consensus_notify::root::ConsensusNotificationRoot;
@@ -82,6 +81,7 @@ use kaspa_database::prelude::StoreResultExtensions;
 use kaspa_hashes::Hash;
 use kaspa_muhash::MuHash;
 use kaspa_txscript::caches::TxScriptCacheCounters;
+use kaspa_utils::arc::ArcExtensions;
 use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use std::{
@@ -688,10 +688,51 @@ impl ConsensusApi for Consensus {
         sample_headers
     }
 
-    fn get_populated_transaction(&self, txid: Hash, accepting_block_daa_score: u64) -> Result<SignableTransaction, UtxoInquirerError> {
+    fn get_populated_transactions_by_accepting_daa_score(
+        &self,
+        tx_ids: Option<Vec<TransactionId>>,
+        accepting_block_daa_score: u64,
+    ) -> ConsensusResult<Vec<SignableTransaction>> {
         // We need consistency between the pruning_point_store, utxo_diffs_store, block_transactions_store, selected chain and headers store reads
         let _guard = self.pruning_lock.blocking_read();
-        self.virtual_processor.get_populated_transaction(txid, accepting_block_daa_score, self.get_source())
+        let res = self.virtual_processor.get_populated_transactions_by_accepting_daa_score(
+            tx_ids,
+            accepting_block_daa_score,
+            self.get_source(),
+        )?;
+
+        Ok(res)
+    }
+
+    fn get_populated_transactions_by_accepting_block(
+        &self,
+        tx_ids: Option<Vec<TransactionId>>,
+        accepting_block: Hash,
+    ) -> ConsensusResult<Vec<SignableTransaction>> {
+        // We need consistency between the pruning_point_store, utxo_diffs_store, block_transactions_store, selected chain and headers store reads
+        let _guard = self.pruning_lock.blocking_read();
+        Ok(self.virtual_processor.get_populated_transactions_by_accepting_block(tx_ids, accepting_block)?)
+    }
+
+    fn get_transactions_by_accepting_block(&self, accepting_block: Hash) -> ConsensusResult<Vec<Transaction>> {
+        // We need consistency between the acceptance store and the block transaction store,
+        let _guard = self.pruning_lock.blocking_read();
+
+        Ok(self
+            .acceptance_data_store
+            .get(accepting_block)
+            .map_err(|_| ConsensusError::MissingData(accepting_block))?
+            .unwrap_or_clone()
+            .into_iter()
+            .flat_map(|mbad| {
+                self.get_block_transactions(
+                    mbad.block_hash,
+                    Some(mbad.accepted_transactions.iter().map(|atx| atx.index_within_block).collect()),
+                )
+                .map_err(|err| return err)
+            })
+            .flatten()
+            .collect::<Vec<_>>())
     }
 
     fn get_virtual_parents(&self) -> BlockHashSet {
@@ -891,15 +932,30 @@ impl ConsensusApi for Consensus {
         })
     }
 
-    fn get_block_transactions(&self, hash: Hash, indices: Option<Vec<TransactionIndexType>>) -> ConsensusResult<Arc<Vec<Transaction>>> {
+    fn get_block_transactions(&self, hash: Hash, indices: Option<Vec<TransactionIndexType>>) -> ConsensusResult<Vec<Transaction>> {
         let transactions = self.block_transactions_store.get(hash).unwrap_option().ok_or(ConsensusError::BlockNotFound(hash))?;
+        let tx_len = transactions.len();
+
         if let Some(indices) = indices {
-            if transactions.len() < indices.len() {
+            if tx_len < indices.len() {
                 return Err(ConsensusError::TransactionQueryTooLarge(indices.len(), hash, transactions.len()));
             }
-            Ok(Arc::new(indices.into_iter().map(|index| *transactions.get(index as usize).unwrap_or(ConsensusError::TransactionIndexOutOfBounds(index, transactions.len(), hash))?).collect_vec()))
+
+            let res = transactions
+                .unwrap_or_clone()
+                .into_iter()
+                .enumerate()
+                .filter(|(index, _tx)| indices.contains(&(*index as TransactionIndexType)))
+                .map(|(_, tx)| tx)
+                .collect::<Vec<_>>();
+
+            if res.len() != indices.len() {
+                Err(ConsensusError::TransactionIndexOutOfBounds(*indices.iter().max().unwrap(), tx_len, hash))
+            } else {
+                Ok(res)
+            }
         } else {
-            Ok(transactions)
+            Ok(transactions.unwrap_or_clone())
         }
     }
 

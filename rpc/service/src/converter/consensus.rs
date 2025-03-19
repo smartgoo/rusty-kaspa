@@ -15,7 +15,12 @@ use kaspa_math::Uint256;
 use kaspa_mining::model::{owner_txs::OwnerTransactions, TransactionIdSet};
 use kaspa_notify::converter::Converter;
 use kaspa_rpc_core::{
-    BlockAddedNotification, Notification, RpcAcceptanceData, RpcAcceptanceDataVerbosity, RpcAcceptedTransactionIds, RpcBlock, RpcBlockHeaderVerbosity, RpcBlockVerboseData, RpcHash, RpcHeader, RpcMempoolEntry, RpcMempoolEntryByAddress, RpcMergesetBlockAcceptanceData, RpcResult, RpcTransaction, RpcTransactionInput, RpcTransactionOutput, RpcTransactionOutputVerboseData, RpcTransactionVerboseData
+    BlockAddedNotification, Notification, RpcAcceptanceDataVerbosity, RpcAcceptedTransactionIds, RpcBlock, RpcBlockVerboseData,
+    RpcHash, RpcHeaderVerbosity, RpcMempoolEntry, RpcMempoolEntryByAddress, RpcMergesetBlockAcceptanceDataVerbosity, RpcResult,
+    RpcTransaction, RpcTransactionId, RpcTransactionInput, RpcTransactionInputVerboseDataVerbosity, RpcTransactionInputVerbosity,
+    RpcTransactionOutpoint, RpcTransactionOutpointVerbosity, RpcTransactionOutput, RpcTransactionOutputVerboseData,
+    RpcTransactionOutputVerboseDataVerbosity, RpcTransactionOutputVerbosity, RpcTransactionVerboseData,
+    RpcTransactionVerboseDataVerbosity, RpcTransactionVerbosity, RpcUtxoEntryVerbosity,
 };
 use kaspa_txscript::{extract_script_pub_key_address, script_class::ScriptClass};
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
@@ -80,7 +85,7 @@ impl ConsensusConverter {
             vec![]
         };
 
-        Ok(RpcBlock { header: block.header.as_ref().into(), transactions, verbose_data })
+        Ok(RpcBlock { header: Some(block.header.as_ref().into()), transactions, verbose_data })
     }
 
     pub fn get_mempool_entry(&self, consensus: &ConsensusProxy, transaction: &MutableTransaction) -> RpcMempoolEntry {
@@ -178,47 +183,86 @@ impl ConsensusConverter {
             .collect())
     }
 
-    async fn get_input_with_verbosity(&self, consensus: &ConsensusProxy) {
+    async fn get_input_with_verbosity(&self, transaction_input: TransactionInput, verbosity: RpcTransactionInputVerbosity) {
         todo!()
     }
 
-    async fn get_input_verbose_data_with_verboity(&self, consensus: &ConsensusProxy) {
+    async fn get_input_verbose_data_with_verboity(
+        &self,
+        transaction_input: TransactionInput,
+        consensus: &ConsensusProxy,
+        verbosity: RpcTransactionInputVerboseDataVerbosity,
+    ) {
         todo!()
     }
 
-    async fn get_output_with_verbosity(&self, consensus: &ConsensusProxy) {
+    async fn get_output_with_verbosity(&self, consensus: &ConsensusProxy, verbosity: RpcTransactionOutputVerbosity) {
         todo!()
     }
 
-    async fn get_output_verbose_data_with_verbosity(&self, consensus: &ConsensusProxy) {
+    async fn get_output_verbose_data_with_verbosity(
+        &self,
+        consensus: &ConsensusProxy,
+        verbosity: RpcTransactionOutputVerboseDataVerbosity,
+    ) {
         todo!()
     }
 
-    async fn get_utxo_with_verbosity(&self, consensus: &ConsensusProxy) {
+    async fn get_outpoint_with_verbosity(&self, outpoint: RpcTransactionOutpoint, verbosity: RpcTransactionOutpointVerbosity) {
         todo!()
     }
 
-    async fn get_header_verbose_data_with_verbosity(&self, consensus: &ConsensusProxy) {
+    async fn get_utxo_with_verbosity(&self, consensus: &ConsensusProxy, verbosity: RpcUtxoEntryVerbosity) {
         todo!()
     }
 
-    async fn get_transaction_verbose_data_with_verbosity(&self, consensus: &ConsensusProxy) {
+    async fn get_transaction_verbose_data_with_verbosity(
+        &self,
+        consensus: &ConsensusProxy,
+        verbosity: RpcTransactionVerboseDataVerbosity,
+    ) {
         todo!()
     }
 
-    async fn get_mergeset_block_acceptance_data_with_verbosity(&self, consensus: &ConsensusProxy) {
+    async fn get_mergeset_block_acceptance_data_with_verbosity(
+        &self,
+        consensus: &ConsensusProxy,
+        verbosity: RpcMergesetBlockAcceptanceDataVerbosity,
+    ) {
         todo!()
     }
 
-    async fn get_headers_with_verbosity(&self, consensus: &ConsensusProxy) {
+    async fn get_headers_with_verbosity(&self, consensus: &ConsensusProxy, verbosity: RpcHeaderVerbosity, block_locator: Vec<Hash>) {
         todo!()
     }
 
-    pub async fn get_transactions_with_verbosity(&self, consensus: &ConsensusProxy, verbosity: RpcTransactionVerbosity, ) {
+    async fn convert_transactions(
+        &self,
+        accepting_block: Option<Hash>, // used to populate input verbose data
+        including_block: Option<Hash>, // used to populate transaction verbose data
+        consensus: &ConsensusProxy,
+        verbosity: RpcTransactionVerbosity,
+    ) -> RpcTransaction {
         todo!()
     }
 
-    pub async fn get_get_acceptance_data_with_verbosity(&self, consensus: &ConsensusProxy, verbosity: RpcAcceptanceDataVerbosity, added_chain_blocks: Vec<Hash>, merged_blocks_limit: Option<usize>) {
+    pub async fn get_accepted_transactions(
+        &self,
+        accepting_block_hash: RpcHash,
+        transaction_ids: Vec<RpcTransactionId>,
+        consensus: &ConsensusProxy,
+        verbosity: RpcTransactionVerbosity,
+    ) -> RpcResult<Vec<RpcTransaction>> {
+        todo!()
+    }
+
+    pub async fn get_get_acceptance_data_with_verbosity(
+        &self,
+        _consensus: &ConsensusProxy,
+        _verbosity: RpcAcceptanceDataVerbosity,
+        _added_chain_blocks: Vec<Hash>,
+        _merged_blocks_limit: Option<usize>,
+    ) {
         todo!()
     }
 }

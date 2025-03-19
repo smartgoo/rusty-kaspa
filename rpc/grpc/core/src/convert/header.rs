@@ -1,5 +1,6 @@
 use crate::protowire;
 use crate::{from, try_from};
+use kaspa_consensus_core::hashing;
 use kaspa_consensus_core::header::Header;
 use kaspa_rpc_core::{FromRpcHex, RpcError, RpcHash, RpcResult, ToRpcHex};
 use std::str::FromStr;
@@ -10,6 +11,7 @@ use std::str::FromStr;
 
 from!(item: &kaspa_rpc_core::RpcHeader, protowire::RpcBlockHeader, {
     Self {
+        hash:  Some(item.hash.js_to_string()),
         version: item.version.into(),
         parents: item.parents_by_level.iter().map(protowire::RpcBlockLevelParents::from).collect(),
         hash_merkle_root: item.hash_merkle_root.to_string(),
@@ -25,8 +27,27 @@ from!(item: &kaspa_rpc_core::RpcHeader, protowire::RpcBlockHeader, {
     }
 });
 
+from!(item: &kaspa_rpc_core::RpcHeaderVerbosity, protowire::RpcBlockHeaderVerbosity, {
+    Self {
+        include_hash: item.include_hash,
+        include_version: item.include_version,
+        include_parents: item.include_parents_by_level,
+        include_hash_merkle_root: item.include_hash_merkle_root,
+        include_accepted_id_merkle_root: item.include_accepted_id_merkle_root,
+        include_utxo_commitment: item.include_utxo_commitment,
+        include_timestamp: item.include_timestamp,
+        include_bits: item.include_bits,
+        include_nonce: item.include_nonce,
+        include_daa_score: item.include_daa_score,
+        include_blue_work: item.include_blue_work,
+        include_blue_score: item.include_blue_score,
+        include_pruning_point: item.include_pruning_point,
+    }
+});
+
 from!(item: &kaspa_rpc_core::RpcRawHeader, protowire::RpcBlockHeader, {
     Self {
+        hash: None, // We don't include the hash for the raw header
         version: item.version.into(),
         parents: item.parents_by_level.iter().map(protowire::RpcBlockLevelParents::from).collect(),
         hash_merkle_root: item.hash_merkle_root.to_string(),
@@ -65,7 +86,30 @@ try_from!(item: &protowire::RpcBlockHeader, kaspa_rpc_core::RpcHeader, {
         RpcHash::from_str(&item.pruning_point)?,
     );
 
+    // Ensure that the hashed header matches the hash sent.
+    if header.hash != hashing::header::hash(&header) {
+        return Err(RpcError::BadBlockHash(RpcHash::from(hashing::header::hash(&header)), RpcHash::from(header.hash)));
+    }
+
     header.into()
+});
+
+try_from!(item: &protowire::RpcBlockHeaderVerbosity, kaspa_rpc_core::RpcHeaderVerbosity, {
+    Self {
+        include_hash: item.include_hash,
+        include_version: item.include_version,
+        include_parents_by_level: item.include_parents,
+        include_hash_merkle_root: item.include_hash_merkle_root,
+        include_accepted_id_merkle_root: item.include_accepted_id_merkle_root,
+        include_utxo_commitment: item.include_utxo_commitment,
+        include_timestamp: item.include_timestamp,
+        include_bits: item.include_bits,
+        include_nonce: item.include_nonce,
+        include_daa_score: item.include_daa_score,
+        include_blue_work: item.include_blue_work,
+        include_blue_score: item.include_blue_score,
+        include_pruning_point: item.include_pruning_point,
+    }
 });
 
 try_from!(item: &protowire::RpcBlockHeader, kaspa_rpc_core::RpcRawHeader, {
@@ -198,15 +242,15 @@ mod tests {
         let r3: RpcBlock = (&b2).into();
         let p2: protowire::RpcBlock = (&r3).into();
 
-        assert_eq!(r.header.parents_by_level, r2.header.parents_by_level);
+        assert_eq!(r.header.as_ref().unwrap().parents_by_level, r2.header.as_ref().unwrap().parents_by_level);
         assert_eq!(p.header.as_ref().unwrap().parents, p2.header.as_ref().unwrap().parents);
-        test_parents_by_level_rxr(&r.header.parents_by_level, &r2.header.parents_by_level);
-        test_parents_by_level_rxr(&r.header.parents_by_level, &r3.header.parents_by_level);
-        test_parents_by_level_rxr(&b.header.parents_by_level, &r2.header.parents_by_level);
+        test_parents_by_level_rxr(&r.header.as_ref().unwrap().parents_by_level, &r2.header.as_ref().unwrap().parents_by_level);
+        test_parents_by_level_rxr(&r.header.as_ref().unwrap().parents_by_level, &r3.header.as_ref().unwrap().parents_by_level);
+        test_parents_by_level_rxr(&b.header.parents_by_level, &r2.header.as_ref().unwrap().parents_by_level);
         test_parents_by_level_rxr(&b.header.parents_by_level, &b2.header.parents_by_level);
-        test_parents_by_level_rxp(&r.header.parents_by_level, &p.header.as_ref().unwrap().parents);
-        test_parents_by_level_rxp(&r.header.parents_by_level, &p2.header.as_ref().unwrap().parents);
-        test_parents_by_level_rxp(&r2.header.parents_by_level, &p2.header.as_ref().unwrap().parents);
+        test_parents_by_level_rxp(&r.header.as_ref().unwrap().parents_by_level, &p.header.as_ref().unwrap().parents);
+        test_parents_by_level_rxp(&r.header.as_ref().unwrap().parents_by_level, &p2.header.as_ref().unwrap().parents);
+        test_parents_by_level_rxp(&r2.header.as_ref().unwrap().parents_by_level, &p2.header.as_ref().unwrap().parents);
 
         assert_eq!(b.hash(), b2.hash());
         assert_eq!(p, p2);

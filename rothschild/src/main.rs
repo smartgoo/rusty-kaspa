@@ -379,7 +379,7 @@ async fn populate_pending_outpoints_from_mempool(
     for entry in entries {
         for entry in entry.sending {
             for input in entry.transaction.inputs {
-                pending_outpoints.insert(input.previous_outpoint.into(), now);
+                pending_outpoints.insert(input.previous_outpoint.expect("expected outpoint").into(), now);
             }
         }
     }

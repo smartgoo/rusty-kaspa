@@ -7,7 +7,7 @@ use crate::protowire::{
     PruningPointUtxoSetOverrideNotificationMessage, SinkBlueScoreChangedNotificationMessage,
     StopNotifyingPruningPointUtxoSetOverrideRequestMessage, StopNotifyingPruningPointUtxoSetOverrideResponseMessage,
     StopNotifyingUtxosChangedRequestMessage, StopNotifyingUtxosChangedResponseMessage, UtxosChangedNotificationMessage,
-    VirtualChainChangedNotificationMessage, VirtualDaaScoreChangedNotificationMessage,
+    VirtualChainChangedNotificationMessage, VirtualChainChangedV2NotificationMessage, VirtualDaaScoreChangedNotificationMessage,
 };
 use crate::{from, try_from};
 use kaspa_notify::subscription::Command;
@@ -33,7 +33,8 @@ from!(item: &kaspa_rpc_core::Notification, Payload, {
         Notification::VirtualDaaScoreChanged(ref notification) => Payload::VirtualDaaScoreChangedNotification(notification.into()),
         Notification::PruningPointUtxoSetOverride(ref notification) => {
             Payload::PruningPointUtxoSetOverrideNotification(notification.into())
-        }
+        },
+        Notification::VirtualChainChangedV2(ref notification) => Payload::VirtualChainChangedV2Notification(notification.into()),
     }
 });
 
@@ -73,6 +74,14 @@ from!(item: &kaspa_rpc_core::VirtualDaaScoreChangedNotification, VirtualDaaScore
 });
 
 from!(&kaspa_rpc_core::PruningPointUtxoSetOverrideNotification, PruningPointUtxoSetOverrideNotificationMessage);
+
+from!(item: &kaspa_rpc_core::VirtualChainChangedV2Notification, VirtualChainChangedV2NotificationMessage, {
+    Self {
+        removed_chain_block_hashes: item.removed_chain_block_hashes.iter().map(|x| x.to_string()).collect(),
+        added_chain_block_hashes: item.added_chain_block_hashes.iter().map(|x| x.to_string()).collect(),
+        added_acceptance_data: item.added_acceptance_data.iter().map(|x| x.into()).collect(),
+    }
+});
 
 from!(item: Command, RpcNotifyCommand, {
     match item {
@@ -116,6 +125,9 @@ try_from!(item: &Payload, kaspa_rpc_core::Notification, {
         }
         Payload::PruningPointUtxoSetOverrideNotification(ref notification) => {
             Notification::PruningPointUtxoSetOverride(notification.try_into()?)
+        }
+        Payload::VirtualChainChangedV2Notification(ref notification) => {
+            Notification::VirtualChainChangedV2(notification.try_into()?)
         }
         _ => Err(RpcError::UnsupportedFeature)?,
     }
@@ -167,6 +179,18 @@ try_from!(item: &SinkBlueScoreChangedNotificationMessage, kaspa_rpc_core::SinkBl
 
 try_from!(item: &VirtualDaaScoreChangedNotificationMessage, kaspa_rpc_core::VirtualDaaScoreChangedNotification, {
     Self { virtual_daa_score: item.virtual_daa_score }
+});
+
+try_from!(item: &VirtualChainChangedV2NotificationMessage, kaspa_rpc_core::VirtualChainChangedV2Notification, {
+    Self {
+        removed_chain_block_hashes: Arc::new(
+            item.removed_chain_block_hashes.iter().map(|x| RpcHash::from_str(x)).collect::<Result<Vec<_>, _>>()?
+        ),
+        added_chain_block_hashes: Arc::new(
+            item.added_chain_block_hashes.iter().map(|x| RpcHash::from_str(x)).collect::<Result<Vec<_>, _>>()?
+        ),
+        added_acceptance_data: Arc::new(item.added_acceptance_data.iter().map(|x| x.try_into()).collect::<Result<Vec<_>, _>>()?),
+    }
 });
 
 try_from!(&PruningPointUtxoSetOverrideNotificationMessage, kaspa_rpc_core::PruningPointUtxoSetOverrideNotification);

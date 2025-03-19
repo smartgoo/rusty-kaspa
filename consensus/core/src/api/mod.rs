@@ -19,8 +19,7 @@ use crate::{
     header::Header,
     pruning::{PruningPointProof, PruningPointTrustedData, PruningPointsList, PruningProofMetadata},
     trusted::{ExternalGhostdagData, TrustedBlock},
-    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionOutpoint, UtxoEntry, TransactionIndexType},
-    utxo::utxo_inquirer::UtxoInquirerError,
+    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionOutpoint, UtxoEntry},
     BlockHashSet, BlueWorkType, ChainPath,
 };
 use kaspa_hashes::Hash;
@@ -173,7 +172,26 @@ pub trait ConsensusApi: Send + Sync {
 
     /// Returns the fully populated transaction with the given txid which was accepted at the provided accepting_block_daa_score.
     /// The argument `accepting_block_daa_score` is expected to be the DAA score of the accepting chain block of `txid`.
-    fn get_populated_transaction(&self, txid: Hash, accepting_block_daa_score: u64) -> Result<SignableTransaction, UtxoInquirerError> {
+    /// Note: If the transaction vec is None, the function returns all accepted transactions.
+    fn get_populated_transactions_by_accepting_daa_score(
+        &self,
+        tx_ids: Option<Vec<TransactionId>>,
+        accepting_block_daa_score: u64,
+    ) -> ConsensusResult<Vec<SignableTransaction>> {
+        unimplemented!()
+    }
+
+    /// Returns the fully populated transaction with the given txid which was accepted by the provided accepting_block.
+    /// Note: If the transaction vec is None, the function returns all accepted transactions.
+    fn get_populated_transactions_by_accepting_block(
+        &self,
+        tx_ids: Option<Vec<TransactionId>>,
+        accepting_block: Hash,
+    ) -> ConsensusResult<Vec<SignableTransaction>> {
+        unimplemented!()
+    }
+
+    fn get_transactions_by_accepting_block(&self, accepting_block: Hash) -> ConsensusResult<Vec<Transaction>> {
         unimplemented!()
     }
 
@@ -282,7 +300,7 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
-    fn get_block_transactions(&self, hash: Hash, indices: Option<Vec<TransactionIndexType>>) -> ConsensusResult<Arc<Vec<Transaction>>> {
+    fn get_block_transactions(&self, hash: Hash, indices: Option<Vec<TransactionIndexType>>) -> ConsensusResult<Vec<Transaction>> {
         unimplemented!()
     }
 

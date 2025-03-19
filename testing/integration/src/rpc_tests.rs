@@ -116,7 +116,7 @@ async fn sanity_test() {
                     assert!(!is_synced);
 
                     // Compute the expected block hash for the received block
-                    let header: Header = (&block.header).into();
+                    let header: Header = block.header.as_ref().expect("expected header").into();
                     let block_hash = header.hash;
 
                     // Submit the template (no mining, in simnet PoW is skipped)
@@ -205,7 +205,7 @@ async fn sanity_test() {
                         .get_block_call(None, GetBlockRequest { hash: SIMNET_GENESIS.hash, include_transactions: false })
                         .await
                         .unwrap();
-                    assert_eq!(response.block.header.hash, SIMNET_GENESIS.hash);
+                    assert_eq!(response.block.header.as_ref().expect("expected header").hash, SIMNET_GENESIS.hash);
                 })
             }
 
@@ -217,7 +217,7 @@ async fn sanity_test() {
                         .await
                         .unwrap();
                     assert_eq!(response.blocks.len(), 1, "genesis block should be returned");
-                    assert_eq!(response.blocks[0].header.hash, SIMNET_GENESIS.hash);
+                    assert_eq!(response.blocks[0].header.as_ref().expect("expected header").hash, SIMNET_GENESIS.hash);
                     assert_eq!(response.block_hashes[0], SIMNET_GENESIS.hash);
                 })
             }
@@ -673,6 +673,59 @@ async fn sanity_test() {
                 })
             }
 
+            KaspadPayloadOps::GetVirtualChainFromBlockV2 => {
+                let rpc_client = client.clone();
+                tst!(op, {
+                    let response = rpc_client
+                        .get_virtual_chain_from_block_v_2_call(
+                            None,
+                            GetVirtualChainFromBlockV2Request { start_hash: SIMNET_GENESIS.hash, acceptance_data_verbosity: None },
+                        )
+                        .await
+                        .unwrap();
+                    assert!(response.added_chain_block_hashes.contains(&SIMNET_GENESIS.hash));
+                    assert!(response.removed_chain_block_hashes.is_empty());
+                })
+            }
+
+            KaspadPayloadOps::GetTransactions => {
+                let rpc_client = client.clone();
+
+                tst!(op, {
+                    let response = rpc_client
+                        .get_transactions_call(
+                            None,
+                            GetTransactionsRequest {
+                                transaction_locator: RpcTransactionLocator::ByAcceptance(RpcTransactionAcceptanceLocator {
+                                    accepting_chain_block: SIMNET_GENESIS.hash,
+                                    transaction_ids: vec![],
+                                }),
+                                transaction_verbosity: None,
+                            },
+                        )
+                        .await;
+                    assert!(response.is_err());
+
+                    let response = rpc_client
+                        .get_transactions_call(
+                            None,
+                            GetTransactionsRequest {
+                                transaction_locator: RpcTransactionLocator::ByInclusion(RpcTransactionInclusionLocator {
+                                    block_hash: SIMNET_GENESIS.hash,
+                                    indices_within_block: vec![0],
+                                }),
+                                transaction_verbosity: None,
+                            },
+                        )
+                        .await
+                        .unwrap();
+                    assert!(
+                        response.transactions[0].verbose_data.as_ref().unwrap().transaction_id
+                            == SIMNET_GENESIS.build_genesis_transactions()[0].id()
+                    );
+                })
+            }
+
             KaspadPayloadOps::NotifyBlockAdded => {
                 let rpc_client = client.clone();
                 let id = listener_id;
@@ -733,6 +786,10 @@ async fn sanity_test() {
                         .await
                         .unwrap();
                 })
+            }
+            KaspadPayloadOps::NotifyVirtualChainChangedV2 => {
+                // unimplemented!();
+                continue;
             }
             KaspadPayloadOps::StopNotifyingUtxosChanged => {
                 let rpc_client = client.clone();

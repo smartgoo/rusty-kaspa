@@ -188,7 +188,7 @@ pub async fn mine_block(pay_address: Address, submitting_client: &GrpcClient, li
 
     // Mine a block
     let template = submitting_client.get_block_template(pay_address.clone(), vec![]).await.unwrap();
-    let header: Header = (&template.block.header).into();
+    let header: Header = template.block.header.as_ref().expect("expected header").into();
     let block_hash = header.hash;
     submitting_client.submit_block(template.block, false).await.unwrap();
 
@@ -200,8 +200,8 @@ pub async fn mine_block(pay_address: Address, submitting_client: &GrpcClient, li
             .unwrap()
         {
             Notification::BlockAdded(BlockAddedNotification { block }) => {
-                assert_eq!(block.header.hash, block_hash);
-                block.header.daa_score
+                assert_eq!(block.header.as_ref().expect("expected header").hash, block_hash);
+                block.header.as_ref().expect("expected header").daa_score
             }
             _ => panic!("wrong notification type"),
         };

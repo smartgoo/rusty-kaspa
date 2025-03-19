@@ -329,42 +329,41 @@ impl Deserializer for RpcRawHeader {
     }
 }
 
-
 #[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RpcBlockHeaderVerbosity {
+pub struct RpcHeaderVerbosity {
     /// Cached hash
-    pub include_hash: bool,
-    pub include_version: bool,
-    pub include_parents_by_level: bool,
-    pub include_hash_merkle_root: bool,
-    pub include_accepted_id_merkle_root: bool,
-    pub include_utxo_commitment: bool,
+    pub include_hash: Option<bool>,
+    pub include_version: Option<bool>,
+    pub include_parents_by_level: Option<bool>,
+    pub include_hash_merkle_root: Option<bool>,
+    pub include_accepted_id_merkle_root: Option<bool>,
+    pub include_utxo_commitment: Option<bool>,
     /// Timestamp is in milliseconds
-    pub include_timestamp: bool,
-    pub include_bits: bool,
-    pub include_nonce: bool,
-    pub include_daa_score: bool,
-    pub include_blue_work: bool,
-    pub include_blue_score: bool,
-    pub include_pruning_point: bool,
-  }
+    pub include_timestamp: Option<bool>,
+    pub include_bits: Option<bool>,
+    pub include_nonce: Option<bool>,
+    pub include_daa_score: Option<bool>,
+    pub include_blue_work: Option<bool>,
+    pub include_blue_score: Option<bool>,
+    pub include_pruning_point: Option<bool>,
+}
 
-impl RpcBlockHeaderVerbosity {
+impl RpcHeaderVerbosity {
     fn new(
-        include_hash: bool,
-        include_version: bool,
-        include_parents_by_level: bool,
-        include_hash_merkle_root: bool,
-        include_accepted_id_merkle_root: bool,
-        include_utxo_commitment: bool,
-        include_timestamp: bool,
-        include_bits: bool,
-        include_nonce: bool,
-        include_daa_score: bool,
-        include_blue_work: bool,
-        include_blue_score: bool,
-        include_pruning_point: bool,
+        include_hash: Option<bool>,
+        include_version: Option<bool>,
+        include_parents_by_level: Option<bool>,
+        include_hash_merkle_root: Option<bool>,
+        include_accepted_id_merkle_root: Option<bool>,
+        include_utxo_commitment: Option<bool>,
+        include_timestamp: Option<bool>,
+        include_bits: Option<bool>,
+        include_nonce: Option<bool>,
+        include_daa_score: Option<bool>,
+        include_blue_work: Option<bool>,
+        include_blue_score: Option<bool>,
+        include_pruning_point: Option<bool>,
     ) -> Self {
         Self {
             include_hash,
@@ -384,45 +383,45 @@ impl RpcBlockHeaderVerbosity {
     }
 }
 
-impl Serializer for RpcBlockHeaderVerbosity {
+impl Serializer for RpcHeaderVerbosity {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         store!(u16, &1, writer)?;
 
-        store!(bool, &self.include_hash, writer)?;
-        store!(bool, &self.include_version, writer)?;
-        store!(bool, &self.include_parents_by_level, writer)?;
-        store!(bool, &self.include_hash_merkle_root, writer)?;
-        store!(bool, &self.include_accepted_id_merkle_root, writer)?;
-        store!(bool, &self.include_utxo_commitment, writer)?;
-        store!(bool, &self.include_timestamp, writer)?;
-        store!(bool, &self.include_bits, writer)?;
-        store!(bool, &self.include_nonce, writer)?;
-        store!(bool, &self.include_daa_score, writer)?;
-        store!(bool, &self.include_blue_work, writer)?;
-        store!(bool, &self.include_blue_score, writer)?;
-        store!(bool, &self.include_pruning_point, writer)?;
+        store!(Option<bool>, &self.include_hash, writer)?;
+        store!(Option<bool>, &self.include_version, writer)?;
+        store!(Option<bool>, &self.include_parents_by_level, writer)?;
+        store!(Option<bool>, &self.include_hash_merkle_root, writer)?;
+        store!(Option<bool>, &self.include_accepted_id_merkle_root, writer)?;
+        store!(Option<bool>, &self.include_utxo_commitment, writer)?;
+        store!(Option<bool>, &self.include_timestamp, writer)?;
+        store!(Option<bool>, &self.include_bits, writer)?;
+        store!(Option<bool>, &self.include_nonce, writer)?;
+        store!(Option<bool>, &self.include_daa_score, writer)?;
+        store!(Option<bool>, &self.include_blue_work, writer)?;
+        store!(Option<bool>, &self.include_blue_score, writer)?;
+        store!(Option<bool>, &self.include_pruning_point, writer)?;
 
         Ok(())
     }
 }
 
-impl Deserializer for RpcBlockHeaderVerbosity {
+impl Deserializer for RpcHeaderVerbosity {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u16, reader)?;
 
-        let include_hash = load!(bool, reader)?;
-        let include_version = load!(bool, reader)?;
-        let include_parents_by_level = load!(bool, reader)?;
-        let include_hash_merkle_root = load!(bool, reader)?;
-        let include_accepted_id_merkle_root = load!(bool, reader)?;
-        let include_utxo_commitment = load!(bool, reader)?;
-        let include_timestamp = load!(bool, reader)?;
-        let include_bits = load!(bool, reader)?;
-        let include_nonce = load!(bool, reader)?;
-        let include_daa_score = load!(bool, reader)?;
-        let include_blue_work = load!(bool, reader)?;
-        let include_blue_score = load!(bool, reader)?;
-        let include_pruning_point = load!(bool, reader)?;
+        let include_hash = load!(Option<bool>, reader)?;
+        let include_version = load!(Option<bool>, reader)?;
+        let include_parents_by_level = load!(Option<bool>, reader)?;
+        let include_hash_merkle_root = load!(Option<bool>, reader)?;
+        let include_accepted_id_merkle_root = load!(Option<bool>, reader)?;
+        let include_utxo_commitment = load!(Option<bool>, reader)?;
+        let include_timestamp = load!(Option<bool>, reader)?;
+        let include_bits = load!(Option<bool>, reader)?;
+        let include_nonce = load!(Option<bool>, reader)?;
+        let include_daa_score = load!(Option<bool>, reader)?;
+        let include_blue_work = load!(Option<bool>, reader)?;
+        let include_blue_score = load!(Option<bool>, reader)?;
+        let include_pruning_point = load!(Option<bool>, reader)?;
 
         Ok(Self {
             include_hash,

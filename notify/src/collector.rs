@@ -167,6 +167,14 @@ mod tests {
             unimplemented!()
         }
 
+        fn apply_virtual_chain_changed_v2_subscription(
+            &self,
+            _subscription: &crate::subscription::single::VirtualChainChangedV2Subscription,
+            _context: &SubscriptionContext,
+        ) -> Option<Self> {
+            unimplemented!()
+        }
+
         fn apply_utxos_changed_subscription(&self, _: &UtxosChangedSubscription, _: &SubscriptionContext) -> Option<Self> {
             unimplemented!()
         }

@@ -82,6 +82,8 @@ impl Factory {
                 GetFeeEstimateExperimental,
                 GetCurrentBlockColor,
                 GetUtxoReturnAddress,
+                GetVirtualChainFromBlockV2,
+                GetTransactions,
                 NotifyBlockAdded,
                 NotifyNewBlockTemplate,
                 NotifyFinalityConflict,
@@ -90,6 +92,7 @@ impl Factory {
                 NotifyPruningPointUtxoSetOverride,
                 NotifyVirtualDaaScoreChanged,
                 NotifyVirtualChainChanged,
+                NotifyVirtualChainChangedV2,
                 StopNotifyingUtxosChanged,
                 StopNotifyingPruningPointUtxoSetOverride,
             ]
@@ -134,6 +137,7 @@ impl Factory {
                 Ok(response)
             })
         });
+        // Ensure NotifyVirtualChainChangedV2Request is implemented for Scope before re-adding NotifyVirtualChainChangedV2
         interface.replace_method(KaspadPayloadOps::NotifyFinalityConflict, method);
 
         // Methods with special properties

@@ -3,7 +3,7 @@
 use crate::{
     NotifyBlockAddedRequest, NotifyFinalityConflictRequest, NotifyNewBlockTemplateRequest, NotifyPruningPointUtxoSetOverrideRequest,
     NotifySinkBlueScoreChangedRequest, NotifyUtxosChangedRequest, NotifyVirtualChainChangedRequest,
-    NotifyVirtualDaaScoreChangedRequest,
+    NotifyVirtualChainChangedV2Request, NotifyVirtualDaaScoreChangedRequest,
 };
 use kaspa_notify::scope::*;
 
@@ -62,3 +62,4 @@ from!(SinkBlueScoreChanged);
 from!(VirtualDaaScoreChanged);
 from!(PruningPointUtxoSetOverride);
 from!(NewBlockTemplate);
+from!(VirtualChainChangedV2);
