@@ -50,7 +50,7 @@ impl VirtualStateProcessor {
                 self.headers_store
                     .get_daa_score(block_hash)
                     .map_err(|_| UtxoInquirerError::MissingCompactHeaderForBlockHash(block_hash))?,
-                    retention_period_root_hash,
+                retention_period_root_hash,
             )?;
             // iterate forward from the ancestor to the sink block, looking for the accepting block
             for candidate in self.reachability_service.forward_chain_iterator(ancestor, sink_hash, true) {
@@ -209,7 +209,8 @@ impl VirtualStateProcessor {
         accepting_block_daa_score: u64,
         retention_period_root_hash: Hash,
     ) -> UtxoInquirerResult<Vec<SignableTransaction>> {
-        let matching_chain_block_hash = self.find_accepting_chain_block_hash_at_daa_score(accepting_block_daa_score, retention_period_root_hash)?;
+        let matching_chain_block_hash =
+            self.find_accepting_chain_block_hash_at_daa_score(accepting_block_daa_score, retention_period_root_hash)?;
 
         self.get_populated_transactions_by_accepting_block(tx_ids, matching_chain_block_hash)
     }
@@ -224,7 +225,7 @@ impl VirtualStateProcessor {
         &self,
         target_daa_score: u64,
         retention_period_root_hash: Hash,
-    ) -> Result<(Hash, Arc<AcceptanceData>), UtxoInquirerError> {
+    ) -> UtxoInquirerResult<Hash> {
         let sc_read = self.selected_chain_store.read();
 
         let retention_period_root_index = sc_read
