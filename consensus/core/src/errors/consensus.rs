@@ -45,6 +45,9 @@ pub enum ConsensusError {
 
     #[error("utxo inquirer error: {0}")]
     UtxoInquirerError(#[from] UtxoInquirerError),
+
+    #[error("{0}")]
+    GeneralOwned(String),
 }
 
 pub type ConsensusResult<T> = std::result::Result<T, ConsensusError>;

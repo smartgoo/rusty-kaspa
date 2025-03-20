@@ -39,7 +39,7 @@ impl VirtualStateProcessor {
     pub fn find_accepting_data(
         &self,
         block_hash: Hash,
-        source_hash: Hash,
+        retention_period_root_hash: Hash,
         sink_hash: Hash,
     ) -> UtxoInquirerResult<Option<MergesetAcceptanceMetaData>> {
         // accepting block hash, daa score, acceptance data
@@ -50,7 +50,7 @@ impl VirtualStateProcessor {
                 self.headers_store
                     .get_daa_score(block_hash)
                     .map_err(|_| UtxoInquirerError::MissingCompactHeaderForBlockHash(block_hash))?,
-                source_hash,
+                    retention_period_root_hash,
             )?;
             // iterate forward from the ancestor to the sink block, looking for the accepting block
             for candidate in self.reachability_service.forward_chain_iterator(ancestor, sink_hash, true) {
@@ -80,7 +80,7 @@ impl VirtualStateProcessor {
         &self,
         block_hash: Hash,
         txs: Vec<Transaction>,
-        source_hash: Hash,
+        retention_period_root_hash: Hash,
     ) -> UtxoInquirerResult<Vec<SignableTransaction>> {
         let virual_state_read = self.virtual_stores.read();
         let sink_hash = virual_state_read.state.get().expect("expected virtual state").ghostdag_data.selected_parent;
@@ -88,7 +88,7 @@ impl VirtualStateProcessor {
 
         let mut signable_transactions = Vec::with_capacity(txs.len());
 
-        if let Some(mergeset_meta_data) = self.find_accepting_data(block_hash, source_hash, sink_hash)? {
+        if let Some(mergeset_meta_data) = self.find_accepting_data(block_hash, retention_period_root_hash, sink_hash)? {
             // We have a mergeset acceptance, so we most factor in the acceptance data to populate the transactions
             let utxo_diff = self
                 .utxo_diffs_store
@@ -207,9 +207,9 @@ impl VirtualStateProcessor {
         &self,
         tx_ids: Option<Vec<TransactionId>>,
         accepting_block_daa_score: u64,
-        source_hash: Hash,
+        retention_period_root_hash: Hash,
     ) -> UtxoInquirerResult<Vec<SignableTransaction>> {
-        let matching_chain_block_hash = self.find_accepting_chain_block_hash_at_daa_score(accepting_block_daa_score, source_hash)?;
+        let matching_chain_block_hash = self.find_accepting_chain_block_hash_at_daa_score(accepting_block_daa_score, retention_period_root_hash)?;
 
         self.get_populated_transactions_by_accepting_block(tx_ids, matching_chain_block_hash)
     }
@@ -223,22 +223,13 @@ impl VirtualStateProcessor {
     pub fn find_accepting_chain_block_hash_at_daa_score(
         &self,
         target_daa_score: u64,
-        source_hash: Hash, // The hash of the block where the search starts
-    ) -> UtxoInquirerResult<Hash> {
+        retention_period_root_hash: Hash,
+    ) -> Result<(Hash, Arc<AcceptanceData>), UtxoInquirerError> {
         let sc_read = self.selected_chain_store.read();
 
-        let source_daa_score = self
-            .headers_store
-            .get_compact_header_data(source_hash)
-            .map(|compact_header| compact_header.daa_score)
-            .map_err(|_| UtxoInquirerError::MissingCompactHeaderForBlockHash(source_hash))?;
-
-        if target_daa_score < source_daa_score {
-            // Early exit if target daa score is lower than that of pruning point's daa score:
-            return Err(UtxoInquirerError::AlreadyPruned);
-        }
-
-        let source_index = sc_read.get_by_hash(source_hash).map_err(|_| UtxoInquirerError::MissingIndexForHash(source_hash))?;
+        let retention_period_root_index = sc_read
+            .get_by_hash(retention_period_root_hash)
+            .map_err(|_| UtxoInquirerError::MissingIndexForHash(retention_period_root_hash))?;
         let (tip_index, tip_hash) = sc_read.get_tip().map_err(|_| UtxoInquirerError::MissingTipData)?;
         let tip_daa_score = self
             .headers_store
@@ -249,7 +240,7 @@ impl VirtualStateProcessor {
         // For a chain segment it holds that len(segment) <= daa_score(segment end) - daa_score(segment start). This is true
         // because each chain block increases the daa score by at least one. Hence we can lower bound our search by high index
         // minus the daa score gap as done below
-        let mut low_index = tip_index.saturating_sub(tip_daa_score.saturating_sub(target_daa_score)).max(source_index);
+        let mut low_index = tip_index.saturating_sub(tip_daa_score.saturating_sub(target_daa_score)).max(retention_period_root_index);
         let mut high_index = tip_index;
 
         let matching_chain_block_hash = loop {
