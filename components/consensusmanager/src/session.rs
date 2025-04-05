@@ -13,7 +13,10 @@ use kaspa_consensus_core::{
     mass::{ContextualMasses, NonContextualMasses},
     pruning::{PruningPointProof, PruningPointTrustedData, PruningPointsList},
     trusted::{ExternalGhostdagData, TrustedBlock},
-    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionOutpoint, UtxoEntry},
+    tx::{
+        MutableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionOutpoint, TransactionQueryResult,
+        TransactionType, UtxoEntry,
+    },
     BlockHashSet, BlueWorkType, ChainPath, Hash,
 };
 use kaspa_utils::sync::rwlock::*;
@@ -314,26 +317,31 @@ impl ConsensusSessionOwned {
         self.clone().spawn_blocking(|c| c.get_chain_block_samples()).await
     }
 
-    pub async fn async_get_populated_transactions_by_accepting_daa_score(
+    pub async fn async_get_transactions_by_block_indices(
         &self,
-        tx_ids: Option<Vec<TransactionId>>,
-        accepting_block_daa_score: u64,
-    ) -> ConsensusResult<Vec<SignableTransaction>> {
-        self.clone()
-            .spawn_blocking(move |c| c.get_populated_transactions_by_accepting_daa_score(tx_ids, accepting_block_daa_score))
-            .await
+        block_hash: Hash,
+        tx_indices: Option<Vec<TransactionIndexType>>,
+        tx_type: TransactionType,
+    ) -> ConsensusResult<TransactionQueryResult> {
+        self.clone().spawn_blocking(move |c| c.get_transactions_by_block_indices(block_hash, tx_indices, tx_type)).await
     }
 
-    pub async fn async_get_populated_transactions_by_accepting_block(
+    pub async fn async_get_transactions_by_accepting_daa_score(
         &self,
+        accepting_daa_score: u64,
         tx_ids: Option<Vec<TransactionId>>,
-        accepting_block_hash: Hash,
-    ) -> ConsensusResult<Vec<SignableTransaction>> {
-        self.clone().spawn_blocking(move |c| c.get_populated_transactions_by_accepting_block(tx_ids, accepting_block_hash)).await
+        tx_type: TransactionType,
+    ) -> ConsensusResult<TransactionQueryResult> {
+        self.clone().spawn_blocking(move |c| c.get_transactions_by_accepting_daa_score(accepting_daa_score, tx_ids, tx_type)).await
     }
 
-    pub async fn async_get_transactions_by_accepting_block(&self, accepting_block_hash: Hash) -> ConsensusResult<Vec<Transaction>> {
-        self.clone().spawn_blocking(move |c| c.get_transactions_by_accepting_block(accepting_block_hash)).await
+    pub async fn async_get_transactions_by_accepting_block(
+        &self,
+        accepting_block: Hash,
+        tx_ids: Option<Vec<TransactionId>>,
+        tx_type: TransactionType,
+    ) -> ConsensusResult<TransactionQueryResult> {
+        self.clone().spawn_blocking(move |c| c.get_transactions_by_accepting_block(accepting_block, tx_ids, tx_type)).await
     }
 
     /// Returns the antipast of block `hash` from the POV of `context`, i.e. `antipast(hash) ∩ past(context)`.

@@ -7,6 +7,7 @@ use crate::service::NetworkType::{Mainnet, Testnet};
 use async_trait::async_trait;
 use kaspa_consensus_core::api::counters::ProcessingCounters;
 use kaspa_consensus_core::errors::block::RuleError;
+use kaspa_consensus_core::tx::{TransactionQueryResult, TransactionType};
 use kaspa_consensus_core::utxo::utxo_inquirer::UtxoInquirerError;
 use kaspa_consensus_core::{
     block::Block,
@@ -825,10 +826,14 @@ NOTE: This error usually indicates an RPC conversion error between the node and 
         let session = self.consensus_manager.consensus().session().await;
 
         match session
-            .async_get_populated_transactions_by_accepting_daa_score(Some(vec![request.txid]), request.accepting_block_daa_score)
-            .await
+            .async_get_transactions_by_accepting_daa_score(
+                request.accepting_block_daa_score,
+                Some(vec![request.txid]),
+                TransactionType::SignableTransaction,
+            )
+            .await?
         {
-            Ok(txs) => {
+            TransactionQueryResult::SignableTransaction(txs) => {
                 if txs.is_empty() {
                     return Err(RpcError::ConsensusError(UtxoInquirerError::TransactionNotFound.into()));
                 };
@@ -847,7 +852,7 @@ NOTE: This error usually indicates an RPC conversion error between the node and 
                     Err(RpcError::ConsensusError(UtxoInquirerError::UnfilledUtxoEntry.into()))
                 }
             }
-            Err(error) => Err(error.into()),
+            TransactionQueryResult::Transaction(_) => Err(RpcError::ConsensusError(UtxoInquirerError::TransactionNotFound.into())),
         }
     }
 
@@ -1176,17 +1181,118 @@ NOTE: This error usually indicates an RPC conversion error between the node and 
     async fn get_virtual_chain_from_block_v_2_call(
         &self,
         _connection: Option<&DynRpcConnection>,
-        _request: GetVirtualChainFromBlockV2Request,
+        request: GetVirtualChainFromBlockV2Request,
     ) -> RpcResult<GetVirtualChainFromBlockV2Response> {
-        unimplemented!()
+        let session = self.consensus_manager.consensus().session().await;
+        let verbosity = request.acceptance_data_verbosity;
+        let batch_size = (self.config.mergeset_size_limit().upper_bound() * 10) as usize;
+        let mut chain_path = session.async_get_virtual_chain_from_block(request.start_hash, Some(batch_size)).await?;
+        let added_acceptance_data = if let Some(verbosity) = verbosity.as_ref() {
+            self.consensus_converter.get_acceptance_data_with_verbosity(&session, verbosity, &chain_path, Some(batch_size)).await?
+        } else {
+            Vec::new()
+        };
+        chain_path.added.truncate(added_acceptance_data.len());
+
+        Ok(GetVirtualChainFromBlockV2Response {
+            removed_chain_block_hashes: chain_path.removed.into(),
+            added_chain_block_hashes: chain_path.added.into(),
+            added_acceptance_data: added_acceptance_data.into(),
+        })
     }
 
     async fn get_transactions_call(
         &self,
         _connection: Option<&DynRpcConnection>,
-        _request: GetTransactionsRequest,
+        request: GetTransactionsRequest,
     ) -> RpcResult<GetTransactionsResponse> {
-        unimplemented!()
+        let session = self.consensus_manager.consensus().session().await;
+
+        let tx_type = if request.transaction_verbosity.as_ref().is_some_and(|active| active.requires_populated_transaction()) {
+            TransactionType::SignableTransaction
+        } else {
+            TransactionType::Transaction
+        };
+        let transactions = match request.transaction_locator {
+            RpcTransactionLocator::ByAcceptingBlock(accepting_block_locator) => {
+                session
+                    .async_get_transactions_by_accepting_block(
+                        accepting_block_locator.accepting_chain_block,
+                        if accepting_block_locator.transaction_ids.is_empty() {
+                            None
+                        } else {
+                            Some(accepting_block_locator.transaction_ids)
+                        },
+                        tx_type,
+                    )
+                    .await?
+            }
+            RpcTransactionLocator::ByAcceptingDaaScore(accpeting_daa_score_locator) => {
+                session
+                    .async_get_transactions_by_accepting_daa_score(
+                        accpeting_daa_score_locator.accepting_daa_score,
+                        if accpeting_daa_score_locator.transaction_ids.is_empty() {
+                            None
+                        } else {
+                            Some(accpeting_daa_score_locator.transaction_ids)
+                        },
+                        tx_type,
+                    )
+                    .await?
+            }
+            RpcTransactionLocator::ByInclusionIndices(inclusion) => {
+                session
+                    .async_get_transactions_by_block_indices(
+                        inclusion.block_hash,
+                        if inclusion.indices_within_block.is_empty() { None } else { Some(inclusion.indices_within_block) },
+                        tx_type,
+                    )
+                    .await?
+            }
+        };
+
+        let rpc_txs = match transactions {
+            TransactionQueryResult::Transaction(transactions) => {
+                let mut result_vec = Vec::with_capacity(transactions.len());
+                for tx in transactions.iter() {
+                    result_vec.push(
+                        self.consensus_converter
+                            .convert_transaction_with_verbosity(
+                                &session,
+                                tx,
+                                None,
+                                None,
+                                request.transaction_verbosity.as_ref().ok_or_else(|| {
+                                    RpcError::MissingRpcFieldError("GetTransactions".to_string(), "transaction_verbosity".to_string())
+                                })?,
+                            )
+                            .await?,
+                    );
+                }
+                result_vec
+            }
+            TransactionQueryResult::SignableTransaction(mutable_transactions) => {
+                let mut result_vec = Vec::with_capacity(mutable_transactions.len());
+                for tx in mutable_transactions.iter() {
+                    result_vec.push(
+                        self.consensus_converter
+                            .convert_signable_transaction_with_verbosity(
+                                &session,
+                                tx,
+                                None,
+                                None,
+                                request.transaction_verbosity.as_ref().ok_or_else(|| {
+                                    RpcError::MissingRpcFieldError("GetTransactions".to_string(), "transaction_verbosity".to_string())
+                                })?,
+                            )
+                            .await?,
+                    );
+                }
+                result_vec
+            }
+        };
+
+        Ok(GetTransactionsResponse { transactions: rpc_txs.into() })
     }
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

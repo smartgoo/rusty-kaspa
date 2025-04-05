@@ -20,7 +20,10 @@ use crate::{
     mass::{ContextualMasses, NonContextualMasses},
     pruning::{PruningPointProof, PruningPointTrustedData, PruningPointsList, PruningProofMetadata},
     trusted::{ExternalGhostdagData, TrustedBlock},
-    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionOutpoint, UtxoEntry},
+    tx::{
+        MutableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionOutpoint, TransactionQueryResult,
+        TransactionType, UtxoEntry,
+    },
     BlockHashSet, BlueWorkType, ChainPath,
 };
 use kaspa_hashes::Hash;
@@ -171,28 +174,33 @@ pub trait ConsensusApi: Send + Sync {
         unimplemented!()
     }
 
+    fn get_transactions_by_block_indices(
+        &self,
+        block_hash: Hash,
+        tx_indices: Option<Vec<TransactionIndexType>>,
+        tx_type: TransactionType,
+    ) -> ConsensusResult<TransactionQueryResult> {
+        unimplemented!()
+    }
+
     /// Returns the fully populated transaction with the given txid which was accepted at the provided accepting_block_daa_score.
     /// The argument `accepting_block_daa_score` is expected to be the DAA score of the accepting chain block of `txid`.
     /// Note: If the transaction vec is None, the function returns all accepted transactions.
-    fn get_populated_transactions_by_accepting_daa_score(
+    fn get_transactions_by_accepting_daa_score(
         &self,
+        accepting_daa_score: u64,
         tx_ids: Option<Vec<TransactionId>>,
-        accepting_block_daa_score: u64,
-    ) -> ConsensusResult<Vec<SignableTransaction>> {
+        tx_type: TransactionType,
+    ) -> ConsensusResult<TransactionQueryResult> {
         unimplemented!()
     }
 
-    /// Returns the fully populated transaction with the given txid which was accepted by the provided accepting_block.
-    /// Note: If the transaction vec is None, the function returns all accepted transactions.
-    fn get_populated_transactions_by_accepting_block(
+    fn get_transactions_by_accepting_block(
         &self,
-        tx_ids: Option<Vec<TransactionId>>,
         accepting_block: Hash,
-    ) -> ConsensusResult<Vec<SignableTransaction>> {
-        unimplemented!()
-    }
-
-    fn get_transactions_by_accepting_block(&self, accepting_block: Hash) -> ConsensusResult<Vec<Transaction>> {
+        tx_ids: Option<Vec<TransactionId>>,
+        tx_type: TransactionType,
+    ) -> ConsensusResult<TransactionQueryResult> {
         unimplemented!()
     }
 

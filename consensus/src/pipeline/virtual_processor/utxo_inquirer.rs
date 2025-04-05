@@ -148,18 +148,13 @@ impl VirtualStateProcessor {
         // In this case, removed_diff wouldn't contain the outpoint of the created-and-immediately-spent UTXO
         // so we use the transaction (which also has acceptance data in this block) and look at its outputs
         let other_tx_id = input.previous_outpoint.transaction_id;
-        let other_tx = &self.find_txs_from_acceptance_data(Some(vec![other_tx_id]), &acceptance_data).unwrap()[0];
+        let other_tx = &self.find_txs_from_acceptance_data(Some(vec![other_tx_id]), acceptance_data).unwrap()[0];
         let output = &other_tx.outputs[input.previous_outpoint.index as usize];
         let utxo_entry =
             UtxoEntry::new(output.value, output.script_public_key.clone(), accepting_block_daa_score, other_tx.is_coinbase());
         Some(utxo_entry)
     }
 
-    /// Returns the fully populated transaction with the given txid which was accepted at the provided accepting_block_daa_score.
-    /// The argument `accepting_block_daa_score` is expected to be the DAA score of the accepting chain block of `txid`.
-    ///
-    /// *Assumed to be called under the pruning read lock.*
-    ///
     pub fn get_populated_transactions_by_accepting_block(
         &self,
         tx_ids: Option<Vec<TransactionId>>,
@@ -203,6 +198,11 @@ impl VirtualStateProcessor {
         Ok(populated_txs)
     }
 
+    /// Returns the fully populated transactions with the given tx ids which were accepted at the provided accepting_block_daa_score.
+    /// The argument `accepting_block_daa_score` is expected to be the DAA score of the accepting chain block of `tx ids`.
+    ///
+    /// *Assumed to be called under the pruning read lock.*
+    ///
     pub fn get_populated_transactions_by_accepting_daa_score(
         &self,
         tx_ids: Option<Vec<TransactionId>>,
@@ -380,7 +380,7 @@ impl VirtualStateProcessor {
                     if txs.len() < tx_ids.len() {
                         // The query includes txs which are not in the acceptance data, we constitute this as an error.
                         return Err(UtxoInquirerError::MissingQueriedTransactions(
-                            tx_ids.iter().filter(|tx_id| !txs.contains_key(*tx_id)).map(|tx_id| *tx_id).collect::<Vec<_>>(),
+                            tx_ids.iter().filter(|tx_id| !txs.contains_key(*tx_id)).copied().collect::<Vec<_>>(),
                         ));
                     };
 

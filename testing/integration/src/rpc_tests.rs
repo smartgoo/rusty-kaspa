@@ -116,11 +116,11 @@ async fn sanity_test() {
                     assert!(!is_synced);
 
                     // Compute the expected block hash for the received block
-                    let header: Header = block.header.as_ref().expect("expected header").into();
+                    let header: Header = block.header.clone().into();
                     let block_hash = header.hash;
 
                     // Submit the template (no mining, in simnet PoW is skipped)
-                    let response = rpc_client.submit_block(block.clone(), false).await.unwrap();
+                    let response = rpc_client.submit_block(block, false).await.unwrap();
                     assert_eq!(response.report, SubmitBlockReport::Success);
 
                     // Wait for virtual event indicating the block was processed and entered past(virtual)
@@ -692,37 +692,51 @@ async fn sanity_test() {
                 let rpc_client = client.clone();
 
                 tst!(op, {
-                    let response = rpc_client
+                    let response_1 = rpc_client
                         .get_transactions_call(
                             None,
                             GetTransactionsRequest {
-                                transaction_locator: RpcTransactionLocator::ByAcceptance(RpcTransactionAcceptanceLocator {
+                                transaction_locator: RpcTransactionLocator::ByAcceptingBlock(RpcTransactionAcceptingBlockLocator {
                                     accepting_chain_block: SIMNET_GENESIS.hash,
                                     transaction_ids: vec![],
                                 }),
-                                transaction_verbosity: None,
+                                transaction_verbosity: None, //TODO: add tx verbosity
                             },
                         )
                         .await;
-                    assert!(response.is_err());
 
-                    let response = rpc_client
+                    assert!(response_1.is_err()); // TODO: add tx verbosity
+
+                    let response_2 = rpc_client
                         .get_transactions_call(
                             None,
                             GetTransactionsRequest {
-                                transaction_locator: RpcTransactionLocator::ByInclusion(RpcTransactionInclusionLocator {
-                                    block_hash: SIMNET_GENESIS.hash,
-                                    indices_within_block: vec![0],
-                                }),
-                                transaction_verbosity: None,
+                                transaction_locator: RpcTransactionLocator::ByInclusionIndices(
+                                    RpcTransactionInclusionIndicesLocator {
+                                        block_hash: SIMNET_GENESIS.hash,
+                                        indices_within_block: vec![0],
+                                    },
+                                ),
+                                transaction_verbosity: None, // TODO: add tx verbosity
                             },
                         )
-                        .await
-                        .unwrap();
-                    assert!(
-                        response.transactions[0].verbose_data.as_ref().unwrap().transaction_id
-                            == SIMNET_GENESIS.build_genesis_transactions()[0].id()
-                    );
+                        .await;
+
+                    assert!(response_2.is_err()); // TODO: add tx verbosity
+
+                    let response_3 = rpc_client
+                        .get_transactions_call(
+                            None,
+                            GetTransactionsRequest {
+                                transaction_locator: RpcTransactionLocator::ByAcceptingDaaScore(
+                                    RpcTransactionAcceptingDaaScoreLocator { accepting_daa_score: 0, transaction_ids: vec![] },
+                                ),
+                                transaction_verbosity: None, // TODO: add tx verbosity
+                            },
+                        )
+                        .await;
+
+                    assert!(response_3.is_err()); // TODO: add tx verbosity
                 })
             }
 

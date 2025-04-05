@@ -23,7 +23,7 @@ impl From<&Block> for RpcBlock {
 impl From<&Block> for RpcRawBlock {
     fn from(item: &Block) -> Self {
         Self {
-            header: Some(RpcRawHeader::from(item.header.as_ref())),
+            header: RpcRawHeader::from(item.header.as_ref()),
             transactions: item.transactions.iter().map(RpcTransaction::from).collect(),
         }
     }
@@ -41,19 +41,13 @@ impl From<&MutableBlock> for RpcBlock {
 
 impl From<&MutableBlock> for RpcRawBlock {
     fn from(item: &MutableBlock) -> Self {
-        Self {
-            header: Some(RpcRawHeader::from(item.header.as_ref())),
-            transactions: item.transactions.iter().map(RpcTransaction::from).collect(),
-        }
+        Self { header: RpcRawHeader::from(&item.header), transactions: item.transactions.iter().map(RpcTransaction::from).collect() }
     }
 }
 
 impl From<MutableBlock> for RpcRawBlock {
     fn from(item: MutableBlock) -> Self {
-        Self {
-            header: Some(RpcRawHeader::from(item.header)),
-            transactions: item.transactions.iter().map(RpcTransaction::from).collect(),
-        }
+        Self { header: RpcRawHeader::from(item.header), transactions: item.transactions.iter().map(RpcTransaction::from).collect() }
     }
 }
 
@@ -89,7 +83,7 @@ impl TryFrom<RpcBlock> for Block {
     fn try_from(item: RpcBlock) -> RpcResult<Self> {
         Ok(Self {
             header: Arc::new(kaspa_consensus_core::header::Header::from(
-                item.header.ok_or(RpcError::MissingRpcFieldError("RpcRawBlock".to_string(), "header".to_string()))?,
+                item.header.ok_or(RpcError::MissingRpcFieldError("RpcBlock".to_string(), "header".to_string()))?,
             )),
             transactions: Arc::new(
                 item.transactions
@@ -105,9 +99,7 @@ impl TryFrom<RpcRawBlock> for Block {
     type Error = RpcError;
     fn try_from(item: RpcRawBlock) -> RpcResult<Self> {
         Ok(Self {
-            header: Arc::new(kaspa_consensus_core::header::Header::from(
-                item.header.ok_or(RpcError::MissingRpcFieldError("RpcRawBlock".to_string(), "header".to_string()))?,
-            )),
+            header: Arc::new(kaspa_consensus_core::header::Header::from(item.header)),
             transactions: Arc::new(
                 item.transactions
                     .into_iter()

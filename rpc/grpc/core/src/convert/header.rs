@@ -11,7 +11,7 @@ use std::str::FromStr;
 
 from!(item: &kaspa_rpc_core::RpcHeader, protowire::RpcBlockHeader, {
     Self {
-        hash:  Some(item.hash.js_to_string()),
+        hash: item.hash.to_string(),
         version: item.version.into(),
         parents: item.parents_by_level.iter().map(protowire::RpcBlockLevelParents::from).collect(),
         hash_merkle_root: item.hash_merkle_root.to_string(),
@@ -47,7 +47,7 @@ from!(item: &kaspa_rpc_core::RpcHeaderVerbosity, protowire::RpcBlockHeaderVerbos
 
 from!(item: &kaspa_rpc_core::RpcRawHeader, protowire::RpcBlockHeader, {
     Self {
-        hash: None, // We don't include the hash for the raw header
+        hash: Default::default(), // We don't include the hash for the raw header
         version: item.version.into(),
         parents: item.parents_by_level.iter().map(protowire::RpcBlockLevelParents::from).collect(),
         hash_merkle_root: item.hash_merkle_root.to_string(),

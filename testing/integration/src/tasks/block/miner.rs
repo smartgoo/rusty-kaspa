@@ -109,7 +109,7 @@ impl Task for BlockMinerTask {
                 // Read the most up-to-date block template
                 let mut block = template.lock().block.clone();
                 // Use index as nonce to avoid duplicate blocks
-                block.header.as_mut().map(|h| h.nonce = i as u64);
+                block.header.nonce = i as u64;
 
                 let c_template = template.clone();
                 let c_client = client.clone();

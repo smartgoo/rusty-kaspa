@@ -245,24 +245,31 @@ mod mockery {
         }
     }
 
-    impl Mock for RpcTransactionAcceptanceLocator {
+    impl Mock for RpcTransactionAcceptingBlockLocator {
         fn mock() -> Self {
-            RpcTransactionAcceptanceLocator { accepting_chain_block: mock(), transaction_ids: mock() }
+            RpcTransactionAcceptingBlockLocator { accepting_chain_block: mock(), transaction_ids: mock() }
         }
     }
 
-    impl Mock for RpcTransactionInclusionLocator {
+    impl Mock for RpcTransactionInclusionIndicesLocator {
         fn mock() -> Self {
-            RpcTransactionInclusionLocator { block_hash: mock(), indices_within_block: mock() }
+            RpcTransactionInclusionIndicesLocator { block_hash: mock(), indices_within_block: mock() }
+        }
+    }
+
+    impl Mock for RpcTransactionAcceptingDaaScoreLocator {
+        fn mock() -> Self {
+            RpcTransactionAcceptingDaaScoreLocator { accepting_daa_score: mock(), transaction_ids: mock() }
         }
     }
 
     impl Mock for RpcTransactionLocator {
         fn mock() -> Self {
-            // randomly choose between acceptance and inclusion
-            match rand::random::<bool>() {
-                true => RpcTransactionLocator::ByAcceptance(mock()),
-                false => RpcTransactionLocator::ByInclusion(mock()),
+            // randomly choose
+            match rand::random::<u8>() % 3 {
+                0 => RpcTransactionLocator::ByAcceptingBlock(mock()),
+                1 => RpcTransactionLocator::ByAcceptingDaaScore(mock()),
+                _ => RpcTransactionLocator::ByInclusionIndices(mock()), // 2
             }
         }
     }
@@ -357,13 +364,13 @@ mod mockery {
 
     impl Mock for RpcMergesetBlockAcceptanceData {
         fn mock() -> Self {
-            RpcMergesetBlockAcceptanceData { hash: mock(), header: mock(), accepted_transactions: mock() }
+            RpcMergesetBlockAcceptanceData { merged_header: mock(), accepted_transactions: mock() }
         }
     }
 
     impl Mock for RpcAcceptanceData {
         fn mock() -> Self {
-            RpcAcceptanceData { accepting_blue_score: mock(), mergeset_block_acceptance_data: mock() }
+            RpcAcceptanceData { accepting_chain_header: mock(), mergeset_block_acceptance_data: mock() }
         }
     }
 

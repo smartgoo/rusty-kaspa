@@ -8,7 +8,7 @@ use workflow_serializer::prelude::*;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpcRawBlock {
-    pub header: Option<RpcRawHeader>,
+    pub header: RpcRawHeader,
     pub transactions: Vec<RpcTransaction>,
 }
 
@@ -45,7 +45,7 @@ impl Deserializer for RpcBlock {
 impl Serializer for RpcRawBlock {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         store!(u16, &1, writer)?;
-        serialize!(Option<RpcRawHeader>, &self.header, writer)?;
+        serialize!(RpcRawHeader, &self.header, writer)?;
         serialize!(Vec<RpcTransaction>, &self.transactions, writer)?;
 
         Ok(())
@@ -55,7 +55,7 @@ impl Serializer for RpcRawBlock {
 impl Deserializer for RpcRawBlock {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u16, reader)?;
-        let header = deserialize!(Option<RpcRawHeader>, reader)?;
+        let header = deserialize!(RpcRawHeader, reader)?;
         let transactions = deserialize!(Vec<RpcTransaction>, reader)?;
 
         Ok(Self { header, transactions })

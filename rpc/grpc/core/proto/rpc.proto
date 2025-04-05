@@ -957,7 +957,7 @@ message RpcTransactionInputVerboseData{
 }
 
 message RpcBlockHeader {
-  optional string hash = 15; // -> this field is new
+  string hash = 15; // -> this field is new
   uint32 version = 1;
   repeated RpcBlockLevelParents parents = 12;
   string hashMerkleRoot = 3;
@@ -983,13 +983,12 @@ message RpcTransactionVerboseData{
 // verbosity messages for vspcn v2 
 
 message RpcAcceptanceDataVerbosity {
-  optional bool includeAcceptingBlueScore = 1; // default is false
+  optional RpcBlockHeaderVerbosity acceptingChainHeaderVerbosity = 1; // default is null
   optional RpcMergesetBlockAcceptanceDataVerbosity mergesetBlockAcceptanceDataVerbosity = 20; // default is null
 }
 
 message RpcMergesetBlockAcceptanceDataVerbosity {
-  optional bool includeHash = 1; // default is false
-  optional RpcBlockHeaderVerbosity headerVerbosity = 2; // default is null
+  optional RpcBlockHeaderVerbosity mergedHeaderVerbosity = 2; // default is null
   optional RpcTransactionVerbosity acceptedTransactionsVerbosity = 4; // default is null
 }
 
@@ -1066,13 +1065,12 @@ message RpcUtxoEntryVerbosity {
 
 // new base messages for vspcn v2
 message RpcAcceptanceData {
-  optional uint64 acceptingBlueScore = 1;
+  optional RpcBlockHeader acceptingChainHeader = 1;
   repeated RpcMergesetBlockAcceptanceData mergesetBlockAcceptanceData = 20;
 }
 
 message RpcMergesetBlockAcceptanceData {
-  optional string hash = 1;
-  optional RpcBlockHeader header = 2;
+  optional RpcBlockHeader mergedHeader = 2;
   repeated RpcTransaction acceptedTransactions = 3;
 }
 
@@ -1125,8 +1123,9 @@ message GetTransactionsRequestMessage{
 
 message RpcTransactionLocator {
    oneof transaction_locator {
-    RpcTransactionAcceptanceLocator byAcceptance = 1;
-    RpcTransactionInclusionLocator byInclusion = 2;
+    RpcTransactionAcceptingBlockLocator byAcceptingBlock = 1;
+    RpcTransactionAcceptingDaaScoreLocator byAcceptingDaaScore = 2;
+    RpcTransactionInclusionIndicesLocator byInclusionIndices = 3;
   }
 }
 
@@ -1136,12 +1135,17 @@ message GetTransactionsResponseMessage {
   RPCError error = 1000;
 }
 
-message RpcTransactionAcceptanceLocator {
+message RpcTransactionAcceptingBlockLocator {
   string acceptingChainBlock = 1;
   repeated string transactionIds = 2;
 }
 
-message RpcTransactionInclusionLocator {
+message RpcTransactionAcceptingDaaScoreLocator {
+  uint64 acceptingDaaScore = 1;
+  repeated string transactionIds = 2;
+}
+
+message RpcTransactionInclusionIndicesLocator {
   string blockHash = 1;
   repeated uint32 indicesWithinBlock = 2;
 }

@@ -269,14 +269,14 @@ impl Deserializer for RpcTransactionOutput {
 #[serde(rename_all = "camelCase")]
 pub struct RpcTransactionOutputVerboseData {
     pub script_public_key_type: RpcScriptClass,
-    pub script_public_key_address: Address,
+    pub script_public_key_address: Option<Address>,
 }
 
 impl Serializer for RpcTransactionOutputVerboseData {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        store!(u8, &1, writer)?;
+        store!(u8, &2, writer)?;
         store!(RpcScriptClass, &self.script_public_key_type, writer)?;
-        store!(Address, &self.script_public_key_address, writer)?;
+        store!(Option<Address>, &self.script_public_key_address, writer)?;
 
         Ok(())
     }
@@ -286,7 +286,11 @@ impl Deserializer for RpcTransactionOutputVerboseData {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u8, reader)?;
         let script_public_key_type = load!(RpcScriptClass, reader)?;
-        let script_public_key_address = load!(Address, reader)?;
+        let script_public_key_address = match _version {
+            1 => Some(load!(Address, reader)?),
+            2 => load!(Option<Address>, reader)?,
+            _ => panic!("Invalid version for RpcTransactionOutputVerboseData"),
+        };
 
         Ok(Self { script_public_key_type, script_public_key_address })
     }
@@ -408,8 +412,9 @@ pub struct RpcAcceptedTransactionIds {
 #[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum RpcTransactionLocator {
-    ByAcceptance(RpcTransactionAcceptanceLocator),
-    ByInclusion(RpcTransactionInclusionLocator),
+    ByAcceptingBlock(RpcTransactionAcceptingBlockLocator),
+    ByAcceptingDaaScore(RpcTransactionAcceptingDaaScoreLocator),
+    ByInclusionIndices(RpcTransactionInclusionIndicesLocator),
 }
 
 impl Serializer for RpcTransactionLocator {
@@ -418,18 +423,22 @@ impl Serializer for RpcTransactionLocator {
         store!(
             u8,
             &match self {
-                RpcTransactionLocator::ByAcceptance(_) => 1,
-                RpcTransactionLocator::ByInclusion(_) => 2,
+                RpcTransactionLocator::ByAcceptingBlock(_) => 1,
+                RpcTransactionLocator::ByAcceptingDaaScore(_) => 2,
+                RpcTransactionLocator::ByInclusionIndices(_) => 3,
             },
             writer
         )?;
 
         match self {
-            RpcTransactionLocator::ByAcceptance(ref locator) => {
-                serialize!(RpcTransactionAcceptanceLocator, locator, writer)?;
+            RpcTransactionLocator::ByAcceptingBlock(ref locator) => {
+                serialize!(RpcTransactionAcceptingBlockLocator, locator, writer)?;
             }
-            RpcTransactionLocator::ByInclusion(ref locator) => {
-                serialize!(RpcTransactionInclusionLocator, locator, writer)?;
+            RpcTransactionLocator::ByAcceptingDaaScore(ref locator) => {
+                serialize!(RpcTransactionAcceptingDaaScoreLocator, locator, writer)?;
+            }
+            RpcTransactionLocator::ByInclusionIndices(ref locator) => {
+                serialize!(RpcTransactionInclusionIndicesLocator, locator, writer)?;
             }
         }
 
@@ -443,12 +452,16 @@ impl Deserializer for RpcTransactionLocator {
         let enum_type = load!(u8, reader)?;
         match enum_type {
             1 => {
-                let locator = deserialize!(RpcTransactionAcceptanceLocator, reader)?;
-                Ok(RpcTransactionLocator::ByAcceptance(locator))
+                let locator = deserialize!(RpcTransactionAcceptingBlockLocator, reader)?;
+                Ok(RpcTransactionLocator::ByAcceptingBlock(locator))
             }
             2 => {
-                let locator = deserialize!(RpcTransactionInclusionLocator, reader)?;
-                Ok(RpcTransactionLocator::ByInclusion(locator))
+                let locator = deserialize!(RpcTransactionAcceptingDaaScoreLocator, reader)?;
+                Ok(RpcTransactionLocator::ByAcceptingDaaScore(locator))
+            }
+            3 => {
+                let locator = deserialize!(RpcTransactionInclusionIndicesLocator, reader)?;
+                Ok(RpcTransactionLocator::ByInclusionIndices(locator))
             }
             _ => Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid enum_type for RpcTransactionLocator")),
         }
@@ -456,18 +469,18 @@ impl Deserializer for RpcTransactionLocator {
 }
 #[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RpcTransactionAcceptanceLocator {
+pub struct RpcTransactionAcceptingBlockLocator {
     pub accepting_chain_block: RpcHash,
     pub transaction_ids: Vec<RpcTransactionId>,
 }
 
-impl RpcTransactionAcceptanceLocator {
+impl RpcTransactionAcceptingBlockLocator {
     pub fn new(accepting_chain_block: RpcHash, transaction_ids: Vec<RpcTransactionId>) -> Self {
         Self { accepting_chain_block, transaction_ids }
     }
 }
 
-impl Serializer for RpcTransactionAcceptanceLocator {
+impl Serializer for RpcTransactionAcceptingBlockLocator {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         store!(u8, &1, writer)?;
         store!(RpcHash, &self.accepting_chain_block, writer)?;
@@ -477,7 +490,7 @@ impl Serializer for RpcTransactionAcceptanceLocator {
     }
 }
 
-impl Deserializer for RpcTransactionAcceptanceLocator {
+impl Deserializer for RpcTransactionAcceptingBlockLocator {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u8, reader)?;
         let accepting_chain_block = load!(RpcHash, reader)?;
@@ -489,18 +502,18 @@ impl Deserializer for RpcTransactionAcceptanceLocator {
 
 #[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RpcTransactionInclusionLocator {
+pub struct RpcTransactionInclusionIndicesLocator {
     pub block_hash: RpcHash,
     pub indices_within_block: Vec<TransactionIndexType>,
 }
 
-impl RpcTransactionInclusionLocator {
+impl RpcTransactionInclusionIndicesLocator {
     pub fn new(block_hash: RpcHash, indices_within_block: Vec<TransactionIndexType>) -> Self {
         Self { block_hash, indices_within_block }
     }
 }
 
-impl Serializer for RpcTransactionInclusionLocator {
+impl Serializer for RpcTransactionInclusionIndicesLocator {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         store!(u8, &1, writer)?;
         store!(RpcHash, &self.block_hash, writer)?;
@@ -510,13 +523,45 @@ impl Serializer for RpcTransactionInclusionLocator {
     }
 }
 
-impl Deserializer for RpcTransactionInclusionLocator {
+impl Deserializer for RpcTransactionInclusionIndicesLocator {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u8, reader)?;
         let block_hash = load!(RpcHash, reader)?;
         let indices_within_block = load!(Vec<TransactionIndexType>, reader)?;
 
         Ok(Self { block_hash, indices_within_block })
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+pub struct RpcTransactionAcceptingDaaScoreLocator {
+    pub accepting_daa_score: u64,
+    pub transaction_ids: Vec<RpcTransactionId>,
+}
+
+impl RpcTransactionAcceptingDaaScoreLocator {
+    pub fn new(accepting_daa_score: u64, transaction_ids: Vec<RpcTransactionId>) -> Self {
+        Self { accepting_daa_score, transaction_ids }
+    }
+}
+
+impl Serializer for RpcTransactionAcceptingDaaScoreLocator {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u8, &1, writer)?;
+        store!(u64, &self.accepting_daa_score, writer)?;
+        store!(Vec<RpcTransactionId>, &self.transaction_ids, writer)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializer for RpcTransactionAcceptingDaaScoreLocator {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u8, reader)?;
+        let accepting_daa_score = load!(u64, reader)?;
+        let transaction_ids = load!(Vec<RpcTransactionId>, reader)?;
+
+        Ok(Self { accepting_daa_score, transaction_ids })
     }
 }
 
@@ -803,6 +848,20 @@ impl RpcTransactionVerbosity {
             include_mass,
             verbose_data_verbosity,
         }
+    }
+
+    pub fn requires_populated_transaction(&self) -> bool {
+        self.input_verbosity
+            .as_ref()
+            .is_some_and(|active| active.verbose_data_verbosity.as_ref().is_some_and(|active| active.utxo_entry_verbosity.is_some()))
+    }
+
+    pub fn requires_block_hash(&self) -> bool {
+        self.verbose_data_verbosity.as_ref().is_some_and(|active| active.include_block_hash.is_some())
+    }
+
+    pub fn requires_block_time(&self) -> bool {
+        self.verbose_data_verbosity.as_ref().is_some_and(|active| active.include_block_time.is_some())
     }
 }
 

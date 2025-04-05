@@ -349,40 +349,6 @@ pub struct RpcHeaderVerbosity {
     pub include_pruning_point: Option<bool>,
 }
 
-impl RpcHeaderVerbosity {
-    fn new(
-        include_hash: Option<bool>,
-        include_version: Option<bool>,
-        include_parents_by_level: Option<bool>,
-        include_hash_merkle_root: Option<bool>,
-        include_accepted_id_merkle_root: Option<bool>,
-        include_utxo_commitment: Option<bool>,
-        include_timestamp: Option<bool>,
-        include_bits: Option<bool>,
-        include_nonce: Option<bool>,
-        include_daa_score: Option<bool>,
-        include_blue_work: Option<bool>,
-        include_blue_score: Option<bool>,
-        include_pruning_point: Option<bool>,
-    ) -> Self {
-        Self {
-            include_hash,
-            include_version,
-            include_parents_by_level,
-            include_hash_merkle_root,
-            include_accepted_id_merkle_root,
-            include_utxo_commitment,
-            include_timestamp,
-            include_bits,
-            include_nonce,
-            include_daa_score,
-            include_blue_work,
-            include_blue_score,
-            include_pruning_point,
-        }
-    }
-}
-
 impl Serializer for RpcHeaderVerbosity {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         store!(u16, &1, writer)?;

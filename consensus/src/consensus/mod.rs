@@ -69,7 +69,10 @@ use kaspa_consensus_core::{
     network::NetworkType,
     pruning::{PruningPointProof, PruningPointTrustedData, PruningPointsList, PruningProofMetadata},
     trusted::{ExternalGhostdagData, TrustedBlock},
-    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionOutpoint, UtxoEntry},
+    tx::{
+        MutableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionOutpoint, TransactionQueryResult,
+        TransactionType, UtxoEntry,
+    },
     BlockHashSet, BlueWorkType, ChainPath, HashMapCustomHasher,
 };
 use kaspa_consensus_notify::root::ConsensusNotificationRoot;
@@ -89,7 +92,7 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 
 use std::{
     cmp::Reverse,
-    collections::{BinaryHeap, VecDeque},
+    collections::{BinaryHeap, HashSet, VecDeque},
     future::Future,
     iter::once,
     ops::Deref,
@@ -766,51 +769,100 @@ impl ConsensusApi for Consensus {
         sample_headers
     }
 
-    fn get_populated_transactions_by_accepting_daa_score(
+    fn get_transactions_by_block_indices(
         &self,
-        tx_ids: Option<Vec<TransactionId>>,
-        accepting_block_daa_score: u64,
-    ) -> ConsensusResult<Vec<SignableTransaction>> {
-        // We need consistency between the pruning_point_store, utxo_diffs_store, block_transactions_store, selected chain and headers store reads
+        block_hash: Hash,
+        tx_indices: Option<Vec<TransactionIndexType>>,
+        tx_type: TransactionType,
+    ) -> ConsensusResult<TransactionQueryResult> {
+        // We need consistency between the acceptance store and the block transaction store,
         let _guard = self.pruning_lock.blocking_read();
-        let res = self.virtual_processor.get_populated_transactions_by_accepting_daa_score(
-            tx_ids,
-            accepting_block_daa_score,
-            self.get_retention_period_root(),
-        )?;
+        let txs = self.get_block_transactions(block_hash, tx_indices)?;
 
-        Ok(res)
+        match tx_type {
+            TransactionType::Transaction => Ok(TransactionQueryResult::Transaction(Arc::new(txs))),
+            TransactionType::SignableTransaction => Ok(TransactionQueryResult::SignableTransaction(Arc::new(
+                self.virtual_processor.populate_block_transactions(block_hash, txs, self.get_retention_period_root())?,
+            ))),
+        }
     }
 
-    fn get_populated_transactions_by_accepting_block(
+    fn get_transactions_by_accepting_daa_score(
         &self,
+        accepting_daa_score: u64,
         tx_ids: Option<Vec<TransactionId>>,
+        tx_type: TransactionType,
+    ) -> ConsensusResult<TransactionQueryResult> {
+        // We need consistency between the acceptance store and the block transaction store,
+        let _guard = self.pruning_lock.blocking_read();
+        let accepting_block = self
+            .virtual_processor
+            .find_accepting_chain_block_hash_at_daa_score(accepting_daa_score, self.get_retention_period_root())?;
+        self.get_transactions_by_accepting_block(accepting_block, tx_ids, tx_type)
+    }
+
+    fn get_transactions_by_accepting_block(
+        &self,
         accepting_block: Hash,
-    ) -> ConsensusResult<Vec<SignableTransaction>> {
-        // We need consistency between the pruning_point_store, utxo_diffs_store, block_transactions_store, selected chain and headers store reads
-        let _guard = self.pruning_lock.blocking_read();
-        Ok(self.virtual_processor.get_populated_transactions_by_accepting_block(tx_ids, accepting_block)?)
-    }
-
-    fn get_transactions_by_accepting_block(&self, accepting_block: Hash) -> ConsensusResult<Vec<Transaction>> {
+        tx_ids: Option<Vec<TransactionId>>,
+        tx_type: TransactionType,
+    ) -> ConsensusResult<TransactionQueryResult> {
         // We need consistency between the acceptance store and the block transaction store,
         let _guard = self.pruning_lock.blocking_read();
 
-        Ok(self
-            .acceptance_data_store
-            .get(accepting_block)
-            .map_err(|_| ConsensusError::MissingData(accepting_block))?
-            .unwrap_or_clone()
-            .into_iter()
-            .flat_map(|mbad| {
-                self.get_block_transactions(
-                    mbad.block_hash,
-                    Some(mbad.accepted_transactions.iter().map(|atx| atx.index_within_block).collect()),
-                )
-                .map_err(|err| return err)
-            })
-            .flatten()
-            .collect::<Vec<_>>())
+        match tx_type {
+            TransactionType::Transaction => {
+                if let Some(tx_ids) = tx_ids {
+                    let tx_id_set = HashSet::<TransactionId>::from_iter(tx_ids);
+
+                    Ok(TransactionQueryResult::Transaction(Arc::new(
+                        self.acceptance_data_store
+                            .get(accepting_block)
+                            .map_err(|_| ConsensusError::MissingData(accepting_block))?
+                            .unwrap_or_clone()
+                            .into_iter()
+                            .flat_map(|mbad| {
+                                self.get_block_transactions(
+                                    mbad.block_hash,
+                                    Some(
+                                        mbad.accepted_transactions
+                                            .into_iter()
+                                            .filter_map(|atx| {
+                                                if tx_id_set.contains(&atx.transaction_id) {
+                                                    Some(atx.index_within_block)
+                                                } else {
+                                                    None
+                                                }
+                                            })
+                                            .collect(),
+                                    ),
+                                )
+                            })
+                            .flatten()
+                            .collect::<Vec<_>>(),
+                    )))
+                } else {
+                    Ok(TransactionQueryResult::Transaction(Arc::new(
+                        self.acceptance_data_store
+                            .get(accepting_block)
+                            .map_err(|_| ConsensusError::MissingData(accepting_block))?
+                            .unwrap_or_clone()
+                            .into_iter()
+                            .flat_map(|mbad| {
+                                self.get_block_transactions(
+                                    mbad.block_hash,
+                                    Some(mbad.accepted_transactions.iter().map(|atx| atx.index_within_block).collect()),
+                                )
+                            })
+                            .flatten()
+                            .collect::<Vec<_>>(),
+                    )))
+                }
+            }
+            TransactionType::SignableTransaction => Ok(TransactionQueryResult::SignableTransaction(Arc::new(
+                self.virtual_processor.get_populated_transactions_by_accepting_block(tx_ids, accepting_block)?,
+            ))),
+        }
     }
 
     fn get_virtual_parents(&self) -> BlockHashSet {
