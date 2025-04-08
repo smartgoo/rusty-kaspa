@@ -266,7 +266,7 @@ mod mockery {
     impl Mock for RpcTransactionLocator {
         fn mock() -> Self {
             // randomly choose
-            match rand::random::<u8>() % 3 {
+            match rand::thread_rng().gen::<u8>() % 3 {
                 0 => RpcTransactionLocator::ByAcceptingBlock(mock()),
                 1 => RpcTransactionLocator::ByAcceptingDaaScore(mock()),
                 _ => RpcTransactionLocator::ByInclusionIndices(mock()), // 2

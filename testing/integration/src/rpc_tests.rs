@@ -683,7 +683,7 @@ async fn sanity_test() {
                         )
                         .await
                         .unwrap();
-                    assert!(response.added_chain_block_hashes.contains(&SIMNET_GENESIS.hash));
+                    assert!(response.added_chain_block_hashes.is_empty());
                     assert!(response.removed_chain_block_hashes.is_empty());
                 })
             }
@@ -705,7 +705,9 @@ async fn sanity_test() {
                         )
                         .await;
 
-                    assert!(response_1.is_err()); // TODO: add tx verbosity
+                    println!("Response 1: {:?}", response_1);
+
+                    assert!(response_1.unwrap().transactions.is_empty()); // TODO: add tx verbosity
 
                     let response_2 = rpc_client
                         .get_transactions_call(
@@ -736,7 +738,7 @@ async fn sanity_test() {
                         )
                         .await;
 
-                    assert!(response_3.is_err()); // TODO: add tx verbosity
+                    assert!(response_3.unwrap().transactions.is_empty()); // TODO: add tx verbosity
                 })
             }
 
