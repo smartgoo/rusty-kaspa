@@ -40,7 +40,7 @@ impl Deserializer for RpcBlock {
                 let transactions = deserialize!(Vec<RpcTransaction>, reader)?;
                 let verbose_data = deserialize!(Option<RpcBlockVerboseData>, reader)?;
                 Ok(Self { header, transactions, verbose_data })
-            },
+            }
             2 => {
                 let header = deserialize!(Option<RpcHeader>, reader)?;
                 let transactions = deserialize!(Vec<RpcTransaction>, reader)?;

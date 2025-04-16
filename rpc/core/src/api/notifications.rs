@@ -218,15 +218,13 @@ impl Deserializer for Notification {
                 let notification = deserialize!(NewBlockTemplateNotification, reader)?;
                 Ok(Notification::NewBlockTemplate(notification))
             }
-            9 => {
-                match _version {
-                    2 => {
-                        let notification = deserialize!(VirtualChainChangedNotification, reader)?;
-                        Ok(Notification::VirtualChainChanged(notification))
-                    }
-                    _ => panic!("Unsupported version"),
+            9 => match _version {
+                2 => {
+                    let notification = deserialize!(VirtualChainChangedNotification, reader)?;
+                    Ok(Notification::VirtualChainChanged(notification))
                 }
-            }
+                _ => panic!("Unsupported version"),
+            },
             _ => panic!("Unsupported version"),
         }
     }

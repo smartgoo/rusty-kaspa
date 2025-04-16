@@ -521,7 +521,7 @@ impl Deserializer for RpcTransaction {
                 let verbose_data = deserialize!(Option<RpcTransactionVerboseData>, reader)?;
 
                 Self { version, inputs, outputs, lock_time, subnetwork_id, gas, payload, mass, verbose_data }
-            },
+            }
             2 => {
                 let version = load!(Option<u16>, reader)?;
                 let inputs = deserialize!(Vec<RpcTransactionInput>, reader)?;
@@ -534,7 +534,7 @@ impl Deserializer for RpcTransaction {
                 let verbose_data = deserialize!(Option<RpcTransactionVerboseData>, reader)?;
 
                 Self { version, inputs, outputs, lock_time, subnetwork_id, gas, payload, mass, verbose_data }
-            },
+            }
             _ => panic!("Invalid version for RpcTransaction"),
         })
     }

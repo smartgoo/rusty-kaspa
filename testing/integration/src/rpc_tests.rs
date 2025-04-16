@@ -226,7 +226,15 @@ async fn sanity_test() {
                         .await
                         .unwrap();
                     assert_eq!(response.blocks.len(), 1, "genesis block should be returned");
-                    assert_eq!(response.blocks[0].header.as_ref().expect("expected header").hash.expect("expected RpcHeader hash field to be set"), SIMNET_GENESIS.hash);
+                    assert_eq!(
+                        response.blocks[0]
+                            .header
+                            .as_ref()
+                            .expect("expected header")
+                            .hash
+                            .expect("expected RpcHeader hash field to be set"),
+                        SIMNET_GENESIS.hash
+                    );
                     assert_eq!(response.block_hashes[0], SIMNET_GENESIS.hash);
                 })
             }

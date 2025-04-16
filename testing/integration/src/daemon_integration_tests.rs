@@ -335,7 +335,9 @@ async fn daemon_utxos_propagation_test() {
     let new_utxos = rpc_client1.get_utxos_by_addresses(vec![user_address]).await.unwrap();
     let new_utxo = new_utxos
         .iter()
-        .find(|utxo| utxo.outpoint.transaction_id.expect("expected RpcTransactionOutpoint transaction_id field to be set") == transaction.id())
+        .find(|utxo| {
+            utxo.outpoint.transaction_id.expect("expected RpcTransactionOutpoint transaction_id field to be set") == transaction.id()
+        })
         .expect("Did not find a utxo for the tx we just created but expected to");
 
     let utxo_return_address = rpc_client1
