@@ -22,7 +22,7 @@ use workflow_wasm::serde::to_value;
 full_featured! {
 #[derive(Clone, Debug, Display, Serialize, Deserialize)]
 pub enum Notification {
-    #[display(fmt = "BlockAdded notification: block hash {}", "_0.block.header.as_ref().map(|header| header.hash).expect(\"expected header to be `Some()`\")")]
+    #[display(fmt = "BlockAdded notification: block hash {}", "_0.block.header.as_ref().expect(\"expected header to be `Some()`\").hash.as_ref().expect(\"expected hash to be `Some()`\")")]
     BlockAdded(BlockAddedNotification),
 
     #[display(fmt = "VirtualChainChanged notification: {} removed blocks, {} added blocks, {} accepted transactions", "_0.removed_chain_block_hashes.len()", "_0.added_chain_block_hashes.len()", "_0.accepted_transaction_ids.len()")]
@@ -131,7 +131,7 @@ impl NotificationTrait for Notification {
 
 impl Serializer for Notification {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        store!(u16, &1, writer)?;
+        store!(u16, &2, writer)?;
         match self {
             Notification::BlockAdded(notification) => {
                 store!(u16, &0, writer)?;
@@ -218,7 +218,16 @@ impl Deserializer for Notification {
                 let notification = deserialize!(NewBlockTemplateNotification, reader)?;
                 Ok(Notification::NewBlockTemplate(notification))
             }
-            _ => Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "Invalid variant")),
+            9 => {
+                match _version {
+                    2 => {
+                        let notification = deserialize!(VirtualChainChangedNotification, reader)?;
+                        Ok(Notification::VirtualChainChanged(notification))
+                    }
+                    _ => panic!("Unsupported version"),
+                }
+            }
+            _ => panic!("Unsupported version"),
         }
     }
 }

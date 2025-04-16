@@ -60,19 +60,19 @@ impl TryFrom<RpcHeader> for kaspa_consensus_core::header::Header {
     type Error = RpcError;
     fn try_from(item: RpcHeader) -> RpcResult<Self> {
         Ok(Self {
-            hash: item.hash,
-            version: item.version,
+            hash: item.hash.ok_or(RpcError::MissingRpcFieldError("RpcHeader".to_string(), "hash".to_string()))?,
+            version: item.version.ok_or(RpcError::MissingRpcFieldError("RpcHeader".to_string(), "version".to_string()))?,
             parents_by_level: item.parents_by_level,
-            hash_merkle_root: item.hash_merkle_root,
-            accepted_id_merkle_root: item.accepted_id_merkle_root,
-            utxo_commitment: item.utxo_commitment,
-            timestamp: item.timestamp,
-            bits: item.bits,
-            nonce: item.nonce,
-            daa_score: item.daa_score,
-            blue_work: item.blue_work,
-            blue_score: item.blue_score,
-            pruning_point: item.pruning_point,
+            hash_merkle_root: item.hash_merkle_root.ok_or(RpcError::MissingRpcFieldError("RpcHeader".to_string(), "hash_merkle_root".to_string()))?,
+            accepted_id_merkle_root: item.accepted_id_merkle_root.ok_or(RpcError::MissingRpcFieldError("RpcHeader".to_string(), "accepted_id_merkle_root".to_string()))?,
+            utxo_commitment: item.utxo_commitment.ok_or(RpcError::MissingRpcFieldError("RpcHeader".to_string(), "utxo_commitment".to_string()))?,
+            timestamp: item.timestamp.ok_or(RpcError::MissingRpcFieldError("RpcHeader".to_string(), "timestamp".to_string()))?,
+            bits: item.bits.ok_or(RpcError::MissingRpcFieldError("RpcHeader".to_string(), "bits".to_string()))?,
+            nonce: item.nonce.ok_or(RpcError::MissingRpcFieldError("RpcHeader".to_string(), "nonce".to_string()))?,
+            daa_score: item.daa_score.ok_or(RpcError::MissingRpcFieldError("RpcHeader".to_string(), "daa_score".to_string()))?,
+            blue_work: item.blue_work.ok_or(RpcError::MissingRpcFieldError("RpcHeader".to_string(), "blue_work".to_string()))?,
+            blue_score: item.blue_score.ok_or(RpcError::MissingRpcFieldError("RpcHeader".to_string(), "blue_score".to_string()))?,
+            pruning_point: item.pruning_point.ok_or(RpcError::MissingRpcFieldError("RpcHeader".to_string(), "pruning_point".to_string()))?,
         })
     }
 }
@@ -82,9 +82,9 @@ impl TryFrom<RpcBlock> for Block {
     type Error = RpcError;
     fn try_from(item: RpcBlock) -> RpcResult<Self> {
         Ok(Self {
-            header: Arc::new(kaspa_consensus_core::header::Header::from(
-                item.header.ok_or(RpcError::MissingRpcFieldError("RpcBlock".to_string(), "header".to_string()))?,
-            )),
+            header: Arc::new(
+                (item.header.ok_or(RpcError::MissingRpcFieldError("RpcBlock".to_string(), "header".to_string()))?).try_into()?,
+            ),
             transactions: Arc::new(
                 item.transactions
                     .into_iter()

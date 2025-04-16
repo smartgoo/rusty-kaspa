@@ -399,7 +399,10 @@ impl UtxoProcessor {
         for (address, entries) in removed.into_iter() {
             if let Some(utxo_context) = self.address_to_utxo_context(&address) {
                 updated_contexts.insert(utxo_context.clone());
-                let entries = entries.into_iter().map(|entry| entry.into()).collect::<Vec<_>>();
+                let entries = entries
+                    .into_iter()
+                    .map(|entry| entry.try_into().expect("expected to convert to UTXO Entry reference"))
+                    .collect::<Vec<_>>();
                 utxo_context.handle_utxo_removed(entries, current_daa_score).await?;
             } else {
                 log_error!("receiving UTXO Changed 'removed' notification for an unknown address: {}", address);
@@ -411,7 +414,10 @@ impl UtxoProcessor {
         for (address, entries) in added.into_iter() {
             if let Some(utxo_context) = self.address_to_utxo_context(&address) {
                 updated_contexts.insert(utxo_context.clone());
-                let entries = entries.into_iter().map(|entry| entry.into()).collect::<Vec<UtxoEntryReference>>();
+                let entries = entries
+                    .into_iter()
+                    .map(|entry| entry.try_into().expect("expected to convert to UTXO Entry reference"))
+                    .collect::<Vec<UtxoEntryReference>>();
                 utxo_context.handle_utxo_added(entries, current_daa_score).await?;
             } else {
                 log_error!("receiving UTXO Changed 'added' notification for an unknown address: {}", address);

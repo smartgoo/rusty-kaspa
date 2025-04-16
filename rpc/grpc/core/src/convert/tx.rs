@@ -1,6 +1,6 @@
 use crate::protowire::{self, RpcTransactionVerboseDataVerbosity};
 use crate::{from, try_from};
-use kaspa_rpc_core::{FromRpcHex, RpcError, RpcHash, RpcResult, RpcScriptVec, ToRpcHex};
+use kaspa_rpc_core::{FromRpcHex, RpcAddress, RpcError, RpcHash, RpcResult, RpcScriptClass, RpcScriptVec, ToRpcHex};
 use std::str::FromStr;
 
 // ----------------------------------------------------------------------------
@@ -9,13 +9,13 @@ use std::str::FromStr;
 
 from!(item: &kaspa_rpc_core::RpcTransaction, protowire::RpcTransaction, {
     Self {
-        version: item.version.into(),
+        version: item.version.map(|x| x.into()),
         inputs: item.inputs.iter().map(protowire::RpcTransactionInput::from).collect(),
         outputs: item.outputs.iter().map(protowire::RpcTransactionOutput::from).collect(),
         lock_time: item.lock_time,
-        subnetwork_id: item.subnetwork_id.to_string(),
+        subnetwork_id: item.subnetwork_id.as_ref().map(|x| x.to_string()),
         gas: item.gas,
-        payload: item.payload.to_rpc_hex(),
+        payload: item.payload.as_ref().map(|x| x.to_rpc_hex()),
         mass: item.mass,
         verbose_data: item.verbose_data.as_ref().map(|x| x.into()),
     }
@@ -38,9 +38,9 @@ from!(item: &kaspa_rpc_core::RpcTransactionVerbosity, protowire::RpcTransactionV
 from!(item: &kaspa_rpc_core::RpcTransactionInput, protowire::RpcTransactionInput, {
     Self {
         previous_outpoint: item.previous_outpoint.as_ref().map(protowire::RpcOutpoint::from),
-        signature_script: item.signature_script.to_rpc_hex(),
+        signature_script: item.signature_script.as_ref().map(|x| x.to_rpc_hex()),
         sequence: item.sequence,
-        sig_op_count: item.sig_op_count.into(),
+        sig_op_count: item.sig_op_count.map(|x| x.into()),
         verbose_data: item.verbose_data.as_ref().map(protowire::RpcTransactionInputVerboseData::from),
     }
 });
@@ -58,7 +58,7 @@ from!(item: &kaspa_rpc_core::RpcTransactionInputVerbosity, protowire::RpcTransac
 from!(item: &kaspa_rpc_core::RpcTransactionOutput, protowire::RpcTransactionOutput, {
     Self {
         amount: item.value,
-        script_public_key: Some((&item.script_public_key).into()),
+        script_public_key: item.script_public_key.as_ref().map(|x| x.into()),
         verbose_data: item.verbose_data.as_ref().map(|x| x.into()),
     }
 });
@@ -72,7 +72,7 @@ from!(item: &kaspa_rpc_core::RpcTransactionOutputVerbosity, protowire::RpcTransa
 });
 
 from!(item: &kaspa_rpc_core::RpcTransactionOutpoint, protowire::RpcOutpoint, {
-    Self { transaction_id: item.transaction_id.to_string(), index: item.index }
+    Self { transaction_id: item.transaction_id.as_ref().map(|x| x.to_string()), index: item.index }
 });
 
 from!(item: &kaspa_rpc_core::RpcTransactionOutpointVerbosity, protowire::RpcOutpointVerbosity, {
@@ -85,10 +85,18 @@ from!(item: &kaspa_rpc_core::RpcTransactionOutpointVerbosity, protowire::RpcOutp
 from!(item: &kaspa_rpc_core::RpcUtxoEntry, protowire::RpcUtxoEntry, {
     Self {
         amount: item.amount,
-        script_public_key: Some((&item.script_public_key).into()),
+        script_public_key: item.script_public_key.as_ref().map(|x| x.into()),
         block_daa_score: item.block_daa_score,
         is_coinbase: item.is_coinbase,
+        verbose_data: item.verbose_data.as_ref().map(|x| x.into()),
     }
+});
+
+from!(item: &kaspa_rpc_core::RpcUtxoEntryVerboseData, protowire::RpcUtxoEntryVerboseData, {
+    Self {
+        script_public_key_type: item.script_public_key_type.as_ref().map(|x| x.to_string()),
+        script_public_key_address: item.script_public_key_address.as_ref().map(|x| x.to_string()),
+        }
 });
 
 from!(item: &kaspa_rpc_core::RpcUtxoEntryVerbosity, protowire::RpcUtxoEntryVerbosity, {
@@ -97,6 +105,14 @@ from!(item: &kaspa_rpc_core::RpcUtxoEntryVerbosity, protowire::RpcUtxoEntryVerbo
         include_script_public_key: item.include_script_public_key,
         include_block_daa_score: item.include_block_daa_score,
         include_is_coinbase: item.include_is_coinbase,
+        verbose_data_verbosity: item.verbose_data_verbosity.as_ref().map(protowire::RpcUtxoEntryVerboseDataVerbosity::from),
+    }
+});
+
+from!(item: &kaspa_rpc_core::RpcUtxoEntryVerboseDataVerbosity, protowire::RpcUtxoEntryVerboseDataVerbosity, {
+    Self {
+        include_script_public_key_type: item.include_script_public_key_type,
+        include_script_public_key_address: item.include_script_public_key_address,
     }
 });
 
@@ -106,10 +122,10 @@ from!(item: &kaspa_rpc_core::RpcScriptPublicKey, protowire::RpcScriptPublicKey, 
 
 from!(item: &kaspa_rpc_core::RpcTransactionVerboseData, protowire::RpcTransactionVerboseData, {
     Self {
-        transaction_id: item.transaction_id.to_string(),
-        hash: item.hash.to_string(),
+        transaction_id: item.transaction_id.map(|v| v.to_string()),
+        hash: item.hash.map(|v| v.to_string()),
         compute_mass: item.compute_mass,
-        block_hash: item.block_hash.to_string(),
+        block_hash: item.block_hash.map(|v| v.to_string()),
         block_time: item.block_time,
     }
 });
@@ -137,13 +153,9 @@ from!(item: &kaspa_rpc_core::RpcTransactionInputVerboseDataVerbosity, protowire:
 });
 
 from!(item: &kaspa_rpc_core::RpcTransactionOutputVerboseData, protowire::RpcTransactionOutputVerboseData, {
-    Self {
-        script_public_key_type: item.script_public_key_type.to_string(),
-        script_public_key_address: if let Some(address) = item.script_public_key_address.as_ref() {
-            address.into()
-        } else {
-            Default::default()
-        },
+Self {
+    script_public_key_type: item.script_public_key_type.as_ref().map(|x| x.to_string()),
+    script_public_key_address: item.script_public_key_address.as_ref().map(|x| x.to_string()),
     }
 });
 
@@ -210,7 +222,9 @@ from!(item: &kaspa_rpc_core::RpcTransactionLocator, protowire::RpcTransactionLoc
 
 try_from!(item: &protowire::RpcTransaction, kaspa_rpc_core::RpcTransaction, {
     Self {
-        version: item.version.try_into()?,
+        version: item.version
+            .map(|x| x.try_into())
+            .transpose()?,
         inputs: item
             .inputs
             .iter()
@@ -222,9 +236,16 @@ try_from!(item: &protowire::RpcTransaction, kaspa_rpc_core::RpcTransaction, {
             .map(kaspa_rpc_core::RpcTransactionOutput::try_from)
             .collect::<RpcResult<Vec<kaspa_rpc_core::RpcTransactionOutput>>>()?,
         lock_time: item.lock_time,
-        subnetwork_id: kaspa_rpc_core::RpcSubnetworkId::from_str(&item.subnetwork_id)?,
+        subnetwork_id: item
+            .subnetwork_id
+            .as_ref()
+            .map(|x| kaspa_rpc_core::RpcSubnetworkId::from_str(x))
+            .transpose()?,
         gas: item.gas,
-        payload: Vec::from_rpc_hex(&item.payload)?,
+        payload: item.payload
+            .as_ref()
+            .map(|x| Vec::from_rpc_hex(x))
+            .transpose()?,
         mass: item.mass,
         verbose_data: item.verbose_data.as_ref().map(kaspa_rpc_core::RpcTransactionVerboseData::try_from).transpose()?,
     }
@@ -251,9 +272,15 @@ try_from!(item: &protowire::RpcTransactionInput, kaspa_rpc_core::RpcTransactionI
             .as_ref()
             .map(kaspa_rpc_core::RpcTransactionOutpoint::try_from)
             .transpose()?,
-        signature_script: Vec::from_rpc_hex(&item.signature_script)?,
+        signature_script: item
+            .signature_script
+            .as_ref()
+            .map(|x| Vec::from_rpc_hex(x))
+            .transpose()?,
         sequence: item.sequence,
-        sig_op_count: item.sig_op_count.try_into()?,
+        sig_op_count: item.sig_op_count
+            .map(|x| x.try_into())
+            .transpose()?,
         verbose_data: item.verbose_data.as_ref().map(kaspa_rpc_core::RpcTransactionInputVerboseData::try_from).transpose()?,
     }
 });
@@ -274,8 +301,8 @@ try_from!(item: &protowire::RpcTransactionOutput, kaspa_rpc_core::RpcTransaction
         script_public_key: item
             .script_public_key
             .as_ref()
-            .ok_or_else(|| RpcError::MissingRpcFieldError("RpcTransactionOutput".to_string(), "script_public_key".to_string()))?
-            .try_into()?,
+            .map(kaspa_rpc_core::RpcScriptPublicKey::try_from)
+            .transpose()?,
         verbose_data: item.verbose_data.as_ref().map(kaspa_rpc_core::RpcTransactionOutputVerboseData::try_from).transpose()?,
     }
 });
@@ -289,7 +316,13 @@ try_from!(item: &protowire::RpcTransactionOutputVerbosity, kaspa_rpc_core::RpcTr
 });
 
 try_from!(item: &protowire::RpcOutpoint, kaspa_rpc_core::RpcTransactionOutpoint, {
-    Self { transaction_id: RpcHash::from_str(&item.transaction_id)?, index: item.index }
+    Self {
+        transaction_id: item.transaction_id
+            .as_ref()
+            .map(|x| RpcHash::from_str(x))
+            .transpose()?,
+        index: item.index
+        }
 });
 
 try_from!(item: &protowire::RpcOutpointVerbosity, kaspa_rpc_core::RpcTransactionOutpointVerbosity, {
@@ -305,10 +338,18 @@ try_from!(item: &protowire::RpcUtxoEntry, kaspa_rpc_core::RpcUtxoEntry, {
         script_public_key: item
             .script_public_key
             .as_ref()
-            .ok_or_else(|| RpcError::MissingRpcFieldError("RpcTransactionOutput".to_string(), "script_public_key".to_string()))?
-            .try_into()?,
+            .map(|x| x.try_into())
+            .transpose()?,
         block_daa_score: item.block_daa_score,
         is_coinbase: item.is_coinbase,
+        verbose_data: item.verbose_data.as_ref().map(kaspa_rpc_core::RpcUtxoEntryVerboseData::try_from).transpose()?,
+    }
+});
+
+try_from!(item: &protowire::RpcUtxoEntryVerboseData, kaspa_rpc_core::RpcUtxoEntryVerboseData, {
+    Self {
+        script_public_key_type: item.script_public_key_type.as_ref().map(|x| RpcScriptClass::from_str(x)).transpose()?,
+        script_public_key_address: item.script_public_key_address.as_ref().map(|x| RpcAddress::try_from(x.to_owned())).transpose()?,
     }
 });
 
@@ -318,6 +359,14 @@ try_from!(item: &protowire::RpcUtxoEntryVerbosity, kaspa_rpc_core::RpcUtxoEntryV
         include_script_public_key: item.include_script_public_key,
         include_block_daa_score: item.include_block_daa_score,
         include_is_coinbase: item.include_is_coinbase,
+        verbose_data_verbosity: item.verbose_data_verbosity.as_ref().map(kaspa_rpc_core::RpcUtxoEntryVerboseDataVerbosity::try_from).transpose()?,
+    }
+});
+
+try_from!(item: &protowire::RpcUtxoEntryVerboseDataVerbosity, kaspa_rpc_core::RpcUtxoEntryVerboseDataVerbosity, {
+    Self {
+        include_script_public_key_type: item.include_script_public_key_type,
+        include_script_public_key_address: item.include_script_public_key_address,
     }
 });
 
@@ -327,10 +376,10 @@ try_from!(item: &protowire::RpcScriptPublicKey, kaspa_rpc_core::RpcScriptPublicK
 
 try_from!(item: &protowire::RpcTransactionVerboseData, kaspa_rpc_core::RpcTransactionVerboseData, {
     Self {
-        transaction_id: RpcHash::from_str(&item.transaction_id)?,
-        hash: RpcHash::from_str(&item.hash)?,
+        transaction_id: item.transaction_id.as_ref().map(|x| RpcHash::from_str(x)).transpose()?,
+        hash: item.hash.as_ref().map(|x| RpcHash::from_str(x)).transpose()?,
         compute_mass: item.compute_mass,
-        block_hash: RpcHash::from_str(&item.block_hash)?,
+        block_hash: item.block_hash.as_ref().map(|x| RpcHash::from_str(x)).transpose()?,
         block_time: item.block_time,
     }
 });
@@ -359,12 +408,8 @@ try_from!(item: &protowire::RpcTransactionInputVerboseDataVerbosity, kaspa_rpc_c
 
 try_from!(item: &protowire::RpcTransactionOutputVerboseData, kaspa_rpc_core::RpcTransactionOutputVerboseData, {
     Self {
-        script_public_key_type: item.script_public_key_type.as_str().try_into()?,
-        script_public_key_address: if !item.script_public_key_address.is_empty() {
-            Some(kaspa_rpc_core::RpcAddress::try_from(item.script_public_key_address.as_ref())?)
-        } else {
-            None
-        },
+        script_public_key_type: item.script_public_key_type.as_ref().map(|x| RpcScriptClass::from_str(x)).transpose()?,
+        script_public_key_address: item.script_public_key_address.as_ref().map(|x| RpcAddress::try_from(x.to_owned())).transpose()?,
     }
 });
 

@@ -3245,6 +3245,7 @@ dependencies = [
  "serde",
  "serde-wasm-bindgen",
  "serde_json",
+ "serde_nested_with",
  "smallvec",
  "thiserror 1.0.69",
  "uuid 1.16.0",
@@ -4827,6 +4828,7 @@ dependencies = [
  "proc-macro-error-attr",
  "proc-macro2",
  "quote",
+ "syn 1.0.109",
  "version_check",
 ]
 
@@ -5479,6 +5481,18 @@ dependencies = [
  "memchr",
  "ryu",
  "serde",
+]
+
+[[package]]
+name = "serde_nested_with"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a2e5de5df86900414dd5f677bcf85486948fdb36c84d4aad54434b9bcdd2d574"
+dependencies = [
+ "darling",
+ "proc-macro-error",
+ "quote",
+ "syn 2.0.100",
 ]
 
 [[package]]

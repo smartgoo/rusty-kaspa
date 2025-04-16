@@ -1,8 +1,6 @@
 use crate::protowire;
 use crate::{from, try_from};
-use kaspa_consensus_core::hashing;
-use kaspa_consensus_core::header::Header;
-use kaspa_rpc_core::{FromRpcHex, RpcError, RpcHash, RpcResult, ToRpcHex};
+use kaspa_rpc_core::{FromRpcHex, RpcBlueWorkType, RpcError, RpcHash, RpcResult, ToRpcHex};
 use std::str::FromStr;
 
 // ----------------------------------------------------------------------------
@@ -11,19 +9,19 @@ use std::str::FromStr;
 
 from!(item: &kaspa_rpc_core::RpcHeader, protowire::RpcBlockHeader, {
     Self {
-        hash: item.hash.to_string(),
-        version: item.version.into(),
+        hash: item.hash.map(|x| x.to_string()),
+        version: item.version.map(|x| x.into()),
         parents: item.parents_by_level.iter().map(protowire::RpcBlockLevelParents::from).collect(),
-        hash_merkle_root: item.hash_merkle_root.to_string(),
-        accepted_id_merkle_root: item.accepted_id_merkle_root.to_string(),
-        utxo_commitment: item.utxo_commitment.to_string(),
-        timestamp: item.timestamp.try_into().expect("timestamp is always convertible to i64"),
+        hash_merkle_root: item.hash_merkle_root.map(|x| x.to_string()),
+        accepted_id_merkle_root: item.accepted_id_merkle_root.map(|x| x.to_string()),
+        utxo_commitment: item.utxo_commitment.map(|x| x.to_string()),
+        timestamp: item.timestamp.map(|x| x.try_into().expect("timestamp is always convertible to i64")),
         bits: item.bits,
         nonce: item.nonce,
         daa_score: item.daa_score,
-        blue_work: item.blue_work.to_rpc_hex(),
+        blue_work: item.blue_work.map(|x| x.to_rpc_hex()),
         blue_score: item.blue_score,
-        pruning_point: item.pruning_point.to_string(),
+        pruning_point: item.pruning_point.map(|x| x.to_string()),
     }
 });
 
@@ -47,19 +45,19 @@ from!(item: &kaspa_rpc_core::RpcHeaderVerbosity, protowire::RpcBlockHeaderVerbos
 
 from!(item: &kaspa_rpc_core::RpcRawHeader, protowire::RpcBlockHeader, {
     Self {
-        hash: Default::default(), // We don't include the hash for the raw header
-        version: item.version.into(),
+        hash: None, // We don't include the hash for the raw header
+        version: Some(item.version.into()),
         parents: item.parents_by_level.iter().map(protowire::RpcBlockLevelParents::from).collect(),
-        hash_merkle_root: item.hash_merkle_root.to_string(),
-        accepted_id_merkle_root: item.accepted_id_merkle_root.to_string(),
-        utxo_commitment: item.utxo_commitment.to_string(),
-        timestamp: item.timestamp.try_into().expect("timestamp is always convertible to i64"),
-        bits: item.bits,
-        nonce: item.nonce,
-        daa_score: item.daa_score,
-        blue_work: item.blue_work.to_rpc_hex(),
-        blue_score: item.blue_score,
-        pruning_point: item.pruning_point.to_string(),
+        hash_merkle_root: Some(item.hash_merkle_root.to_string()),
+        accepted_id_merkle_root: Some(item.accepted_id_merkle_root.to_string()),
+        utxo_commitment: Some(item.utxo_commitment.to_string()),
+        timestamp: Some(item.timestamp.try_into().expect("timestamp is always convertible to i64")),
+        bits: Some(item.bits),
+        nonce: Some(item.nonce),
+        daa_score: Some(item.daa_score),
+        blue_work: Some(item.blue_work.to_rpc_hex()),
+        blue_score: Some(item.blue_score),
+        pruning_point: Some(item.pruning_point.to_string()),
     }
 });
 
@@ -70,28 +68,25 @@ from!(item: &Vec<RpcHash>, protowire::RpcBlockLevelParents, { Self { parent_hash
 // ----------------------------------------------------------------------------
 
 try_from!(item: &protowire::RpcBlockHeader, kaspa_rpc_core::RpcHeader, {
-    // We re-hash the block to remain as most trustless as possible
-    let header = Header::new_finalized(
-        item.version.try_into()?,
-        item.parents.iter().map(Vec::<RpcHash>::try_from).collect::<RpcResult<Vec<Vec<RpcHash>>>>()?,
-        RpcHash::from_str(&item.hash_merkle_root)?,
-        RpcHash::from_str(&item.accepted_id_merkle_root)?,
-        RpcHash::from_str(&item.utxo_commitment)?,
-        item.timestamp.try_into()?,
-        item.bits,
-        item.nonce,
-        item.daa_score,
-        kaspa_rpc_core::RpcBlueWorkType::from_rpc_hex(&item.blue_work)?,
-        item.blue_score,
-        RpcHash::from_str(&item.pruning_point)?,
-    );
-
-    // Ensure that the hashed header matches the hash sent.
-    if header.hash != hashing::header::hash(&header) {
-        return Err(RpcError::BadBlockHash(RpcHash::from(hashing::header::hash(&header)), RpcHash::from(header.hash)));
+    Self {
+        hash: item.hash.as_ref().map(|x| RpcHash::from_str(x.as_str())).transpose()?,
+        version: item.version.map(|x| x.try_into()).transpose()?,
+        parents_by_level: item.parents.iter().map(Vec::<RpcHash>::try_from).collect::<RpcResult<Vec<Vec<RpcHash>>>>()?,
+        hash_merkle_root: item.hash_merkle_root.as_ref().map(|x| RpcHash::from_str(x.as_str()) ).transpose()?,
+        accepted_id_merkle_root: item.accepted_id_merkle_root.as_ref().map(|x|  RpcHash::from_str(x.as_str()) ).transpose()?,
+        utxo_commitment: item.utxo_commitment.as_ref().map(|x|  RpcHash::from_str(x.as_str())).transpose()?,
+        timestamp: item.timestamp.map(|x| x.try_into()).transpose()?,
+        bits: item.bits,
+        nonce: item.nonce,
+        daa_score: item.daa_score,
+        blue_work: item.blue_work.as_ref().map(|x| RpcBlueWorkType::from_rpc_hex(x.as_str())).transpose()?,
+        blue_score: item.blue_score,
+        pruning_point: item
+            .pruning_point
+            .as_ref()
+            .map(|x|  RpcHash::from_str(x.as_str()) )
+            .transpose()?,
     }
-
-    header.into()
 });
 
 try_from!(item: &protowire::RpcBlockHeaderVerbosity, kaspa_rpc_core::RpcHeaderVerbosity, {
@@ -114,18 +109,54 @@ try_from!(item: &protowire::RpcBlockHeaderVerbosity, kaspa_rpc_core::RpcHeaderVe
 
 try_from!(item: &protowire::RpcBlockHeader, kaspa_rpc_core::RpcRawHeader, {
     Self {
-        version: item.version.try_into()?,
+        // hash: we don't include the hash for the raw header
+        version: item.version.ok_or(RpcError::MissingRpcFieldError("RpcBlockHeader".to_owned(), "version".to_owned()))?.try_into()?,
         parents_by_level: item.parents.iter().map(Vec::<RpcHash>::try_from).collect::<RpcResult<Vec<Vec<RpcHash>>>>()?,
-        hash_merkle_root: RpcHash::from_str(&item.hash_merkle_root)?,
-        accepted_id_merkle_root: RpcHash::from_str(&item.accepted_id_merkle_root)?,
-        utxo_commitment: RpcHash::from_str(&item.utxo_commitment)?,
-        timestamp: item.timestamp.try_into()?,
-        bits: item.bits,
-        nonce: item.nonce,
-        daa_score: item.daa_score,
-        blue_work: kaspa_rpc_core::RpcBlueWorkType::from_rpc_hex(&item.blue_work)?,
-        blue_score: item.blue_score,
-        pruning_point: RpcHash::from_str(&item.pruning_point)?,
+        hash_merkle_root: RpcHash::from_str(item.hash_merkle_root.as_ref().ok_or(RpcError::MissingRpcFieldError("RpcBlockHeader".to_owned(), "hash_merkle_root".to_owned()))?.as_str())?,
+        accepted_id_merkle_root:
+        RpcHash::from_str(
+            item
+            .accepted_id_merkle_root
+            .as_ref()
+            .ok_or(RpcError::MissingRpcFieldError("RpcBlockHeader".to_owned(), "accepted_id_merkle_root".to_owned()))?
+            .as_str()
+        )?,
+        utxo_commitment: RpcHash::from_str(
+            item
+            .utxo_commitment
+            .as_ref()
+            .ok_or(RpcError::MissingRpcFieldError("RpcBlockHeader".to_owned(), "utxo_commitment".to_owned()))?
+            .as_str()
+        )?,
+        timestamp: item
+            .timestamp
+            .ok_or(RpcError::MissingRpcFieldError("RpcBlockHeader".to_owned(), "timestamp".to_owned()))?
+            .try_into()?,
+        bits: item
+            .bits
+            .ok_or(RpcError::MissingRpcFieldError("RpcBlockHeader".to_owned(), "bits".to_owned()))?,
+        nonce: item
+            .nonce
+            .ok_or(RpcError::MissingRpcFieldError("RpcBlockHeader".to_owned(), "nonce".to_owned()))?,
+        daa_score: item
+            .daa_score
+            .ok_or(RpcError::MissingRpcFieldError("RpcBlockHeader".to_owned(), "daa_score".to_owned()))?,
+        blue_work: RpcBlueWorkType::from_rpc_hex(
+            item
+            .blue_work
+            .as_ref()
+            .ok_or(RpcError::MissingRpcFieldError("RpcBlockHeader".to_owned(), "blue_work".to_owned()))?
+            .as_str()
+        )?,
+        blue_score: item
+            .blue_score
+            .ok_or(RpcError::MissingRpcFieldError("RpcBlockHeader".to_owned(), "blue_score".to_owned()))?,
+        pruning_point: RpcHash::from_str(item
+            .pruning_point
+            .as_ref()
+            .ok_or(RpcError::MissingRpcFieldError("RpcBlockHeader".to_owned(), "pruning_point".to_owned()))?
+            .as_str()
+        )?
     }
 });
 
