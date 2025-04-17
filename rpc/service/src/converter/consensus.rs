@@ -420,12 +420,10 @@ impl ConsensusConverter {
             payload: if verbosity.include_payload.unwrap_or(false) { Some(transaction.payload.clone()) } else { Default::default() },
             mass: if verbosity.include_mass.unwrap_or(false) { Some(transaction.mass()) } else { Default::default() },
             verbose_data: if let Some(verbose_data_verbosity) = verbosity.verbose_data_verbosity.as_ref() {
-                let block_time = if verbose_data_verbosity.include_hash.unwrap_or(false) && block_hash.is_none() {
-                    return Err(RpcError::ConsensusConverterNotFound("block_hash".to_string()));
-                } else if verbose_data_verbosity.include_block_time.unwrap_or(false) && block_time.is_none() {
-                    consensus.async_get_header(block_hash.unwrap()).await?.timestamp
+                let block_time = if let Some(block_time) = block_time {
+                    block_time 
                 } else {
-                    block_time.unwrap()
+                    consensus.async_get_header(block_hash.unwrap()).await?.timestamp
                 };
 
                 Some(self.get_transaction_verbose_data_with_verbosity(
@@ -478,12 +476,10 @@ impl ConsensusConverter {
             payload: Some(transaction.tx.payload.clone()),
             mass: Some(transaction.tx.mass()),
             verbose_data: if let Some(verbose_data_verbosity) = verbosity.verbose_data_verbosity.as_ref() {
-                let block_time = if verbose_data_verbosity.include_hash.unwrap_or(false) && block_hash.is_none() {
-                    return Err(RpcError::ConsensusConverterNotFound("block_hash".to_string()));
-                } else if verbose_data_verbosity.include_block_time.unwrap_or(false) && block_time.is_none() {
-                    consensus.async_get_header(block_hash.unwrap()).await?.timestamp
+                let block_time = if let Some(block_time) = block_time {
+                    block_time 
                 } else {
-                    block_time.unwrap()
+                    consensus.async_get_header(block_hash.unwrap()).await?.timestamp
                 };
 
                 Some(
