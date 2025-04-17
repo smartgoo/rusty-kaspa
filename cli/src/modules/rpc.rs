@@ -373,10 +373,84 @@ impl Rpc {
                         None,
                         GetVirtualChainFromBlockV2Request { start_hash, acceptance_data_verbosity },
                     )
-                    .await?;
+                    .await;
 
                 self.println(&ctx, result);
             }
+            /*
+            RpcApiOps::GetTransactions => {
+                if argv.is_empty() {
+                    return Err(Error::custom("Please specify at least one txid"));
+                }
+                
+                // for enum we provide the first argument as the locator type
+                let transaction_locator = match argv.remove(0).parse::<u8>()? {
+                    0 => RpcTransactionLocator::ByAcceptingBlock(RpcTransactionAcceptingBlockLocator{
+                        accepting_chain_block: argv.remove(0).parse::<RpcHash>()?,
+                        transaction_ids: argv.iter().map(|s| s.parse::<RpcHash>()).collect::<std::result::Result<Vec<_>, _>>()?,
+                    }),
+                    1 => RpcTransactionLocator::ByAcceptingDaaScore(RpcTransactionAcceptingDaaScoreLocator{
+                        accepting_daa_score: argv.remove(0).parse::<u64>()?,
+                        transaction_ids: argv.iter().(|s| s.parse::<RpcHash>()).collect::<std::result::Result<Vec<_>, _>>()?,
+                    }),
+                    2 => RpcTransactionLocator::ByInclusionIndices(RpcTransactionInclusionIndicesLocator{
+                        block_hash: argv.remove(0).parse::<RpcHash>()?,
+                        transaction_indices: argv.iter().map(|s| s.parse::<u32>()).collect::<std::result::Result<Vec<_>, _>>()?,
+                    }),
+                    _ => return Err(Error::custom("Invalid transaction locator specify 0, 1 or 2 for by_accepting_block, by_accepting_daa_score or by_inclusion_indices respectively")),
+                };
+
+                let transaction_verbosity = accepted_transactions_verbosity: Some(RpcTransactionVerbosity {
+                    include_version: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                    input_verbosity: Some(RpcTransactionInputVerbosity {
+                        include_previous_outpoint: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                        include_signature_script: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                        include_sequence: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                        include_sig_op_count: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                        verbose_data_verbosity: Some(RpcTransactionInputVerboseDataVerbosity {
+                            utxo_entry_verbosity: Some(RpcUtxoEntryVerbosity {
+                                include_amount: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                                include_script_public_key: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                                include_block_daa_score: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                                include_is_coinbase: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                                verbose_data_verbosity: Some(RpcUtxoEntryVerboseDataVerbosity {
+                                    include_script_public_key_type: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                                    include_script_public_key_address: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                                }),
+                            }),
+                        }),
+                    }),
+                    output_verbosity: Some(RpcTransactionOutputVerbosity {
+                        include_amount: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                        include_script_public_key: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                        verbose_data_verbosity: Some(RpcTransactionOutputVerboseDataVerbosity {
+                            include_script_public_key_type: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                            include_script_public_key_address: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                        }),
+                    }),
+                    include_lock_time: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                    include_subnetwork_id: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                    include_gas: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                    include_payload: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                    include_mass: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                    verbose_data_verbosity: Some(RpcTransactionVerboseDataVerbosity {
+                        include_transaction_id: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                        include_hash: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                        include_compute_mass: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                        include_block_hash: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                        include_block_time: argv.pop().and_then(|arg| arg.parse::<bool>().ok()),
+                    }),
+
+                let result = rpc
+                    .get_transactions_call(
+                        None,
+                        GetTransactionsRequest { transaction_locator, transaction_verbosity: () } { start_hash, acceptance_data_verbosity },
+                    )
+                    .await?;
+
+                self.println(&ctx, result);
+                
+            }*/
             _ => {
                 tprintln!(ctx, "rpc method exists but is not supported by the cli: '{op_str}'\r\n");
                 return Ok(());

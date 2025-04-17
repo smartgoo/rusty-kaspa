@@ -141,10 +141,10 @@ pub enum RpcApiOps {
     /// Get UTXO Return Addresses
     GetUtxoReturnAddress = 150,
 
-    // Get Virtual Chain from Block V2
+    /// Get Virtual Chain from Block V2
     GetVirtualChainFromBlockV2 = 151,
 
-    // Get Transactions
+    /// Get Transactions
     GetTransactions = 152,
 }
 
