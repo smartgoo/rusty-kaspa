@@ -165,11 +165,10 @@ impl VirtualStateProcessor {
             .get(accepting_block)
             .map_err(|_| UtxoInquirerError::MissingAcceptanceDataForChainBlock(accepting_block))?;
 
-        let accepting_daa_score = Lazy::new(|| {
-            self.headers_store
-                .get_daa_score(accepting_block)
-                .map_err(|_| UtxoInquirerError::MissingCompactHeaderForBlockHash(accepting_block))
-        });
+        let accepting_daa_score = self
+            .headers_store
+            .get_daa_score(accepting_block)
+            .map_err(|_| UtxoInquirerError::MissingCompactHeaderForBlockHash(accepting_block))?;
         // Expected to never fail, since we found the acceptance data and therefore there must be matching diff
         let utxo_diff = self
             .utxo_diffs_store
@@ -186,9 +185,9 @@ impl VirtualStateProcessor {
             let mut entries = Vec::<UtxoEntry>::with_capacity(tx.inputs.len());
             for input in tx.inputs.iter() {
                 let filled_utxo = if let Some(utxo_entry) = removed_diffs.get(&input.previous_outpoint) {
-                    Some(utxo_entry.clone().to_owned())
+                    Some(utxo_entry.to_owned())
                 } else {
-                    self.resolve_multi_spend_utxo(input, &acceptance_data, (*accepting_daa_score).clone()?)
+                    self.resolve_multi_spend_utxo(input, &acceptance_data, accepting_daa_score)
                 };
                 entries.push(filled_utxo.ok_or(UtxoInquirerError::MissingUtxoEntryForOutpoint(input.previous_outpoint))?);
             }
@@ -335,7 +334,7 @@ impl VirtualStateProcessor {
                                 .find_map(|tx| (tx.transaction_id == tx_id).then_some(tx.index_within_block));
                             tx_arr_index.map(|index| (mbad.block_hash, index))
                         })
-                        .ok_or(UtxoInquirerError::MissingQueriedTransactions(vec![tx_id]))?;
+                        .ok_or_else(|| UtxoInquirerError::MissingQueriedTransactions(vec![tx_id]))?;
                     Ok(self
                         .block_transactions_store
                         .get(block_hash)
