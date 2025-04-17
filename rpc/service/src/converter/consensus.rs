@@ -530,16 +530,23 @@ impl ConsensusConverter {
                 let mut converted = Vec::with_capacity(txs.len());
 
                 for tx in txs.iter() {
-                    converted.push(
-                        self.convert_transaction_with_verbosity(
-                            consensus,
-                            tx,
-                            Some(mergeset_block_acceptance.block_hash),
-                            block_time,
-                            verbosity,
-                        )
-                        .await?,
-                    );
+                    converted.push({
+                        let rpc_tx = self
+                            .convert_transaction_with_verbosity(
+                                consensus,
+                                tx,
+                                Some(mergeset_block_acceptance.block_hash),
+                                block_time,
+                                verbosity,
+                            )
+                            .await?;
+
+                        if rpc_tx.is_empty() {
+                            continue;
+                        };
+
+                        rpc_tx
+                    });
                 }
 
                 converted
@@ -548,16 +555,23 @@ impl ConsensusConverter {
                 let mut converted = Vec::with_capacity(txs.len());
 
                 for tx in txs.iter() {
-                    converted.push(
-                        self.convert_signable_transaction_with_verbosity(
-                            consensus,
-                            tx,
-                            Some(mergeset_block_acceptance.block_hash),
-                            block_time,
-                            verbosity,
-                        )
-                        .await?,
-                    );
+                    converted.push({
+                        let rpc_tx = self
+                            .convert_signable_transaction_with_verbosity(
+                                consensus,
+                                tx,
+                                Some(mergeset_block_acceptance.block_hash),
+                                block_time,
+                                verbosity,
+                            )
+                            .await?;
+
+                        if rpc_tx.is_empty() {
+                            continue;
+                        };
+
+                        rpc_tx
+                    });
                 }
 
                 converted
@@ -573,7 +587,13 @@ impl ConsensusConverter {
         verbosity: &RpcMergesetBlockAcceptanceDataVerbosity,
     ) -> RpcResult<RpcMergesetBlockAcceptanceData> {
         let merged_header = if let Some(merged_header_verbosity) = verbosity.merged_header_verbosity.as_ref() {
-            Some(self.get_header_with_verbosity(consensus, merged_header_verbosity, mergeset_block_acceptance.block_hash).await?)
+            let merged_header =
+                self.get_header_with_verbosity(consensus, merged_header_verbosity, mergeset_block_acceptance.block_hash).await?;
+            if merged_header.is_empty() {
+                Default::default()
+            } else {
+                Some(merged_header)
+            }
         } else {
             Default::default()
         };
@@ -612,7 +632,12 @@ impl ConsensusConverter {
 
         for (accepting_chain_hash, acceptance_data) in chain_path.added.iter().zip(acceptance_data.iter()) {
             let accepting_chain_header = if let Some(verbosity) = verbosity.accepting_chain_header_verbosity.as_ref() {
-                Some(self.get_header_with_verbosity(consensus, verbosity, *accepting_chain_hash).await?)
+                let header = self.get_header_with_verbosity(consensus, verbosity, *accepting_chain_hash).await?;
+                if header.is_empty() {
+                    Default::default()
+                } else {
+                    Some(header)
+                }
             } else {
                 Default::default()
             };

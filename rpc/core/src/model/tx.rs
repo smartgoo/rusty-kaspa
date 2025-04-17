@@ -31,6 +31,14 @@ pub struct RpcUtxoEntry {
 }
 
 impl RpcUtxoEntry {
+    pub fn is_empty(&self) -> bool {
+        self.amount.is_none()
+            && self.script_public_key.is_none()
+            && self.block_daa_score.is_none()
+            && self.is_coinbase.is_none()
+            && (self.verbose_data.is_none() || self.verbose_data.as_ref().is_some_and(|x| x.is_empty()))
+    }
+
     pub fn new(
         amount: Option<u64>,
         script_public_key: Option<ScriptPublicKey>,
@@ -123,6 +131,10 @@ pub struct RpcUtxoEntryVerboseData {
 }
 
 impl RpcUtxoEntryVerboseData {
+    pub fn is_empty(&self) -> bool {
+        self.script_public_key_type.is_none() && self.script_public_key_address.is_none()
+    }
+
     pub fn new(script_public_key_type: Option<RpcScriptClass>, script_public_key_address: Option<Address>) -> Self {
         Self { script_public_key_type, script_public_key_address }
     }
@@ -296,6 +308,14 @@ impl RpcTransactionInput {
     pub fn from_transaction_inputs(other: Vec<TransactionInput>) -> Vec<Self> {
         other.into_iter().map(Self::from).collect()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.previous_outpoint.is_none()
+            && self.signature_script.is_none()
+            && self.sequence.is_none()
+            && self.sig_op_count.is_none()
+            && (self.verbose_data.is_none() || self.verbose_data.as_ref().is_some_and(|x| x.is_empty()))
+    }
 }
 
 impl Serializer for RpcTransactionInput {
@@ -346,6 +366,12 @@ pub struct RpcTransactionInputVerboseData {
     pub utxo_entry: Option<RpcUtxoEntry>,
 }
 
+impl RpcTransactionInputVerboseData {
+    pub fn is_empty(&self) -> bool {
+        self.utxo_entry.is_none() || self.utxo_entry.as_ref().is_some_and(|x| x.is_empty())
+    }
+}
+
 impl Serializer for RpcTransactionInputVerboseData {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         store!(u8, &1, writer)?;
@@ -372,6 +398,12 @@ pub struct RpcTransactionOutput {
 }
 
 impl RpcTransactionOutput {
+    pub fn is_empty(&self) -> bool {
+        self.value.is_none()
+            && self.script_public_key.is_none()
+            && (self.verbose_data.is_none() || self.verbose_data.as_ref().is_some_and(|x| x.is_empty()))
+    }
+
     pub fn from_transaction_outputs(other: Vec<TransactionOutput>) -> Vec<Self> {
         other.into_iter().map(Self::from).collect()
     }
@@ -426,6 +458,12 @@ pub struct RpcTransactionOutputVerboseData {
     pub script_public_key_address: Option<Address>,
 }
 
+impl RpcTransactionOutputVerboseData {
+    pub fn is_empty(&self) -> bool {
+        self.script_public_key_type.is_none() && self.script_public_key_address.is_none()
+    }
+}
+
 impl Serializer for RpcTransactionOutputVerboseData {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         store!(u8, &2, writer)?;
@@ -470,6 +508,20 @@ pub struct RpcTransaction {
     pub payload: Option<Vec<u8>>,
     pub mass: Option<u64>,
     pub verbose_data: Option<RpcTransactionVerboseData>,
+}
+
+impl RpcTransaction {
+    pub fn is_empty(&self) -> bool {
+        self.version.is_none()
+            && (self.inputs.is_empty() || self.inputs.iter().all(|input| input.is_empty()))
+            && (self.outputs.is_empty() || self.outputs.iter().all(|output| output.is_empty()))
+            && self.lock_time.is_none()
+            && self.subnetwork_id.is_none()
+            && self.gas.is_none()
+            && self.payload.is_none()
+            && self.mass.is_none()
+            && (self.verbose_data.is_none() || self.verbose_data.as_ref().is_some_and(|x| x.is_empty()))
+    }
 }
 
 impl std::fmt::Debug for RpcTransaction {
@@ -553,6 +605,16 @@ pub struct RpcTransactionVerboseData {
     #[serde_nested(sub = "RpcHash", serde(with = "serde_bytes_fixed_ref"))]
     pub block_hash: Option<RpcHash>,
     pub block_time: Option<u64>,
+}
+
+impl RpcTransactionVerboseData {
+    pub fn is_empty(&self) -> bool {
+        self.transaction_id.is_none()
+            && self.hash.is_none()
+            && self.compute_mass.is_none()
+            && self.block_hash.is_none()
+            && self.block_time.is_none()
+    }
 }
 
 impl Serializer for RpcTransactionVerboseData {
@@ -764,6 +826,7 @@ impl Deserializer for RpcTransactionAcceptingDaaScoreLocator {
     }
 }
 
+/*
 /// Verbosity switches
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -797,6 +860,7 @@ impl Deserializer for RpcTransactionOutpointVerbosity {
         Ok(Self { include_transaction_id, include_index })
     }
 }
+*/
 
 // RpcUtxoEntryVerbosity
 #[derive(Clone, Debug, Serialize, Deserialize)]

@@ -47,6 +47,21 @@ pub struct RpcHeader {
 }
 
 impl RpcHeader {
+    pub fn is_empty(&self) -> bool {
+        self.hash.is_none()
+            && self.version.is_none()
+            && self.parents_by_level.is_empty()
+            && self.hash_merkle_root.is_none()
+            && self.accepted_id_merkle_root.is_none()
+            && self.utxo_commitment.is_none()
+            && self.timestamp.is_none()
+            && self.bits.is_none()
+            && self.nonce.is_none()
+            && self.daa_score.is_none()
+            && self.blue_work.is_none()
+            && self.blue_score.is_none()
+            && self.pruning_point.is_none()
+    }
     pub fn direct_parents(&self) -> &[Hash] {
         if self.parents_by_level.is_empty() {
             &[]

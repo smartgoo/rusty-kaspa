@@ -74,13 +74,14 @@ from!(item: &kaspa_rpc_core::RpcTransactionOutputVerbosity, protowire::RpcTransa
 from!(item: &kaspa_rpc_core::RpcTransactionOutpoint, protowire::RpcOutpoint, {
     Self { transaction_id: item.transaction_id.as_ref().map(|x| x.to_string()), index: item.index }
 });
-
+/*
 from!(item: &kaspa_rpc_core::RpcTransactionOutpointVerbosity, protowire::RpcOutpointVerbosity, {
     Self {
         include_transaction_id: item.include_transaction_id,
         include_index: item.include_index,
     }
 });
+*/
 
 from!(item: &kaspa_rpc_core::RpcUtxoEntry, protowire::RpcUtxoEntry, {
     Self {
@@ -325,12 +326,14 @@ try_from!(item: &protowire::RpcOutpoint, kaspa_rpc_core::RpcTransactionOutpoint,
         }
 });
 
+/*
 try_from!(item: &protowire::RpcOutpointVerbosity, kaspa_rpc_core::RpcTransactionOutpointVerbosity, {
     Self {
         include_transaction_id: item.include_transaction_id,
         include_index: item.include_index,
     }
 });
+*/
 
 try_from!(item: &protowire::RpcUtxoEntry, kaspa_rpc_core::RpcUtxoEntry, {
     Self {
