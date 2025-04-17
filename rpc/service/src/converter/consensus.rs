@@ -421,7 +421,7 @@ impl ConsensusConverter {
             mass: if verbosity.include_mass.unwrap_or(false) { Some(transaction.mass()) } else { Default::default() },
             verbose_data: if let Some(verbose_data_verbosity) = verbosity.verbose_data_verbosity.as_ref() {
                 let block_time = if let Some(block_time) = block_time {
-                    block_time 
+                    block_time
                 } else {
                     consensus.async_get_header(block_hash.unwrap()).await?.timestamp
                 };
@@ -477,7 +477,7 @@ impl ConsensusConverter {
             mass: Some(transaction.tx.mass()),
             verbose_data: if let Some(verbose_data_verbosity) = verbosity.verbose_data_verbosity.as_ref() {
                 let block_time = if let Some(block_time) = block_time {
-                    block_time 
+                    block_time
                 } else {
                     consensus.async_get_header(block_hash.unwrap()).await?.timestamp
                 };
@@ -489,7 +489,7 @@ impl ConsensusConverter {
                         block_time,
                         transaction
                             .calculated_non_contextual_masses
-                            .ok_or(RpcError::ConsensusConverterNotFound("compute mass".to_string()))?
+                            .unwrap_or(consensus.calculate_transaction_non_contextual_masses(transaction.tx.as_ref()))
                             .compute_mass,
                         verbose_data_verbosity,
                     )?,
