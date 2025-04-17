@@ -382,7 +382,7 @@ impl Rpc {
                 if argv.is_empty() {
                     return Err(Error::custom("Please specify at least one txid"));
                 }
-                
+
                 // for enum we provide the first argument as the locator type
                 let transaction_locator = match argv.remove(0).parse::<u8>()? {
                     0 => RpcTransactionLocator::ByAcceptingBlock(RpcTransactionAcceptingBlockLocator{
@@ -449,7 +449,7 @@ impl Rpc {
                     .await?;
 
                 self.println(&ctx, result);
-                
+
             }*/
             _ => {
                 tprintln!(ctx, "rpc method exists but is not supported by the cli: '{op_str}'\r\n");
