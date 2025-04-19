@@ -143,7 +143,6 @@ impl VirtualStateProcessor {
         // - A chain block happens to accept both of these
         // In this case, removed_diff wouldn't contain the outpoint of the created-and-immediately-spent UTXO
         // so we use the transaction (which also has acceptance data in this block) and look at its outputs
-        let other_tx_id = outpoint.transaction_id;
         let other_tx = &self.find_txs_from_acceptance_data(Some(vec![outpoint.transaction_id]), acceptance_data)?[0];
         let output = &other_tx.outputs[outpoint.index as usize];
         let utxo_entry =
@@ -178,19 +177,20 @@ impl VirtualStateProcessor {
         for tx in txs.iter() {
             let mut entries = Vec::with_capacity(tx.inputs.len());
             for input in tx.inputs.iter() {
-                let filled_utxo = utxo_diff.removed().get(&input.previous_outpoint).cloned().or(populated_txs
-                    .iter()
-                    .map(|ptx| &ptx.tx)
-                    .chain(txs.iter())
-                    .find_map(|tx| {
-                        if tx.id() == input.previous_outpoint.transaction_id {
-                            let output = &tx.outputs[input.previous_outpoint.index as usize];
-                            Some(UtxoEntry::new(output.value, output.script_public_key.clone(), accepting_daa_score, tx.is_coinbase()))
-                        } else {
-                            None
-                        }
-                    })
-                    .or(Some(self.resolve_missing_outpoint(&input.previous_outpoint, &acceptance_data, accepting_daa_score)?)));
+                let filled_utxo = if let Some(utxo) = utxo_diff.removed().get(&input.previous_outpoint).cloned() {
+                    Some(utxo)
+                } else if let Some(utxo) = populated_txs.iter().map(|ptx| &ptx.tx).chain(txs.iter()).find_map(|tx| {
+                    if tx.id() == input.previous_outpoint.transaction_id {
+                        let output = &tx.outputs[input.previous_outpoint.index as usize];
+                        Some(UtxoEntry::new(output.value, output.script_public_key.clone(), accepting_daa_score, tx.is_coinbase()))
+                    } else {
+                        None
+                    }
+                }) {
+                    Some(utxo)
+                } else {
+                    Some(self.resolve_missing_outpoint(&input.previous_outpoint, &acceptance_data, accepting_daa_score)?)
+                };
 
                 entries.push(filled_utxo.ok_or(UtxoInquirerError::MissingUtxoEntryForOutpoint(input.previous_outpoint))?);
             }
@@ -341,7 +341,7 @@ impl VirtualStateProcessor {
                                 .find_map(|tx| (tx.transaction_id == tx_id).then_some(tx.index_within_block as usize));
                             tx_arr_index.map(|index| (mbad.block_hash, index))
                         })
-                        .ok_or(UtxoInquirerError::MissingQueriedTransactions(vec![tx_id]))?;
+                        .ok_or_else(|| UtxoInquirerError::MissingQueriedTransactions(vec![tx_id]))?;
 
                     let tx = self
                         .block_transactions_store
@@ -351,7 +351,7 @@ impl VirtualStateProcessor {
                             block_txs
                                 .get(index)
                                 .cloned()
-                                .ok_or(UtxoInquirerError::MissingTransactionIndexOfBlock(index, containing_block))
+                                .ok_or_else(|| UtxoInquirerError::MissingTransactionIndexOfBlock(index, containing_block))
                         })?;
 
                     return Ok(vec![tx]);
