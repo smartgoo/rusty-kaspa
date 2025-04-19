@@ -406,12 +406,26 @@ impl VirtualStateProcessor {
             let mut all_txs = Vec::new();
 
             for mbad in acceptance_data.iter() {
-                let block_txs = self
-                    .block_transactions_store
-                    .get(mbad.block_hash)
-                    .map_err(|_| UtxoInquirerError::MissingBlockFromBlockTxStore(mbad.block_hash))?;
+                let mut index_iter = mbad.accepted_transactions.iter().map(|tx| tx.index_within_block as usize);
 
-                all_txs.extend(block_txs.iter().cloned());
+                let mut next_target_index = index_iter.next().unwrap(); // we expect at least coinbase.
+
+                all_txs.extend(
+                    self.block_transactions_store
+                        .get(mbad.block_hash)
+                        .map_err(|_| UtxoInquirerError::MissingBlockFromBlockTxStore(mbad.block_hash))?
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(i, tx)| {
+                            if i == next_target_index {
+                                next_target_index = index_iter.next().unwrap_or(usize::MAX);
+                                Some(tx.clone())
+                            } else {
+                                None
+                            }
+                        })
+                        .take(mbad.accepted_transactions.len()),
+                )
             }
 
             Ok(all_txs)
