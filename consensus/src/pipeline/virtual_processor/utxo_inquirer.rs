@@ -6,7 +6,7 @@ use std::{
 
 use kaspa_consensus_core::{
     acceptance_data::AcceptanceData,
-    tx::{SignableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionInput, UtxoEntry},
+    tx::{SignableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionInput, TransactionOutpoint, UtxoEntry},
     utxo::{
         utxo_diff::ImmutableUtxoDiff,
         utxo_inquirer::{UtxoInquirerError, UtxoInquirerResult},
@@ -103,8 +103,8 @@ impl VirtualStateProcessor {
                     } else if let Some(utxo) = utxo_store.get(&input.previous_outpoint).ok().map(|arc| (*arc).clone()) {
                         // secound check: if it was not accepted, it may be in the utxo set
                         entries.push(utxo);
-                    } else if let Some(utxo) = self.resolve_multi_spend_utxo(
-                        input,
+                    } else if let Some(utxo) = self.resolve_missing_outpoint(
+                        &input.previous_outpoint,
                         &mergeset_meta_data.acceptance_data,
                         mergeset_meta_data.accepting_daa_score,
                     ) {
@@ -135,9 +135,9 @@ impl VirtualStateProcessor {
         Ok(signable_transactions)
     }
 
-    fn resolve_multi_spend_utxo(
+    fn resolve_missing_outpoint(
         &self,
-        input: &TransactionInput,
+        outpoint: &TransactionOutpoint,
         acceptance_data: &AcceptanceData,
         accepting_block_daa_score: u64,
     ) -> Option<UtxoEntry> {
@@ -147,9 +147,9 @@ impl VirtualStateProcessor {
         // - A chain block happens to accept both of these
         // In this case, removed_diff wouldn't contain the outpoint of the created-and-immediately-spent UTXO
         // so we use the transaction (which also has acceptance data in this block) and look at its outputs
-        let other_tx_id = input.previous_outpoint.transaction_id;
-        let other_tx = &self.find_txs_from_acceptance_data(Some(vec![other_tx_id]), acceptance_data).unwrap()[0];
-        let output = &other_tx.outputs[input.previous_outpoint.index as usize];
+        let other_tx_id = outpoint.transaction_id;
+        let other_tx = &self.find_txs_from_acceptance_data(Some(vec![outpoint.transaction_id]), acceptance_data).unwrap()[0];
+        let output = &other_tx.outputs[outpoint.index as usize];
         let utxo_entry =
             UtxoEntry::new(output.value, output.script_public_key.clone(), accepting_block_daa_score, other_tx.is_coinbase());
         Some(utxo_entry)
@@ -196,7 +196,8 @@ impl VirtualStateProcessor {
                             None
                         }
                     })
-                    .or(self.resolve_multi_spend_utxo(input, &acceptance_data, accepting_daa_score)));
+                    .or(self.resolve_missing_outpoint(&input.previous_outpoint, &acceptance_data, accepting_daa_score)));
+
                 entries.push(filled_utxo.ok_or(UtxoInquirerError::MissingUtxoEntryForOutpoint(input.previous_outpoint))?);
             }
             populated_txs.push(SignableTransaction::with_entries(tx.clone(), entries));
@@ -326,13 +327,16 @@ impl VirtualStateProcessor {
         tx_ids: Option<Vec<TransactionId>>, // specifying `None` returns all transactions in the acceptance data
         acceptance_data: &AcceptanceData,
     ) -> UtxoInquirerResult<Vec<Transaction>> {
-        if let Some(tx_ids) = tx_ids {
+        if let Some(mut tx_ids) = tx_ids {
             match tx_ids.len() {
                 // empty vec should never happen
                 0 => panic!("tx_ids should not be empty"),
                 // if we are dealing with a single tx, we optimize for this.
                 1 => {
-                    let tx_id = tx_ids[0];
+                    let tx_id = tx_ids.pop().unwrap();
+
+                    //sanity check
+                    assert!(tx_ids.is_empty());
 
                     let (containing_block, index) = acceptance_data
                         .iter()
