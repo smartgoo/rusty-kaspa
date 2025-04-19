@@ -325,23 +325,30 @@ impl VirtualStateProcessor {
                 // if we are dealing with a single tx, we optimize for this.
                 1 => {
                     let tx_id = tx_ids[0];
-                    let (block_hash, index) = acceptance_data
+
+                    let (containing_block, index) = acceptance_data
                         .iter()
                         .find_map(|mbad| {
                             let tx_arr_index = mbad
                                 .accepted_transactions
                                 .iter()
-                                .find_map(|tx| (tx.transaction_id == tx_id).then_some(tx.index_within_block));
+                                .find_map(|tx| (tx.transaction_id == tx_id).then_some(tx.index_within_block as usize));
                             tx_arr_index.map(|index| (mbad.block_hash, index))
                         })
                         .ok_or_else(|| UtxoInquirerError::MissingQueriedTransactions(vec![tx_id]))?;
-                    Ok(self
+
+                    let tx = self
                         .block_transactions_store
-                        .get(block_hash)
-                        .map_err(|_| UtxoInquirerError::MissingBlockFromBlockTxStore(block_hash))?
-                        .get(index as usize)
-                        .map(|tx| vec![tx.to_owned()])
-                        .ok_or(UtxoInquirerError::MissingTransactionIndexOfBlock(index as usize, block_hash))?)
+                        .get(containing_block)
+                        .map_err(|_| UtxoInquirerError::MissingBlockFromBlockTxStore(containing_block))
+                        .and_then(|block_txs| {
+                            block_txs
+                                .get(index)
+                                .cloned()
+                                .ok_or(UtxoInquirerError::MissingTransactionIndexOfBlock(index, containing_block))
+                        })?;
+
+                    return Ok(vec![tx]);
                 }
                 // else we work, and optimize with sets, and iterate by block hash, as to minimize block transaction store queries.
                 _ => {
@@ -384,15 +391,18 @@ impl VirtualStateProcessor {
             }
         } else {
             // if tx_ids is None, we return all transactions in the acceptance data
-            Ok(acceptance_data
-                .iter()
-                .flat_map(|mbad| {
-                    self.block_transactions_store
-                        .get(mbad.block_hash)
-                        .map_err(|_| UtxoInquirerError::MissingBlockFromBlockTxStore(mbad.block_hash))
-                })
-                .flat_map(|arc_vec| arc_vec.iter().cloned().collect::<Vec<_>>())
-                .collect::<Vec<Transaction>>())
+            let mut all_txs = Vec::new();
+
+            for mbad in acceptance_data.iter() {
+                let block_txs = self
+                    .block_transactions_store
+                    .get(mbad.block_hash)
+                    .map_err(|_| UtxoInquirerError::MissingBlockFromBlockTxStore(mbad.block_hash))?;
+
+                all_txs.extend(block_txs.iter().cloned());
+            }
+
+            Ok(all_txs)
         }
     }
 }
