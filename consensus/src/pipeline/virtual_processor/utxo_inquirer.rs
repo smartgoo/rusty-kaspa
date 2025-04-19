@@ -181,17 +181,25 @@ impl VirtualStateProcessor {
 
         let removed_diffs = utxo_diff.removed();
 
-        for tx in txs.into_iter() {
+        for tx in txs.iter() {
             let mut entries = Vec::<UtxoEntry>::with_capacity(tx.inputs.len());
             for input in tx.inputs.iter() {
-                let filled_utxo = if let Some(utxo_entry) = removed_diffs.get(&input.previous_outpoint) {
-                    Some(utxo_entry.to_owned())
-                } else {
-                    self.resolve_multi_spend_utxo(input, &acceptance_data, accepting_daa_score)
-                };
+                let filled_utxo = removed_diffs.get(&input.previous_outpoint).map(|utxo| utxo.to_owned()).or(populated_txs
+                    .iter()
+                    .map(|ptx| &ptx.tx)
+                    .chain(txs.iter())
+                    .find_map(|tx| {
+                        if tx.id() == input.previous_outpoint.transaction_id {
+                            let output = &tx.outputs[input.previous_outpoint.index as usize];
+                            Some(UtxoEntry::new(output.value, output.script_public_key.clone(), accepting_daa_score, tx.is_coinbase()))
+                        } else {
+                            None
+                        }
+                    })
+                    .or(self.resolve_multi_spend_utxo(input, &acceptance_data, accepting_daa_score)));
                 entries.push(filled_utxo.ok_or(UtxoInquirerError::MissingUtxoEntryForOutpoint(input.previous_outpoint))?);
             }
-            populated_txs.push(SignableTransaction::with_entries(tx, entries));
+            populated_txs.push(SignableTransaction::with_entries(tx.clone(), entries));
         }
 
         Ok(populated_txs)
@@ -335,7 +343,7 @@ impl VirtualStateProcessor {
                                 .find_map(|tx| (tx.transaction_id == tx_id).then_some(tx.index_within_block as usize));
                             tx_arr_index.map(|index| (mbad.block_hash, index))
                         })
-                        .ok_or_else(|| UtxoInquirerError::MissingQueriedTransactions(vec![tx_id]))?;
+                        .ok_or(UtxoInquirerError::MissingQueriedTransactions(vec![tx_id]))?;
 
                     let tx = self
                         .block_transactions_store
