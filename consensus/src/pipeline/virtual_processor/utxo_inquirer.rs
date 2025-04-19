@@ -15,7 +15,6 @@ use kaspa_consensus_core::{
 use kaspa_core::trace;
 use kaspa_hashes::Hash;
 use kaspa_utils::arc::ArcExtensions;
-use once_cell::unsync::Lazy;
 
 use crate::model::{
     services::reachability::ReachabilityService,
@@ -103,16 +102,13 @@ impl VirtualStateProcessor {
                     } else if let Some(utxo) = utxo_store.get(&input.previous_outpoint).ok().map(|arc| (*arc).clone()) {
                         // secound check: if it was not accepted, it may be in the utxo set
                         entries.push(utxo);
-                    } else if let Some(utxo) = self.resolve_missing_outpoint(
-                        &input.previous_outpoint,
-                        &mergeset_meta_data.acceptance_data,
-                        mergeset_meta_data.accepting_daa_score,
-                    ) {
-                        // third check: if it was not accepted and not in the utxo set, it may have been created and spent in a parallel block.
-                        entries.push(utxo);
                     } else {
-                        // else we have an unexpected problem.. the utxo entry is missing.
-                        return Err(UtxoInquirerError::MissingUtxoEntryForOutpoint(input.previous_outpoint));
+                        // third check: if it was not accepted and not in the utxo set, it may have been created and spent in a parallel block.
+                        entries.push(self.resolve_missing_outpoint(
+                            &input.previous_outpoint,
+                            &mergeset_meta_data.acceptance_data,
+                            mergeset_meta_data.accepting_daa_score,
+                        )?);
                     }
                 }
                 signable_transactions.push(SignableTransaction::with_entries(tx, entries));
@@ -140,7 +136,7 @@ impl VirtualStateProcessor {
         outpoint: &TransactionOutpoint,
         acceptance_data: &AcceptanceData,
         accepting_block_daa_score: u64,
-    ) -> Option<UtxoEntry> {
+    ) -> UtxoInquirerResult<UtxoEntry> {
         // This handles this rare scenario:
         // - UTXO0 is spent by TX1 and creates UTXO1
         // - UTXO1 is spent by TX2 and creates UTXO2
@@ -148,11 +144,11 @@ impl VirtualStateProcessor {
         // In this case, removed_diff wouldn't contain the outpoint of the created-and-immediately-spent UTXO
         // so we use the transaction (which also has acceptance data in this block) and look at its outputs
         let other_tx_id = outpoint.transaction_id;
-        let other_tx = &self.find_txs_from_acceptance_data(Some(vec![outpoint.transaction_id]), acceptance_data).unwrap()[0];
+        let other_tx = &self.find_txs_from_acceptance_data(Some(vec![outpoint.transaction_id]), acceptance_data)?[0];
         let output = &other_tx.outputs[outpoint.index as usize];
         let utxo_entry =
             UtxoEntry::new(output.value, output.script_public_key.clone(), accepting_block_daa_score, other_tx.is_coinbase());
-        Some(utxo_entry)
+        Ok(utxo_entry)
     }
 
     pub fn get_populated_transactions_by_accepting_block(
@@ -179,12 +175,10 @@ impl VirtualStateProcessor {
 
         let mut populated_txs = Vec::<SignableTransaction>::with_capacity(txs.len());
 
-        let removed_diffs = utxo_diff.removed();
-
         for tx in txs.iter() {
-            let mut entries = Vec::<UtxoEntry>::with_capacity(tx.inputs.len());
+            let mut entries = Vec::with_capacity(tx.inputs.len());
             for input in tx.inputs.iter() {
-                let filled_utxo = removed_diffs.get(&input.previous_outpoint).map(|utxo| utxo.to_owned()).or(populated_txs
+                let filled_utxo = utxo_diff.removed().get(&input.previous_outpoint).cloned().or(populated_txs
                     .iter()
                     .map(|ptx| &ptx.tx)
                     .chain(txs.iter())
@@ -196,7 +190,7 @@ impl VirtualStateProcessor {
                             None
                         }
                     })
-                    .or(self.resolve_missing_outpoint(&input.previous_outpoint, &acceptance_data, accepting_daa_score)));
+                    .or(Some(self.resolve_missing_outpoint(&input.previous_outpoint, &acceptance_data, accepting_daa_score)?)));
 
                 entries.push(filled_utxo.ok_or(UtxoInquirerError::MissingUtxoEntryForOutpoint(input.previous_outpoint))?);
             }
@@ -364,6 +358,9 @@ impl VirtualStateProcessor {
                 }
                 // else we work, and optimize with sets, and iterate by block hash, as to minimize block transaction store queries.
                 _ => {
+                    panic!("we should not be here (yet)")
+                    /*
+
                     let mut txs = HashMap::<TransactionId, Transaction, _>::new();
                     for (containing_block, indices) in
                         self.find_containing_blocks_and_indices_from_acceptance_data(&tx_ids, acceptance_data)
@@ -391,14 +388,17 @@ impl VirtualStateProcessor {
                         );
                     }
 
+                    /*
                     if txs.len() < tx_ids.len() {
                         // The query includes txs which are not in the acceptance data, we constitute this as an error.
                         return Err(UtxoInquirerError::MissingQueriedTransactions(
                             tx_ids.iter().filter(|tx_id| !txs.contains_key(*tx_id)).copied().collect::<Vec<_>>(),
                         ));
                     };
+                    */
 
-                    Ok(tx_ids.iter().map(|tx_id| txs.remove(tx_id).expect("expected queried tx id")).collect::<Vec<_>>())
+                    return Ok(tx_ids.iter().map(|tx_id| txs.remove(tx_id).expect("expected queried tx id")).collect::<Vec<_>>())
+                                        */
                 }
             }
         } else {
@@ -430,7 +430,7 @@ impl VirtualStateProcessor {
                 };
             }
 
-            Ok(all_txs)
+            return Ok(all_txs);
         }
     }
 }
