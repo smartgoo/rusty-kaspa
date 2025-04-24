@@ -1,12 +1,12 @@
 use std::{
     cmp,
-    collections::{HashMap, HashSet},
+    collections::HashSet,
     sync::Arc,
 };
 
 use kaspa_consensus_core::{
     acceptance_data::AcceptanceData,
-    tx::{SignableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionInput, TransactionOutpoint, UtxoEntry},
+    tx::{SignableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionOutpoint, UtxoEntry},
     utxo::{
         utxo_diff::ImmutableUtxoDiff,
         utxo_inquirer::{UtxoInquirerError, UtxoInquirerResult},
@@ -14,7 +14,6 @@ use kaspa_consensus_core::{
 };
 use kaspa_core::trace;
 use kaspa_hashes::Hash;
-use kaspa_utils::arc::ArcExtensions;
 
 use crate::model::{
     services::reachability::ReachabilityService,
@@ -351,10 +350,10 @@ impl VirtualStateProcessor {
                             block_txs
                                 .get(index)
                                 .cloned()
-                                .ok_or_else(|| UtxoInquirerError::MissingTransactionIndexOfBlock(index, containing_block))
+                                .ok_or(UtxoInquirerError::MissingTransactionIndexOfBlock(index, containing_block))
                         })?;
 
-                    return Ok(vec![tx]);
+                    Ok(vec![tx])
                 }
                 // else we work, and optimize with sets, and iterate by block hash, as to minimize block transaction store queries.
                 _ => {
@@ -430,7 +429,7 @@ impl VirtualStateProcessor {
                 };
             }
 
-            return Ok(all_txs);
+            Ok(all_txs)
         }
     }
 }

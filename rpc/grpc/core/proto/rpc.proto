@@ -23,19 +23,19 @@ message RpcBlock {
 }
 
 message RpcBlockHeader {
-  optional string hash = 15; // -> this field is new
-  optional uint32 version = 1;
+  string hash = 15; // -> this field is new
+  uint32 version = 1;
   repeated RpcBlockLevelParents parents = 12;
-  optional string hashMerkleRoot = 3;
-  optional string acceptedIdMerkleRoot = 4;
-  optional string utxoCommitment = 5;
-  optional int64 timestamp = 6;
-  optional uint32 bits = 7;
-  optional uint64 nonce = 8;
-  optional uint64 daaScore = 9;
-  optional string blueWork = 10;
-  optional string pruningPoint = 14;
-  optional uint64 blueScore = 13;
+  string hashMerkleRoot = 3;
+  string acceptedIdMerkleRoot = 4;
+  string utxoCommitment = 5;
+  int64 timestamp = 6;
+  uint32 bits = 7;
+  uint64 nonce = 8;
+  uint64 daaScore = 9;
+  string blueWork = 10;
+  string pruningPoint = 14;
+  uint64 blueScore = 13;
 }
 
 message RpcBlockLevelParents {
@@ -56,48 +56,48 @@ message RpcBlockVerboseData{
 }
 
 message RpcTransaction {
-  optional uint32 version = 1;
+  uint32 version = 1;
   repeated RpcTransactionInput inputs = 2;
   repeated RpcTransactionOutput outputs = 3;
-  optional uint64 lockTime = 4;
-  optional string subnetworkId = 5;
-  optional uint64 gas = 6;
-  optional string payload = 8;
-  optional RpcTransactionVerboseData verboseData = 9;
-  optional uint64 mass = 10;
+  uint64 lockTime = 4;
+  string subnetworkId = 5;
+  uint64 gas = 6;
+  string payload = 8;
+  RpcTransactionVerboseData verboseData = 9;
+  uint64 mass = 10;
 }
 
 message RpcTransactionVerboseData{
-  optional string transactionId = 1;
-  optional string hash = 2;
-  optional uint64 computeMass = 4;
-  optional string blockHash = 12;
-  optional uint64 blockTime = 14;
+  string transactionId = 1;
+  string hash = 2;
+  uint64 computeMass = 4;
+  string blockHash = 12;
+  uint64 blockTime = 14;
 }
 
 message RpcTransactionInput {
   RpcOutpoint previousOutpoint = 1;
-  optional string signatureScript = 2;
-  optional uint64 sequence = 3;
-  optional uint32 sigOpCount = 5;
+  string signatureScript = 2;
+  uint64 sequence = 3;
+  uint32 sigOpCount = 5;
   RpcTransactionInputVerboseData verboseData = 4;
 }
 
 message RpcTransactionInputVerboseData{
-  optional RpcUtxoEntry utxoEntry = 1; // -> this field is new, if this is null, the utxo cannot be found, or is coinbase. 
+  RpcUtxoEntry utxoEntry = 1; // -> this field is new, if this is null, the utxo cannot be found, or is coinbase. 
 }
 
 message RpcUtxoEntry {
-  optional uint64 amount = 1;
-  optional RpcScriptPublicKey scriptPublicKey = 2;
-  optional uint64 blockDaaScore = 3;
-  optional bool isCoinbase = 4;
+  uint64 amount = 1;
+  RpcScriptPublicKey scriptPublicKey = 2;
+  uint64 blockDaaScore = 3;
+  bool isCoinbase = 4;
   RpcUtxoEntryVerboseData verboseData = 5;
 }
 
 message RpcUtxoEntryVerboseData {
-  optional string scriptPublicKeyType = 5;
-  optional string scriptPublicKeyAddress = 6;
+  string scriptPublicKeyType = 5;
+  string scriptPublicKeyAddress = 6;
 }
 
 message RpcScriptPublicKey {
@@ -106,19 +106,19 @@ message RpcScriptPublicKey {
 }
 
 message RpcTransactionOutput {
-  optional uint64 amount = 1;
+  uint64 amount = 1;
   RpcScriptPublicKey scriptPublicKey = 2;
   RpcTransactionOutputVerboseData verboseData = 3;
 }
 
 message RpcOutpoint {
-  optional string transactionId = 1;
-  optional uint32 index = 2;
+  string transactionId = 1;
+  uint32 index = 2;
 }
 
 message RpcTransactionOutputVerboseData{
-  optional string scriptPublicKeyType = 5;
-  optional string scriptPublicKeyAddress = 6;
+  string scriptPublicKeyType = 5;
+  string scriptPublicKeyAddress = 6;
 }
 
 enum RpcNotifyCommand {
