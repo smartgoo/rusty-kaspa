@@ -1,8 +1,4 @@
-use std::{
-    cmp,
-    collections::HashSet,
-    sync::Arc,
-};
+use std::{cmp, collections::HashSet, sync::Arc};
 
 use kaspa_consensus_core::{
     acceptance_data::AcceptanceData,
