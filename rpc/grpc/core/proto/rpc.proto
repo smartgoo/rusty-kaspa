@@ -405,6 +405,28 @@ message GetVirtualChainFromBlockResponseMessage{
   RPCError error = 1000;
 }
 
+message GetVirtualChainFromBlockCustomRequestMessage{
+  string startHash = 1;
+}
+
+message RpcMergesetBlockAcceptanceData {
+  RpcBlockHeader mergedHeader = 1;
+  repeated RpcTransaction acceptedTransactions = 2;
+}
+
+message RpcAcceptanceData {
+  RpcBlockHeader acceptingChainBlockHeader = 1;
+  repeated RpcMergesetBlockAcceptanceData mergesetBlockAcceptanceData = 2;
+}
+
+message GetVirtualChainFromBlockCustomResponseMessage{
+  repeated string removedChainBlockHashes = 1;
+  repeated string addedChainBlockHashes = 3;
+  repeated RpcAcceptanceData addedAcceptanceData = 2;
+
+  RPCError error = 1000;
+}
+
 // GetBlocksRequestMessage requests blocks between a certain block lowHash up to this
 // kaspad's current virtual.
 message GetBlocksRequestMessage{

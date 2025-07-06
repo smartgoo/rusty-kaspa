@@ -64,6 +64,7 @@ pub enum KaspadPayloadOps {
     SubmitTransactionReplacement,
     GetSubnetwork,
     GetVirtualChainFromBlock,
+    GetVirtualChainFromBlockCustom,
     GetBlockCount,
     GetBlockDagInfo,
     ResolveFinalityConflict,
