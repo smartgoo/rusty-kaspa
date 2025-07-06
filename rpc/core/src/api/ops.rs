@@ -95,6 +95,8 @@ pub enum RpcApiOps {
     //
     GetVirtualChainFromBlock = 128,
     //
+    GetVirtualChainFromBlockCustom = 200,
+    //
     GetBlocks = 129,
     /// Returns the amount of blocks in the DAG
     GetBlockCount = 130,
