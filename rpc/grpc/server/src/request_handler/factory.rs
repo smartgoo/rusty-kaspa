@@ -58,6 +58,7 @@ impl Factory {
                 SubmitTransactionReplacement,
                 GetSubnetwork,
                 GetVirtualChainFromBlock,
+                GetVirtualChainFromBlockCustom,
                 GetBlockCount,
                 GetBlockDagInfo,
                 ResolveFinalityConflict,

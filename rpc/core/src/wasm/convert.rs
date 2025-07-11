@@ -9,7 +9,13 @@ use std::sync::Arc;
 impl From<RpcUtxosByAddressesEntry> for UtxoEntry {
     fn from(entry: RpcUtxosByAddressesEntry) -> UtxoEntry {
         let RpcUtxosByAddressesEntry { address, outpoint, utxo_entry } = entry;
-        let RpcUtxoEntry { amount, script_public_key, block_daa_score, is_coinbase } = utxo_entry;
+        let RpcUtxoEntry {
+            amount,
+            script_public_key,
+            block_daa_score,
+            is_coinbase,
+            ..
+        } = utxo_entry;
         UtxoEntry { address, outpoint: outpoint.into(), amount, script_public_key, block_daa_score, is_coinbase }
     }
 }

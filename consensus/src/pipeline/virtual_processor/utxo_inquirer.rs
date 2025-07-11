@@ -2,8 +2,8 @@ use std::{cmp, sync::Arc};
 
 use kaspa_consensus_core::{
     acceptance_data::AcceptanceData,
-    tx::{SignableTransaction, Transaction, UtxoEntry},
-    utxo::{utxo_diff::ImmutableUtxoDiff, utxo_inquirer::UtxoInquirerError},
+    tx::{SignableTransaction, Transaction, TransactionId, TransactionOutpoint, UtxoEntry},
+    utxo::{utxo_diff::ImmutableUtxoDiff, utxo_inquirer::{UtxoInquirerError, UtxoInquirerResult}},
 };
 use kaspa_core::{trace, warn};
 use kaspa_hashes::Hash;
@@ -183,5 +183,194 @@ impl VirtualStateProcessor {
         }
 
         Ok(tx)
+    }
+
+    pub fn get_populated_transactions_by_accepting_block(
+        &self,
+        tx_ids: Option<Vec<TransactionId>>,
+        accepting_block: Hash,
+    ) -> UtxoInquirerResult<Vec<SignableTransaction>> {
+        let acceptance_data = self
+            .acceptance_data_store
+            .get(accepting_block)
+            .map_err(|_| UtxoInquirerError::MissingAcceptanceDataForChainBlock(accepting_block))?;
+
+        let accepting_daa_score = self
+            .headers_store
+            .get_daa_score(accepting_block)
+            .map_err(|_| UtxoInquirerError::MissingCompactHeaderForBlockHash(accepting_block))?;
+        // Expected to never fail, since we found the acceptance data and therefore there must be matching diff
+        let utxo_diff = self
+            .utxo_diffs_store
+            .get(accepting_block)
+            .map_err(|_| UtxoInquirerError::MissingUtxoDiffForChainBlock(accepting_block))?;
+
+        let txs = self.find_txs_from_acceptance_data(tx_ids, &acceptance_data)?;
+
+        let mut populated_txs = Vec::<SignableTransaction>::with_capacity(txs.len());
+
+        for tx in txs.iter() {
+            let mut entries = Vec::with_capacity(tx.inputs.len());
+            for input in tx.inputs.iter() {
+                let filled_utxo = if let Some(utxo) = utxo_diff.removed().get(&input.previous_outpoint).cloned() {
+                    Some(utxo)
+                } else if let Some(utxo) = populated_txs.iter().map(|ptx| &ptx.tx).chain(txs.iter()).find_map(|tx| {
+                    if tx.id() == input.previous_outpoint.transaction_id {
+                        let output = &tx.outputs[input.previous_outpoint.index as usize];
+                        Some(UtxoEntry::new(output.value, output.script_public_key.clone(), accepting_daa_score, tx.is_coinbase()))
+                    } else {
+                        None
+                    }
+                }) {
+                    Some(utxo)
+                } else {
+                    Some(self.resolve_missing_outpoint(&input.previous_outpoint, &acceptance_data, accepting_daa_score)?)
+                };
+
+                entries.push(filled_utxo.ok_or(UtxoInquirerError::MissingUtxoEntryForOutpoint(input.previous_outpoint))?);
+            }
+            populated_txs.push(SignableTransaction::with_entries(tx.clone(), entries));
+        }
+
+        Ok(populated_txs)
+    }
+
+    /// Finds a transaction through the accepting block acceptance data (and using indexed info therein for
+    /// finding the tx in the block transactions store)
+    fn find_txs_from_acceptance_data(
+        &self,
+        tx_ids: Option<Vec<TransactionId>>, // specifying `None` returns all transactions in the acceptance data
+        acceptance_data: &AcceptanceData,
+    ) -> UtxoInquirerResult<Vec<Transaction>> {
+        if let Some(mut tx_ids) = tx_ids {
+            match tx_ids.len() {
+                // empty vec should never happen
+                0 => panic!("tx_ids should not be empty"),
+                // if we are dealing with a single tx, we optimize for this.
+                1 => {
+                    let tx_id = tx_ids.pop().unwrap();
+
+                    //sanity check
+                    assert!(tx_ids.is_empty());
+
+                    let (containing_block, index) = acceptance_data
+                        .iter()
+                        .find_map(|mbad| {
+                            let tx_arr_index = mbad
+                                .accepted_transactions
+                                .iter()
+                                .find_map(|tx| (tx.transaction_id == tx_id).then_some(tx.index_within_block as usize));
+                            tx_arr_index.map(|index| (mbad.block_hash, index))
+                        })
+                        .ok_or_else(|| UtxoInquirerError::MissingQueriedTransactions(vec![tx_id]))?;
+
+                    let tx = self
+                        .block_transactions_store
+                        .get(containing_block)
+                        .map_err(|_| UtxoInquirerError::MissingBlockFromBlockTxStore(containing_block))
+                        .and_then(|block_txs| {
+                            block_txs
+                                .get(index)
+                                .cloned()
+                                .ok_or(UtxoInquirerError::MissingTransactionIndexOfBlock(index, containing_block))
+                        })?;
+
+                    Ok(vec![tx])
+                }
+                // else we work, and optimize with sets, and iterate by block hash, as to minimize block transaction store queries.
+                _ => {
+                    panic!("we should not be here (yet)")
+                    /*
+
+                    let mut txs = HashMap::<TransactionId, Transaction, _>::new();
+                    for (containing_block, indices) in
+                        self.find_containing_blocks_and_indices_from_acceptance_data(&tx_ids, acceptance_data)
+                    {
+                        let mut indice_iter = indices.iter();
+                        let mut target_index = (*indice_iter.next().unwrap()) as usize;
+                        let cut_off_index = (*indices.last().unwrap()) as usize;
+
+                        txs.extend(
+                            self.block_transactions_store
+                                .get(containing_block)
+                                .map_err(|_| UtxoInquirerError::MissingBlockFromBlockTxStore(containing_block))?
+                                .unwrap_or_clone()
+                                .into_iter()
+                                .enumerate()
+                                .take_while(|(i, _)| *i <= cut_off_index)
+                                .filter_map(|(i, tx)| {
+                                    if i == target_index {
+                                        target_index = (*indice_iter.next().unwrap()) as usize;
+                                        Some((tx.id(), tx))
+                                    } else {
+                                        None
+                                    }
+                                }),
+                        );
+                    }
+
+                    /*
+                    if txs.len() < tx_ids.len() {
+                        // The query includes txs which are not in the acceptance data, we constitute this as an error.
+                        return Err(UtxoInquirerError::MissingQueriedTransactions(
+                            tx_ids.iter().filter(|tx_id| !txs.contains_key(*tx_id)).copied().collect::<Vec<_>>(),
+                        ));
+                    };
+                    */
+
+                    return Ok(tx_ids.iter().map(|tx_id| txs.remove(tx_id).expect("expected queried tx id")).collect::<Vec<_>>())
+                                        */
+                }
+            }
+        } else {
+            // if tx_ids is None, we return all transactions in the acceptance data
+            let mut all_txs = Vec::new();
+
+            for mbad in acceptance_data.iter() {
+                let mut index_iter = mbad.accepted_transactions.iter().map(|tx| tx.index_within_block as usize);
+
+                if let Some(mut next_target_index) = index_iter.next() {
+                    all_txs.extend(
+                        self.block_transactions_store
+                            .get(mbad.block_hash)
+                            .map_err(|_| UtxoInquirerError::MissingBlockFromBlockTxStore(mbad.block_hash))?
+                            .iter()
+                            .enumerate()
+                            .filter_map(|(i, tx)| {
+                                if i == next_target_index {
+                                    next_target_index = index_iter.next().unwrap_or(usize::MAX);
+                                    Some(tx.clone())
+                                } else {
+                                    None
+                                }
+                            })
+                            .take(mbad.accepted_transactions.len()),
+                    )
+                } else {
+                    continue;
+                };
+            }
+
+            Ok(all_txs)
+        }
+    }
+
+    fn resolve_missing_outpoint(
+        &self,
+        outpoint: &TransactionOutpoint,
+        acceptance_data: &AcceptanceData,
+        accepting_block_daa_score: u64,
+    ) -> UtxoInquirerResult<UtxoEntry> {
+        // This handles this rare scenario:
+        // - UTXO0 is spent by TX1 and creates UTXO1
+        // - UTXO1 is spent by TX2 and creates UTXO2
+        // - A chain block happens to accept both of these
+        // In this case, removed_diff wouldn't contain the outpoint of the created-and-immediately-spent UTXO
+        // so we use the transaction (which also has acceptance data in this block) and look at its outputs
+        let other_tx = &self.find_txs_from_acceptance_data(Some(vec![outpoint.transaction_id]), acceptance_data)?[0];
+        let output = &other_tx.outputs[outpoint.index as usize];
+        let utxo_entry =
+            UtxoEntry::new(output.value, output.script_public_key.clone(), accepting_block_daa_score, other_tx.is_coinbase());
+        Ok(utxo_entry)
     }
 }

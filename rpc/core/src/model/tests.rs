@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod mockery {
 
-    use crate::{model::*, RpcScriptClass};
+    use crate::model::*;
     use kaspa_addresses::{Prefix, Version};
     use kaspa_consensus_core::api::BlockCount;
     use kaspa_consensus_core::network::NetworkType;
@@ -11,6 +11,7 @@ mod mockery {
     use kaspa_math::Uint192;
     use kaspa_notify::subscription::Command;
     use kaspa_rpc_macros::test_wrpc_serializer as test;
+    use kaspa_txscript::script_class::ScriptClass;
     use kaspa_utils::networking::{ContextualNetAddress, IpAddress, NetAddress};
     use rand::Rng;
     use std::net::{IpAddr, Ipv4Addr};
@@ -205,7 +206,7 @@ mod mockery {
 
     impl Mock for RpcTransactionInputVerboseData {
         fn mock() -> Self {
-            RpcTransactionInputVerboseData {}
+            RpcTransactionInputVerboseData { utxo_entry: mock() }
         }
     }
 
@@ -223,7 +224,7 @@ mod mockery {
 
     impl Mock for RpcTransactionOutputVerboseData {
         fn mock() -> Self {
-            RpcTransactionOutputVerboseData { script_public_key_type: RpcScriptClass::PubKey, script_public_key_address: mock() }
+            RpcTransactionOutputVerboseData { script_public_key_type: mock(), script_public_key_address: mock() }
         }
     }
 
@@ -329,7 +330,30 @@ mod mockery {
 
     impl Mock for RpcUtxoEntry {
         fn mock() -> Self {
-            RpcUtxoEntry { amount: mock(), script_public_key: mock(), block_daa_score: mock(), is_coinbase: true }
+            RpcUtxoEntry {
+                amount: mock(),
+                script_public_key: mock(),
+                block_daa_score: mock(),
+                is_coinbase: true,
+                verbose_data: mock(),
+            }
+        }
+    }
+
+    impl Mock for RpcUtxoEntryVerboseData {
+        fn mock() -> Self {
+            RpcUtxoEntryVerboseData { script_public_key_type: mock(), script_public_key_address: mock() }
+        }
+    }
+
+    impl Mock for ScriptClass {
+        fn mock() -> Self {
+            match rand::thread_rng().gen::<u8>() % 4 {
+                0 => ScriptClass::NonStandard,
+                1 => ScriptClass::PubKey,
+                2 => ScriptClass::PubKeyECDSA,
+                _ => ScriptClass::ScriptHash, // 3
+            }
         }
     }
 

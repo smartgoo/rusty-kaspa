@@ -1,6 +1,8 @@
 use kaspa_hashes::Hash;
 use thiserror::Error;
 
+use crate::tx::{TransactionId, TransactionOutpoint};
+
 #[derive(Error, Debug, Clone)]
 pub enum UtxoInquirerError {
     #[error("Transaction is already pruned")]
@@ -35,4 +37,10 @@ pub enum UtxoInquirerError {
     MissingAcceptanceDataForChainBlock(Hash),
     #[error("Utxo entry is not filled")]
     UnfilledUtxoEntry,
+    #[error("Did not find utxo entry for outpoint {0}")]
+    MissingUtxoEntryForOutpoint(TransactionOutpoint),
+    #[error("Did not find queried transactions in acceptance data: {0:?}")]
+    MissingQueriedTransactions(Vec<TransactionId>),
 }
+
+pub type UtxoInquirerResult<T> = std::result::Result<T, UtxoInquirerError>;

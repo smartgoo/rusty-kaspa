@@ -1,6 +1,8 @@
 use kaspa_hashes::Hash;
 use thiserror::Error;
 
+use crate::utxo::utxo_inquirer::UtxoInquirerError;
+
 use super::{difficulty::DifficultyError, sync::SyncManagerError, traversal::TraversalError};
 
 #[derive(Error, Debug, Clone)]
@@ -34,6 +36,9 @@ pub enum ConsensusError {
 
     #[error("{0}")]
     General(&'static str),
+
+    #[error("utxo inquirer error: {0}")]
+    UtxoInquirerError(#[from] UtxoInquirerError),
 
     #[error("{0}")]
     GeneralOwned(String),

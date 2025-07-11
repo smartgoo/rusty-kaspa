@@ -362,6 +362,10 @@ async fn sanity_test() {
                 tst!(op, "see SubmitBlock")
             }
 
+            KaspadPayloadOps::GetVirtualChainFromBlockCustom => {
+                tst!(op, "see SubmitBlock")
+            }
+
             KaspadPayloadOps::GetBlockCount => {
                 tst!(op, "see SubmitBlock")
             }

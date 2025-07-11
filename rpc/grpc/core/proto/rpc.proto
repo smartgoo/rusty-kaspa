@@ -95,6 +95,12 @@ message RpcUtxoEntry {
   RpcScriptPublicKey scriptPublicKey = 2;
   uint64 blockDaaScore = 3;
   bool isCoinbase = 4;
+  RpcUtxoEntryVerboseData verboseData = 5;
+}
+
+message RpcUtxoEntryVerboseData {
+  string scriptPublicKeyType = 5;
+  string scriptPublicKeyAddress = 6;
 }
 
 message RpcTransactionVerboseData{
@@ -106,6 +112,7 @@ message RpcTransactionVerboseData{
 }
 
 message RpcTransactionInputVerboseData{
+  RpcUtxoEntry utxoEntry = 1; // -> this field is new, if this is null, the utxo cannot be found, or is coinbase. 
 }
 
 message RpcTransactionOutputVerboseData{
