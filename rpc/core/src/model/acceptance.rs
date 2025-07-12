@@ -20,7 +20,7 @@ impl Serializer for RpcAcceptanceData {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         store!(u16, &1, writer)?;
         store!(RpcHeader, &self.accepting_chain_block_header, writer)?;
-        store!(Vec<RpcMergesetBlockAcceptanceData>, &self.mergeset_block_acceptance_data, writer)?;
+        serialize!(Vec<RpcMergesetBlockAcceptanceData>, &self.mergeset_block_acceptance_data, writer)?;
 
         Ok(())
     }
@@ -30,7 +30,7 @@ impl Deserializer for RpcAcceptanceData {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u16, reader)?;
         let accepting_chain_block_header = load!(RpcHeader, reader)?;
-        let mergeset_block_acceptance_data = load!(Vec<RpcMergesetBlockAcceptanceData>, reader)?;
+        let mergeset_block_acceptance_data = deserialize!(Vec<RpcMergesetBlockAcceptanceData>, reader)?;
 
         Ok(Self { accepting_chain_block_header, mergeset_block_acceptance_data })
     }
