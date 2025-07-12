@@ -708,7 +708,6 @@ NOTE: This error usually indicates an RPC conversion error between the node and 
         let mut chain_path = session.async_get_virtual_chain_from_block(request.start_hash, Some(batch_size)).await?;
         let added_acceptance_data = self.consensus_converter.get_acceptance_data(&session, &chain_path, Some(batch_size)).await?;
         chain_path.added.truncate(added_acceptance_data.len());
-
         Ok(GetVirtualChainFromBlockCustomResponse {
             removed_chain_block_hashes: chain_path.removed.into(),
             added_chain_block_hashes: chain_path.added.into(),

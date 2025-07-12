@@ -70,7 +70,7 @@ use kaspa_consensus_core::{
     network::NetworkType,
     pruning::{PruningPointProof, PruningPointTrustedData, PruningPointsList, PruningProofMetadata},
     trusted::{ExternalGhostdagData, TrustedBlock},
-    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionOutpoint, TransactionQueryResult, TransactionType, UtxoEntry},
+    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionIndexType, TransactionOutpoint, TransactionQueryResult, TransactionType, UtxoEntry},
     utxo::utxo_inquirer::UtxoInquirerError,
     BlockHashSet, BlueWorkType, ChainPath, HashMapCustomHasher,
 };
@@ -1035,6 +1035,33 @@ impl ConsensusApi for Consensus {
             header: self.headers_store.get_header(hash).unwrap_option().ok_or(ConsensusError::BlockNotFound(hash))?,
             transactions: self.block_transactions_store.get(hash).unwrap_option().ok_or(ConsensusError::BlockNotFound(hash))?,
         })
+    }
+
+    fn get_block_transactions(&self, hash: Hash, indices: Option<Vec<TransactionIndexType>>) -> ConsensusResult<Vec<Transaction>> {
+        let transactions = self.block_transactions_store.get(hash).unwrap_option().ok_or(ConsensusError::BlockNotFound(hash))?;
+        let tx_len = transactions.len();
+
+        if let Some(indices) = indices {
+            if tx_len < indices.len() {
+                return Err(ConsensusError::TransactionQueryTooLarge(indices.len(), hash, transactions.len()));
+            }
+
+            let res = transactions
+                .unwrap_or_clone()
+                .into_iter()
+                .enumerate()
+                .filter(|(index, _tx)| indices.contains(&(*index as TransactionIndexType)))
+                .map(|(_, tx)| tx)
+                .collect::<Vec<_>>();
+
+            if res.len() != indices.len() {
+                Err(ConsensusError::TransactionIndexOutOfBounds(*indices.iter().max().unwrap(), tx_len, hash))
+            } else {
+                Ok(res)
+            }
+        } else {
+            Ok(transactions.unwrap_or_clone())
+        }
     }
 
     fn get_block_even_if_header_only(&self, hash: Hash) -> ConsensusResult<Block> {

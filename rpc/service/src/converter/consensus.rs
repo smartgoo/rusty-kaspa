@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use kaspa_addresses::{Address, AddressError};
 use kaspa_consensus_core::{
-    acceptance_data::MergesetBlockAcceptanceData, block::Block, config::Config, hashing::tx::hash, header::Header, tx::{MutableTransaction, Transaction, TransactionId, TransactionInput, TransactionOutput, TransactionQueryResult, TransactionType, UtxoEntry}, ChainPath
+    acceptance_data::MergesetBlockAcceptanceData, block::Block, config::Config, hashing::tx::hash, header::Header, tx::{MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionInput, TransactionOutput, TransactionQueryResult, TransactionType, UtxoEntry}, ChainPath
 };
 use kaspa_consensus_notify::notification::{self as consensus_notify, Notification as ConsensusNotification};
 use kaspa_consensusmanager::{ConsensusManager, ConsensusProxy};
@@ -326,6 +326,55 @@ impl ConsensusConverter {
         })
     }
 
+    pub async fn convert_signable_transaction(
+        &self,
+        consensus: &ConsensusProxy,
+        transaction: &SignableTransaction,
+        block_hash: Option<Hash>,
+        block_time: Option<u64>,
+    ) -> RpcResult<RpcTransaction> {
+        Ok(RpcTransaction {
+            version: transaction.tx.version,
+            inputs: transaction
+                .tx
+                .inputs
+                .iter()
+                .enumerate()
+                .map(|(i, x)| self.get_transaction_input_with_verbose_data(x, transaction.entries[i].clone()))
+                .collect::<Result<Vec<_>, _>>()?,
+            outputs: transaction
+                .tx
+                .outputs
+                .iter()
+                .map(|x| self.convert_transaction_output(x))
+                .collect::<Result<Vec<_>, _>>()?,
+            lock_time: transaction.tx.lock_time,
+            subnetwork_id: transaction.tx.subnetwork_id.clone(),
+            gas: transaction.tx.gas,
+            payload: transaction.tx.payload.clone(),
+            mass: transaction.tx.mass(),
+            verbose_data: {
+                let block_time = if let Some(block_time) = block_time {
+                    block_time
+                } else {
+                    consensus.async_get_header(block_hash.unwrap()).await?.timestamp
+                };
+
+                Some(
+                    self.get_transaction_verbose_data(
+                        &transaction.tx,
+                        block_hash.unwrap(),
+                        block_time,
+                        transaction
+                            .calculated_non_contextual_masses
+                            .unwrap_or(consensus.calculate_transaction_non_contextual_masses(transaction.tx.as_ref()))
+                            .compute_mass,
+                    )?,
+                )
+            },
+        })
+    }
+
     async fn get_accepted_transactions(
         &self,
         consensus: &ConsensusProxy,
@@ -338,18 +387,42 @@ impl ConsensusConverter {
             .async_get_transactions_by_accepting_block(
                 accepting_chain_block,
                 tx_ids,
-                TransactionType::Transaction,
+                TransactionType::SignableTransaction,
             )
             .await?;
 
         Ok(match txs {
-            TransactionQueryResult::Transaction(txs) => {
+            // TransactionQueryResult::Transaction(txs) => {
+            //     let mut converted = Vec::with_capacity(txs.len());
+
+            //     for tx in txs.iter() {
+            //         converted.push({
+            //             let rpc_tx = self
+            //                 .convert_transaction(
+            //                     consensus,
+            //                     tx,
+            //                     Some(mergeset_block_acceptance.block_hash),
+            //                     block_time,
+            //                 )
+            //                 .await?;
+
+            //             // if rpc_tx.is_empty() {
+            //             //     continue;
+            //             // };
+
+            //             rpc_tx
+            //         });
+            //     }
+
+            //     converted
+            // },
+            TransactionQueryResult::SignableTransaction(txs) => {
                 let mut converted = Vec::with_capacity(txs.len());
 
                 for tx in txs.iter() {
                     converted.push({
                         let rpc_tx = self
-                            .convert_transaction(
+                            .convert_signable_transaction(
                                 consensus,
                                 tx,
                                 Some(mergeset_block_acceptance.block_hash),
@@ -366,7 +439,7 @@ impl ConsensusConverter {
                 }
 
                 converted
-            },
+            }
             _ => unimplemented!()
         })
     }
