@@ -1,7 +1,16 @@
 use async_trait::async_trait;
 use kaspa_addresses::{Address, AddressError};
 use kaspa_consensus_core::{
-    acceptance_data::MergesetBlockAcceptanceData, block::Block, config::Config, hashing::tx::hash, header::Header, tx::{MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionInput, TransactionOutput, TransactionQueryResult, TransactionType, UtxoEntry}, ChainPath
+    acceptance_data::MergesetBlockAcceptanceData,
+    block::Block,
+    config::Config,
+    hashing::tx::hash,
+    header::Header,
+    tx::{
+        MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionInput, TransactionOutput,
+        TransactionQueryResult, TransactionType, UtxoEntry,
+    },
+    ChainPath,
 };
 use kaspa_consensus_notify::notification::{self as consensus_notify, Notification as ConsensusNotification};
 use kaspa_consensusmanager::{ConsensusManager, ConsensusProxy};
@@ -10,7 +19,10 @@ use kaspa_math::Uint256;
 use kaspa_mining::model::{owner_txs::OwnerTransactions, TransactionIdSet};
 use kaspa_notify::converter::Converter;
 use kaspa_rpc_core::{
-    BlockAddedNotification, Notification, RpcAcceptanceData, RpcAcceptedTransactionIds, RpcBlock, RpcBlockVerboseData, RpcHash, RpcHeader, RpcMempoolEntry, RpcMempoolEntryByAddress, RpcMergesetBlockAcceptanceData, RpcResult, RpcTransaction, RpcTransactionInput, RpcTransactionInputVerboseData, RpcTransactionOutput, RpcTransactionOutputVerboseData, RpcTransactionVerboseData, RpcUtxoEntry, RpcUtxoEntryVerboseData
+    BlockAddedNotification, Notification, RpcAcceptanceData, RpcAcceptedTransactionIds, RpcBlock, RpcBlockVerboseData, RpcHash,
+    RpcHeader, RpcMempoolEntry, RpcMempoolEntryByAddress, RpcMergesetBlockAcceptanceData, RpcResult, RpcTransaction,
+    RpcTransactionInput, RpcTransactionInputVerboseData, RpcTransactionOutput, RpcTransactionOutputVerboseData,
+    RpcTransactionVerboseData, RpcUtxoEntry, RpcUtxoEntryVerboseData,
 };
 use kaspa_txscript::{extract_script_pub_key_address, script_class::ScriptClass};
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
@@ -173,11 +185,7 @@ impl ConsensusConverter {
             .collect())
     }
 
-    async fn get_header(
-        &self,
-        consensus: &ConsensusProxy,
-        block_hash: RpcHash,
-    ) -> RpcResult<RpcHeader> {
+    async fn get_header(&self, consensus: &ConsensusProxy, block_hash: RpcHash) -> RpcResult<RpcHeader> {
         let header = consensus.async_get_header(block_hash).await?;
 
         Ok(RpcHeader {
@@ -197,16 +205,13 @@ impl ConsensusConverter {
         })
     }
 
-    fn get_utxo_verbose_data(
-        &self,
-        utxo: &UtxoEntry,
-    ) -> RpcResult<RpcUtxoEntryVerboseData> {
+    fn get_utxo_verbose_data(&self, utxo: &UtxoEntry) -> RpcResult<RpcUtxoEntryVerboseData> {
         Ok(RpcUtxoEntryVerboseData {
             script_public_key_type: Some(ScriptClass::from_script(&utxo.script_public_key)),
             script_public_key_address: Some(
-                    extract_script_pub_key_address(&utxo.script_public_key, self.config.prefix())
-                        .map_err(|_| AddressError::InvalidAddress)?,
-                ),
+                extract_script_pub_key_address(&utxo.script_public_key, self.config.prefix())
+                    .map_err(|_| AddressError::InvalidAddress)?,
+            ),
         })
     }
 
@@ -220,16 +225,13 @@ impl ConsensusConverter {
         })
     }
 
-    fn get_input_verbose_data(
-        &self,
-        utxo: Option<UtxoEntry>,
-    ) -> RpcResult<RpcTransactionInputVerboseData> {
+    fn get_input_verbose_data(&self, utxo: Option<UtxoEntry>) -> RpcResult<RpcTransactionInputVerboseData> {
         Ok(RpcTransactionInputVerboseData {
             utxo_entry: if utxo.is_some() {
                 Some(self.convert_utxo_entry_with_verbosity(utxo.unwrap())?)
             } else {
                 return Err(kaspa_rpc_core::RpcError::General("UtxoEntry missing".to_string()));
-            }
+            },
         })
     }
 
@@ -247,21 +249,15 @@ impl ConsensusConverter {
         })
     }
 
-    fn get_transaction_output_verbose_data(
-        &self,
-        output: &TransactionOutput,
-    ) -> RpcResult<RpcTransactionOutputVerboseData> {
+    fn get_transaction_output_verbose_data(&self, output: &TransactionOutput) -> RpcResult<RpcTransactionOutputVerboseData> {
         Ok(RpcTransactionOutputVerboseData {
             script_public_key_type: ScriptClass::from_script(&output.script_public_key),
             script_public_key_address: extract_script_pub_key_address(&output.script_public_key, self.config.prefix())
-                    .map_err(|_| AddressError::InvalidAddress)?,
+                .map_err(|_| AddressError::InvalidAddress)?,
         })
     }
 
-    fn convert_transaction_output(
-        &self,
-        output: &TransactionOutput,
-    ) -> RpcResult<RpcTransactionOutput> {
+    fn convert_transaction_output(&self, output: &TransactionOutput) -> RpcResult<RpcTransactionOutput> {
         Ok(RpcTransactionOutput {
             value: output.value,
             script_public_key: output.script_public_key.clone(),
@@ -279,9 +275,9 @@ impl ConsensusConverter {
         Ok(RpcTransactionVerboseData {
             transaction_id: transaction.id(),
             hash: hash(transaction, true),
-            compute_mass: compute_mass,
-            block_hash: block_hash,
-            block_time: block_time,
+            compute_mass,
+            block_hash,
+            block_time,
         })
     }
 
@@ -295,15 +291,11 @@ impl ConsensusConverter {
         Ok(RpcTransaction {
             version: transaction.version,
             inputs: transaction
-                    .inputs
-                    .iter()
-                    .map(|x| self.get_transaction_input_with_verbose_data(x, None))
-                    .collect::<Result<Vec<_>, _>>()?,
-            outputs: transaction
-                    .outputs
-                    .iter()
-                    .map(|x| self.convert_transaction_output(x))
-                    .collect::<Result<Vec<_>, _>>()?,
+                .inputs
+                .iter()
+                .map(|x| self.get_transaction_input_with_verbose_data(x, None))
+                .collect::<Result<Vec<_>, _>>()?,
+            outputs: transaction.outputs.iter().map(|x| self.convert_transaction_output(x)).collect::<Result<Vec<_>, _>>()?,
             lock_time: transaction.lock_time,
             subnetwork_id: transaction.subnetwork_id.clone(),
             gas: transaction.gas,
@@ -342,12 +334,7 @@ impl ConsensusConverter {
                 .enumerate()
                 .map(|(i, x)| self.get_transaction_input_with_verbose_data(x, transaction.entries[i].clone()))
                 .collect::<Result<Vec<_>, _>>()?,
-            outputs: transaction
-                .tx
-                .outputs
-                .iter()
-                .map(|x| self.convert_transaction_output(x))
-                .collect::<Result<Vec<_>, _>>()?,
+            outputs: transaction.tx.outputs.iter().map(|x| self.convert_transaction_output(x)).collect::<Result<Vec<_>, _>>()?,
             lock_time: transaction.tx.lock_time,
             subnetwork_id: transaction.tx.subnetwork_id.clone(),
             gas: transaction.tx.gas,
@@ -384,11 +371,7 @@ impl ConsensusConverter {
         block_time: Option<u64>,
     ) -> RpcResult<Vec<RpcTransaction>> {
         let txs = consensus
-            .async_get_transactions_by_accepting_block(
-                accepting_chain_block,
-                tx_ids,
-                TransactionType::SignableTransaction,
-            )
+            .async_get_transactions_by_accepting_block(accepting_chain_block, tx_ids, TransactionType::SignableTransaction)
             .await?;
 
         Ok(match txs {
@@ -422,12 +405,7 @@ impl ConsensusConverter {
                 for tx in txs.iter() {
                     converted.push({
                         let rpc_tx = self
-                            .convert_signable_transaction(
-                                consensus,
-                                tx,
-                                Some(mergeset_block_acceptance.block_hash),
-                                block_time,
-                            )
+                            .convert_signable_transaction(consensus, tx, Some(mergeset_block_acceptance.block_hash), block_time)
                             .await?;
 
                         // if rpc_tx.is_empty() {
@@ -440,7 +418,7 @@ impl ConsensusConverter {
 
                 converted
             }
-            _ => unimplemented!()
+            _ => unimplemented!(),
         })
     }
 
@@ -452,14 +430,15 @@ impl ConsensusConverter {
     ) -> RpcResult<RpcMergesetBlockAcceptanceData> {
         let merged_header = self.get_header(consensus, mergeset_block_acceptance.block_hash).await?;
 
-        let accepted_transactions = self.get_accepted_transactions(
-            consensus,
-            accepting_chain_block,
-            None,
-            mergeset_block_acceptance,
-            Some(merged_header.timestamp)
-        )
-        .await?;
+        let accepted_transactions = self
+            .get_accepted_transactions(
+                consensus,
+                accepting_chain_block,
+                None,
+                mergeset_block_acceptance,
+                Some(merged_header.timestamp),
+            )
+            .await?;
 
         Ok(RpcMergesetBlockAcceptanceData { merged_header, accepted_transactions })
     }
@@ -478,19 +457,13 @@ impl ConsensusConverter {
 
             let mut rpc_meregeset_block_acceptance_data = Vec::with_capacity(acceptance_data.len());
             for mergeset_block_acceptance in acceptance_data.iter() {
-                rpc_meregeset_block_acceptance_data.push(
-                    self.get_mergeset_block_acceptance_data(
-                        consensus,
-                        *accepting_chain_hash,
-                        mergeset_block_acceptance,
-                    )
-                    .await?,
-                );
+                rpc_meregeset_block_acceptance_data
+                    .push(self.get_mergeset_block_acceptance_data(consensus, *accepting_chain_hash, mergeset_block_acceptance).await?);
             }
 
             rpc_acceptance_data.push(RpcAcceptanceData {
                 accepting_chain_block_header: accepting_chain_header,
-                mergeset_block_acceptance_data: rpc_meregeset_block_acceptance_data
+                mergeset_block_acceptance_data: rpc_meregeset_block_acceptance_data,
             });
         }
 

@@ -3,7 +3,10 @@ use std::{cmp, sync::Arc};
 use kaspa_consensus_core::{
     acceptance_data::AcceptanceData,
     tx::{SignableTransaction, Transaction, TransactionId, TransactionOutpoint, UtxoEntry},
-    utxo::{utxo_diff::ImmutableUtxoDiff, utxo_inquirer::{UtxoInquirerError, UtxoInquirerResult}},
+    utxo::{
+        utxo_diff::ImmutableUtxoDiff,
+        utxo_inquirer::{UtxoInquirerError, UtxoInquirerResult},
+    },
 };
 use kaspa_core::{trace, warn};
 use kaspa_hashes::Hash;

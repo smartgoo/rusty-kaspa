@@ -987,7 +987,6 @@ impl Deserializer for GetVirtualChainFromBlockCustomResponse {
     }
 }
 
-
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GetBlocksRequest {

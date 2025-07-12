@@ -11,14 +11,8 @@ pub struct RpcAcceptanceData {
 }
 
 impl RpcAcceptanceData {
-    pub fn new(
-        accepting_chain_block_header: RpcHeader,
-        mergeset_block_acceptance_data: Vec<RpcMergesetBlockAcceptanceData>,
-    ) -> Self {
-        Self {
-            accepting_chain_block_header,
-            mergeset_block_acceptance_data,
-        }
+    pub fn new(accepting_chain_block_header: RpcHeader, mergeset_block_acceptance_data: Vec<RpcMergesetBlockAcceptanceData>) -> Self {
+        Self { accepting_chain_block_header, mergeset_block_acceptance_data }
     }
 }
 
@@ -50,14 +44,8 @@ pub struct RpcMergesetBlockAcceptanceData {
 }
 
 impl RpcMergesetBlockAcceptanceData {
-    pub fn new(
-        merged_header: RpcHeader,
-        accepted_transactions: Vec<RpcTransaction>,
-    ) -> Self {
-        Self {
-            merged_header,
-            accepted_transactions,
-        }
+    pub fn new(merged_header: RpcHeader, accepted_transactions: Vec<RpcTransaction>) -> Self {
+        Self { merged_header, accepted_transactions }
     }
 }
 

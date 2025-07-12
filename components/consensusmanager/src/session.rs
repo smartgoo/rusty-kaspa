@@ -13,7 +13,10 @@ use kaspa_consensus_core::{
     mass::{ContextualMasses, NonContextualMasses},
     pruning::{PruningPointProof, PruningPointTrustedData, PruningPointsList},
     trusted::{ExternalGhostdagData, TrustedBlock},
-    tx::{MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionOutpoint, TransactionQueryResult, TransactionType, UtxoEntry},
+    tx::{
+        MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionOutpoint, TransactionQueryResult,
+        TransactionType, UtxoEntry,
+    },
     utxo::utxo_inquirer::UtxoInquirerError,
     BlockHashSet, BlueWorkType, ChainPath, Hash,
 };

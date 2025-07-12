@@ -8,7 +8,6 @@ use kaspa_wrpc_client::{
     KaspaRpcClient, WrpcEncoding,
 };
 use std::time::Duration;
-use tokio::time::sleep;
 
 #[tokio::main]
 async fn main() {
@@ -56,7 +55,7 @@ async fn check_node_status() {
 
     // Use the first virtual parent hash instead of pruning point hash
     // This is more likely to be within the retention period
-        
+
     let mut low_hash = pruning_point_hash;
     loop {
         let vspc = client.get_virtual_chain_from_block_custom(low_hash).await.unwrap();
@@ -67,5 +66,5 @@ async fn check_node_status() {
     }
 
     // Disconnect client from Kaspa node
-    client.disconnect().await.unwrap();
+    // client.disconnect().await.unwrap();
 }

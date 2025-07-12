@@ -28,7 +28,6 @@ from!(item: &kaspa_rpc_core::RpcMergesetBlockAcceptanceData, protowire::RpcMerge
 // protowire to rpc_core
 // ----------------------------------------------------------------------------
 
-
 try_from!(item: &protowire::RpcAcceptanceData, kaspa_rpc_core::RpcAcceptanceData, {
     Self {
         accepting_chain_block_header: item
