@@ -260,6 +260,15 @@ pub trait RpcApi: Sync + Send + AnySync {
         request: GetVirtualChainFromBlockRequest,
     ) -> RpcResult<GetVirtualChainFromBlockResponse>;
 
+    async fn get_virtual_chain_from_block_custom(&self, start_hash: RpcHash) -> RpcResult<GetVirtualChainFromBlockCustomResponse> {
+        self.get_virtual_chain_from_block_custom_call(None, GetVirtualChainFromBlockCustomRequest::new(start_hash)).await
+    }
+    async fn get_virtual_chain_from_block_custom_call(
+        &self,
+        connection: Option<&DynRpcConnection>,
+        request: GetVirtualChainFromBlockCustomRequest,
+    ) -> RpcResult<GetVirtualChainFromBlockCustomResponse>;
+
     /// Requests blocks between a certain block `low_hash` up to this node's current virtual.
     async fn get_blocks(
         &self,

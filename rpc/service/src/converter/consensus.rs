@@ -1,22 +1,28 @@
 use async_trait::async_trait;
-use kaspa_addresses::Address;
+use kaspa_addresses::{Address, AddressError};
 use kaspa_consensus_core::{
+    acceptance_data::MergesetBlockAcceptanceData,
     block::Block,
     config::Config,
     hashing::tx::hash,
     header::Header,
-    tx::{MutableTransaction, Transaction, TransactionId, TransactionInput, TransactionOutput},
+    tx::{
+        MutableTransaction, SignableTransaction, Transaction, TransactionId, TransactionInput, TransactionOutput,
+        TransactionQueryResult, TransactionType, UtxoEntry,
+    },
     ChainPath,
 };
 use kaspa_consensus_notify::notification::{self as consensus_notify, Notification as ConsensusNotification};
 use kaspa_consensusmanager::{ConsensusManager, ConsensusProxy};
+use kaspa_hashes::Hash;
 use kaspa_math::Uint256;
 use kaspa_mining::model::{owner_txs::OwnerTransactions, TransactionIdSet};
 use kaspa_notify::converter::Converter;
 use kaspa_rpc_core::{
-    BlockAddedNotification, Notification, RpcAcceptedTransactionIds, RpcBlock, RpcBlockVerboseData, RpcHash, RpcMempoolEntry,
-    RpcMempoolEntryByAddress, RpcResult, RpcTransaction, RpcTransactionInput, RpcTransactionOutput, RpcTransactionOutputVerboseData,
-    RpcTransactionVerboseData,
+    BlockAddedNotification, Notification, RpcAcceptanceData, RpcAcceptedTransactionIds, RpcBlock, RpcBlockVerboseData, RpcHash,
+    RpcHeader, RpcMempoolEntry, RpcMempoolEntryByAddress, RpcMergesetBlockAcceptanceData, RpcResult, RpcTransaction,
+    RpcTransactionInput, RpcTransactionInputVerboseData, RpcTransactionOutput, RpcTransactionOutputVerboseData,
+    RpcTransactionVerboseData, RpcUtxoEntry, RpcUtxoEntryVerboseData,
 };
 use kaspa_txscript::{extract_script_pub_key_address, script_class::ScriptClass};
 use std::{collections::HashMap, fmt::Debug, sync::Arc};
@@ -177,6 +183,291 @@ impl ConsensusConverter {
                     .collect(),
             })
             .collect())
+    }
+
+    async fn get_header(&self, consensus: &ConsensusProxy, block_hash: RpcHash) -> RpcResult<RpcHeader> {
+        let header = consensus.async_get_header(block_hash).await?;
+
+        Ok(RpcHeader {
+            hash: block_hash,
+            version: header.version,
+            parents_by_level: header.parents_by_level.to_owned(),
+            hash_merkle_root: header.hash_merkle_root,
+            accepted_id_merkle_root: header.accepted_id_merkle_root,
+            utxo_commitment: header.utxo_commitment,
+            timestamp: header.timestamp,
+            bits: header.bits,
+            nonce: header.nonce,
+            daa_score: header.daa_score,
+            blue_work: header.blue_work,
+            blue_score: header.blue_score,
+            pruning_point: header.pruning_point,
+        })
+    }
+
+    fn get_utxo_verbose_data(&self, utxo: &UtxoEntry) -> RpcResult<RpcUtxoEntryVerboseData> {
+        Ok(RpcUtxoEntryVerboseData {
+            script_public_key_type: Some(ScriptClass::from_script(&utxo.script_public_key)),
+            script_public_key_address: Some(
+                extract_script_pub_key_address(&utxo.script_public_key, self.config.prefix())
+                    .map_err(|_| AddressError::InvalidAddress)?,
+            ),
+        })
+    }
+
+    fn convert_utxo_entry_with_verbosity(&self, utxo: UtxoEntry) -> RpcResult<RpcUtxoEntry> {
+        Ok(RpcUtxoEntry {
+            amount: utxo.amount,
+            script_public_key: utxo.script_public_key.clone(),
+            block_daa_score: utxo.block_daa_score,
+            is_coinbase: utxo.is_coinbase,
+            verbose_data: Some(self.get_utxo_verbose_data(&utxo)?),
+        })
+    }
+
+    fn get_input_verbose_data(&self, utxo: Option<UtxoEntry>) -> RpcResult<RpcTransactionInputVerboseData> {
+        Ok(RpcTransactionInputVerboseData {
+            utxo_entry: if utxo.is_some() {
+                Some(self.convert_utxo_entry_with_verbosity(utxo.unwrap())?)
+            } else {
+                return Err(kaspa_rpc_core::RpcError::General("UtxoEntry missing".to_string()));
+            },
+        })
+    }
+
+    pub fn get_transaction_input_with_verbose_data(
+        &self,
+        input: &TransactionInput,
+        utxo: Option<UtxoEntry>,
+    ) -> RpcResult<RpcTransactionInput> {
+        Ok(RpcTransactionInput {
+            previous_outpoint: input.previous_outpoint.into(),
+            signature_script: input.signature_script.clone(),
+            sequence: input.sequence,
+            sig_op_count: input.sig_op_count,
+            verbose_data: Some(self.get_input_verbose_data(utxo)?),
+        })
+    }
+
+    fn get_transaction_output_verbose_data(&self, output: &TransactionOutput) -> RpcResult<RpcTransactionOutputVerboseData> {
+        Ok(RpcTransactionOutputVerboseData {
+            script_public_key_type: ScriptClass::from_script(&output.script_public_key),
+            script_public_key_address: extract_script_pub_key_address(&output.script_public_key, self.config.prefix())
+                .map_err(|_| AddressError::InvalidAddress)?,
+        })
+    }
+
+    fn convert_transaction_output(&self, output: &TransactionOutput) -> RpcResult<RpcTransactionOutput> {
+        Ok(RpcTransactionOutput {
+            value: output.value,
+            script_public_key: output.script_public_key.clone(),
+            verbose_data: Some(self.get_transaction_output_verbose_data(output)?),
+        })
+    }
+
+    fn get_transaction_verbose_data(
+        &self,
+        transaction: &Transaction,
+        block_hash: Hash,
+        block_time: u64,
+        compute_mass: u64,
+    ) -> RpcResult<RpcTransactionVerboseData> {
+        Ok(RpcTransactionVerboseData {
+            transaction_id: transaction.id(),
+            hash: hash(transaction, true),
+            compute_mass,
+            block_hash,
+            block_time,
+        })
+    }
+
+    pub async fn convert_transaction(
+        &self,
+        consensus: &ConsensusProxy,
+        transaction: &Transaction,
+        block_hash: Option<Hash>,
+        block_time: Option<u64>,
+    ) -> RpcResult<RpcTransaction> {
+        Ok(RpcTransaction {
+            version: transaction.version,
+            inputs: transaction
+                .inputs
+                .iter()
+                .map(|x| self.get_transaction_input_with_verbose_data(x, None))
+                .collect::<Result<Vec<_>, _>>()?,
+            outputs: transaction.outputs.iter().map(|x| self.convert_transaction_output(x)).collect::<Result<Vec<_>, _>>()?,
+            lock_time: transaction.lock_time,
+            subnetwork_id: transaction.subnetwork_id.clone(),
+            gas: transaction.gas,
+            payload: transaction.payload.clone(),
+            mass: transaction.mass(),
+            verbose_data: {
+                let block_time = if let Some(block_time) = block_time {
+                    block_time
+                } else {
+                    consensus.async_get_header(block_hash.unwrap()).await?.timestamp
+                };
+
+                Some(self.get_transaction_verbose_data(
+                    transaction,
+                    block_hash.unwrap(),
+                    block_time,
+                    consensus.calculate_transaction_non_contextual_masses(transaction).compute_mass,
+                )?)
+            },
+        })
+    }
+
+    pub async fn convert_signable_transaction(
+        &self,
+        consensus: &ConsensusProxy,
+        transaction: &SignableTransaction,
+        block_hash: Option<Hash>,
+        block_time: Option<u64>,
+    ) -> RpcResult<RpcTransaction> {
+        Ok(RpcTransaction {
+            version: transaction.tx.version,
+            inputs: transaction
+                .tx
+                .inputs
+                .iter()
+                .enumerate()
+                .map(|(i, x)| self.get_transaction_input_with_verbose_data(x, transaction.entries[i].clone()))
+                .collect::<Result<Vec<_>, _>>()?,
+            outputs: transaction.tx.outputs.iter().map(|x| self.convert_transaction_output(x)).collect::<Result<Vec<_>, _>>()?,
+            lock_time: transaction.tx.lock_time,
+            subnetwork_id: transaction.tx.subnetwork_id.clone(),
+            gas: transaction.tx.gas,
+            payload: transaction.tx.payload.clone(),
+            mass: transaction.tx.mass(),
+            verbose_data: {
+                let block_time = if let Some(block_time) = block_time {
+                    block_time
+                } else {
+                    consensus.async_get_header(block_hash.unwrap()).await?.timestamp
+                };
+
+                Some(
+                    self.get_transaction_verbose_data(
+                        &transaction.tx,
+                        block_hash.unwrap(),
+                        block_time,
+                        transaction
+                            .calculated_non_contextual_masses
+                            .unwrap_or(consensus.calculate_transaction_non_contextual_masses(transaction.tx.as_ref()))
+                            .compute_mass,
+                    )?,
+                )
+            },
+        })
+    }
+
+    async fn get_accepted_transactions(
+        &self,
+        consensus: &ConsensusProxy,
+        accepting_chain_block: Hash,
+        tx_ids: Option<Vec<TransactionId>>,
+        mergeset_block_acceptance: &MergesetBlockAcceptanceData,
+        block_time: Option<u64>,
+    ) -> RpcResult<Vec<RpcTransaction>> {
+        let txs = consensus
+            .async_get_transactions_by_accepting_block(accepting_chain_block, tx_ids, TransactionType::SignableTransaction)
+            .await?;
+
+        Ok(match txs {
+            // TransactionQueryResult::Transaction(txs) => {
+            //     let mut converted = Vec::with_capacity(txs.len());
+
+            //     for tx in txs.iter() {
+            //         converted.push({
+            //             let rpc_tx = self
+            //                 .convert_transaction(
+            //                     consensus,
+            //                     tx,
+            //                     Some(mergeset_block_acceptance.block_hash),
+            //                     block_time,
+            //                 )
+            //                 .await?;
+
+            //             // if rpc_tx.is_empty() {
+            //             //     continue;
+            //             // };
+
+            //             rpc_tx
+            //         });
+            //     }
+
+            //     converted
+            // },
+            TransactionQueryResult::SignableTransaction(txs) => {
+                let mut converted = Vec::with_capacity(txs.len());
+
+                for tx in txs.iter() {
+                    converted.push({
+                        let rpc_tx = self
+                            .convert_signable_transaction(consensus, tx, Some(mergeset_block_acceptance.block_hash), block_time)
+                            .await?;
+
+                        // if rpc_tx.is_empty() {
+                        //     continue;
+                        // };
+
+                        rpc_tx
+                    });
+                }
+
+                converted
+            }
+            _ => unimplemented!(),
+        })
+    }
+
+    async fn get_mergeset_block_acceptance_data(
+        &self,
+        consensus: &ConsensusProxy,
+        accepting_chain_block: Hash,
+        mergeset_block_acceptance: &MergesetBlockAcceptanceData,
+    ) -> RpcResult<RpcMergesetBlockAcceptanceData> {
+        let merged_header = self.get_header(consensus, mergeset_block_acceptance.block_hash).await?;
+
+        let accepted_transactions = self
+            .get_accepted_transactions(
+                consensus,
+                accepting_chain_block,
+                None,
+                mergeset_block_acceptance,
+                Some(merged_header.timestamp),
+            )
+            .await?;
+
+        Ok(RpcMergesetBlockAcceptanceData { merged_header, accepted_transactions })
+    }
+
+    pub async fn get_acceptance_data(
+        &self,
+        consensus: &ConsensusProxy,
+        chain_path: &ChainPath,
+        merged_blocks_limit: Option<usize>,
+    ) -> RpcResult<Vec<RpcAcceptanceData>> {
+        let acceptance_data = consensus.async_get_blocks_acceptance_data(chain_path.added.clone(), merged_blocks_limit).await?;
+        let mut rpc_acceptance_data = Vec::<RpcAcceptanceData>::with_capacity(acceptance_data.len());
+
+        for (accepting_chain_hash, acceptance_data) in chain_path.added.iter().zip(acceptance_data.iter()) {
+            let accepting_chain_header = self.get_header(consensus, *accepting_chain_hash).await?;
+
+            let mut rpc_meregeset_block_acceptance_data = Vec::with_capacity(acceptance_data.len());
+            for mergeset_block_acceptance in acceptance_data.iter() {
+                rpc_meregeset_block_acceptance_data
+                    .push(self.get_mergeset_block_acceptance_data(consensus, *accepting_chain_hash, mergeset_block_acceptance).await?);
+            }
+
+            rpc_acceptance_data.push(RpcAcceptanceData {
+                accepting_chain_block_header: accepting_chain_header,
+                mergeset_block_acceptance_data: rpc_meregeset_block_acceptance_data,
+            });
+        }
+
+        Ok(rpc_acceptance_data)
     }
 }
 

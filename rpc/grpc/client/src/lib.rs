@@ -257,6 +257,7 @@ impl RpcApi for GrpcClient {
     route!(submit_transaction_replacement_call, SubmitTransactionReplacement);
     route!(get_subnetwork_call, GetSubnetwork);
     route!(get_virtual_chain_from_block_call, GetVirtualChainFromBlock);
+    route!(get_virtual_chain_from_block_custom_call, GetVirtualChainFromBlockCustom);
     route!(get_blocks_call, GetBlocks);
     route!(get_block_count_call, GetBlockCount);
     route!(get_block_dag_info_call, GetBlockDagInfo);

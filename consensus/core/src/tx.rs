@@ -23,6 +23,7 @@ use std::{
     fmt::Display,
     ops::Range,
     str::{self},
+    sync::Arc,
 };
 use wasm_bindgen::prelude::*;
 
@@ -541,6 +542,18 @@ impl MutableTransaction {
 /// Alias for a fully mutable and owned transaction which can be populated with external data
 /// and can also be modified internally and signed etc.
 pub type SignableTransaction = MutableTransaction<Transaction>;
+
+#[derive(Debug, Clone)]
+pub enum TransactionType {
+    Transaction,
+    SignableTransaction,
+}
+
+#[derive(Debug, Clone)]
+pub enum TransactionQueryResult {
+    Transaction(Arc<Vec<Transaction>>),
+    SignableTransaction(Arc<Vec<SignableTransaction>>),
+}
 
 #[cfg(test)]
 mod tests {

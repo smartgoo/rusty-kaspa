@@ -698,6 +698,23 @@ NOTE: This error usually indicates an RPC conversion error between the node and 
         Ok(GetVirtualChainFromBlockResponse::new(virtual_chain_batch.removed, virtual_chain_batch.added, accepted_transaction_ids))
     }
 
+    async fn get_virtual_chain_from_block_custom_call(
+        &self,
+        _connection: Option<&DynRpcConnection>,
+        request: GetVirtualChainFromBlockCustomRequest,
+    ) -> RpcResult<GetVirtualChainFromBlockCustomResponse> {
+        let session = self.consensus_manager.consensus().session().await;
+        let batch_size = (self.config.mergeset_size_limit().upper_bound() * 10) as usize;
+        let mut chain_path = session.async_get_virtual_chain_from_block(request.start_hash, Some(batch_size)).await?;
+        let added_acceptance_data = self.consensus_converter.get_acceptance_data(&session, &chain_path, Some(batch_size)).await?;
+        chain_path.added.truncate(added_acceptance_data.len());
+        Ok(GetVirtualChainFromBlockCustomResponse {
+            removed_chain_block_hashes: chain_path.removed,
+            added_chain_block_hashes: chain_path.added,
+            added_acceptance_data,
+        })
+    }
+
     async fn get_block_count_call(
         &self,
         _connection: Option<&DynRpcConnection>,

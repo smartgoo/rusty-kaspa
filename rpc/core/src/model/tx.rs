@@ -23,11 +23,18 @@ pub struct RpcUtxoEntry {
     pub script_public_key: ScriptPublicKey,
     pub block_daa_score: u64,
     pub is_coinbase: bool,
+    pub verbose_data: Option<RpcUtxoEntryVerboseData>,
 }
 
 impl RpcUtxoEntry {
-    pub fn new(amount: u64, script_public_key: ScriptPublicKey, block_daa_score: u64, is_coinbase: bool) -> Self {
-        Self { amount, script_public_key, block_daa_score, is_coinbase }
+    pub fn new(
+        amount: u64,
+        script_public_key: ScriptPublicKey,
+        block_daa_score: u64,
+        is_coinbase: bool,
+        verbose_data: Option<RpcUtxoEntryVerboseData>,
+    ) -> Self {
+        Self { amount, script_public_key, block_daa_score, is_coinbase, verbose_data }
     }
 }
 
@@ -38,6 +45,7 @@ impl From<UtxoEntry> for RpcUtxoEntry {
             script_public_key: entry.script_public_key,
             block_daa_score: entry.block_daa_score,
             is_coinbase: entry.is_coinbase,
+            verbose_data: None,
         }
     }
 }
@@ -55,11 +63,12 @@ impl From<RpcUtxoEntry> for UtxoEntry {
 
 impl Serializer for RpcUtxoEntry {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
-        store!(u8, &1, writer)?;
+        store!(u8, &2, writer)?;
         store!(u64, &self.amount, writer)?;
         store!(ScriptPublicKey, &self.script_public_key, writer)?;
         store!(u64, &self.block_daa_score, writer)?;
         store!(bool, &self.is_coinbase, writer)?;
+        serialize!(Option<RpcUtxoEntryVerboseData>, &self.verbose_data, writer)?;
 
         Ok(())
     }
@@ -68,17 +77,70 @@ impl Serializer for RpcUtxoEntry {
 impl Deserializer for RpcUtxoEntry {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u8, reader)?;
-        let amount = load!(u64, reader)?;
-        let script_public_key = load!(ScriptPublicKey, reader)?;
-        let block_daa_score = load!(u64, reader)?;
-        let is_coinbase = load!(bool, reader)?;
 
-        Ok(Self { amount, script_public_key, block_daa_score, is_coinbase })
+        match _version {
+            1 => {
+                let amount = load!(u64, reader)?;
+                let script_public_key = load!(ScriptPublicKey, reader)?;
+                let block_daa_score = load!(u64, reader)?;
+                let is_coinbase = load!(bool, reader)?;
+                let verbose_data = None; // this field was not present in version 1
+
+                Ok(Self { amount, script_public_key, block_daa_score, is_coinbase, verbose_data })
+            }
+            2 => {
+                let amount = load!(u64, reader)?;
+                let script_public_key = load!(ScriptPublicKey, reader)?;
+                let block_daa_score = load!(u64, reader)?;
+                let is_coinbase = load!(bool, reader)?;
+                let verbose_data = deserialize!(Option<RpcUtxoEntryVerboseData>, reader)?;
+
+                Ok(Self { amount, script_public_key, block_daa_score, is_coinbase, verbose_data })
+            }
+            _ => panic!("Invalid version for RpcUtxoEntry"),
+        }
+    }
+}
+
+#[derive(Eq, Hash, PartialEq, Debug, Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RpcUtxoEntryVerboseData {
+    pub script_public_key_type: Option<RpcScriptClass>,
+    pub script_public_key_address: Option<Address>,
+}
+
+impl RpcUtxoEntryVerboseData {
+    pub fn is_empty(&self) -> bool {
+        self.script_public_key_type.is_none() && self.script_public_key_address.is_none()
+    }
+
+    pub fn new(script_public_key_type: Option<RpcScriptClass>, script_public_key_address: Option<Address>) -> Self {
+        Self { script_public_key_type, script_public_key_address }
+    }
+}
+
+impl Serializer for RpcUtxoEntryVerboseData {
+    fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
+        store!(u8, &1, writer)?;
+        store!(Option<RpcScriptClass>, &self.script_public_key_type, writer)?;
+        store!(Option<Address>, &self.script_public_key_address, writer)?;
+
+        Ok(())
+    }
+}
+
+impl Deserializer for RpcUtxoEntryVerboseData {
+    fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
+        let _version = load!(u8, reader)?;
+        let script_public_key_type = load!(Option<RpcScriptClass>, reader)?;
+        let script_public_key_address = load!(Option<Address>, reader)?;
+
+        Ok(Self { script_public_key_type, script_public_key_address })
     }
 }
 
 /// Represents a Kaspa transaction outpoint
-#[derive(Eq, Hash, PartialEq, Debug, Copy, Clone, Serialize, Deserialize)]
+#[derive(Eq, Hash, PartialEq, Debug, Copy, Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpcTransactionOutpoint {
     #[serde(with = "serde_bytes_fixed_ref")]
@@ -131,7 +193,7 @@ impl Deserializer for RpcTransactionOutpoint {
 }
 
 /// Represents a Kaspa transaction input
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpcTransactionInput {
     pub previous_outpoint: RpcTransactionOutpoint,
@@ -199,13 +261,16 @@ impl Deserializer for RpcTransactionInput {
 }
 
 /// Represent Kaspa transaction input verbose data
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RpcTransactionInputVerboseData {}
+pub struct RpcTransactionInputVerboseData {
+    pub utxo_entry: Option<RpcUtxoEntry>,
+}
 
 impl Serializer for RpcTransactionInputVerboseData {
     fn serialize<W: std::io::Write>(&self, writer: &mut W) -> std::io::Result<()> {
         store!(u8, &1, writer)?;
+        serialize!(Option<RpcUtxoEntry>, &self.utxo_entry, writer)?;
         Ok(())
     }
 }
@@ -213,12 +278,13 @@ impl Serializer for RpcTransactionInputVerboseData {
 impl Deserializer for RpcTransactionInputVerboseData {
     fn deserialize<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let _version = load!(u8, reader)?;
-        Ok(Self {})
+        let utxo_entry = deserialize!(Option<RpcUtxoEntry>, reader)?;
+        Ok(Self { utxo_entry })
     }
 }
 
 /// Represents a Kaspad transaction output
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpcTransactionOutput {
     pub value: u64,
@@ -261,7 +327,7 @@ impl Deserializer for RpcTransactionOutput {
 }
 
 /// Represent Kaspa transaction output verbose data
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpcTransactionOutputVerboseData {
     pub script_public_key_type: RpcScriptClass,
@@ -289,7 +355,7 @@ impl Deserializer for RpcTransactionOutputVerboseData {
 }
 
 /// Represents a Kaspa transaction
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpcTransaction {
     pub version: u16,
@@ -355,7 +421,7 @@ impl Deserializer for RpcTransaction {
 }
 
 /// Represent Kaspa transaction verbose data
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RpcTransactionVerboseData {
     pub transaction_id: RpcTransactionId,
