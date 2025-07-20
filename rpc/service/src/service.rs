@@ -704,7 +704,7 @@ NOTE: This error usually indicates an RPC conversion error between the node and 
         request: GetVirtualChainFromBlockCustomRequest,
     ) -> RpcResult<GetVirtualChainFromBlockCustomResponse> {
         let session = self.consensus_manager.consensus().session().await;
-        let batch_size = (self.config.mergeset_size_limit().upper_bound() * 10) as usize;
+        let batch_size = self.config.mergeset_size_limit().upper_bound() as usize;
         let mut chain_path = session.async_get_virtual_chain_from_block(request.start_hash, Some(batch_size)).await?;
         let added_acceptance_data = self.consensus_converter.get_acceptance_data(&session, &chain_path, Some(batch_size)).await?;
         chain_path.added.truncate(added_acceptance_data.len());
