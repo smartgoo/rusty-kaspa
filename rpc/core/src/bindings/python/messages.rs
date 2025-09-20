@@ -226,7 +226,7 @@ try_from_args! ( dict : ResolveFinalityConflictRequest, {
 
 try_from_args! ( dict : SubmitTransactionRequest, {
     let transaction: Transaction = dict.get_item("transaction")?
-        .ok_or_else(|| PyException::new_err("Key `transactions` not present"))?
+        .ok_or_else(|| PyException::new_err("Key `transaction` not present"))?
         .extract()?;
     let inner = transaction.inner();
 
