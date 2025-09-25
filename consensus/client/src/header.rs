@@ -16,6 +16,14 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::prelude::{JsError, JsValue};
 use workflow_wasm::prelude::*;
 
+cfg_if::cfg_if! {
+    if #[cfg(feature = "py-sdk")] {
+        use kaspa_python_core::types::PyBinary;
+        use pyo3::prelude::*;
+        use pyo3::types::{PyDict, PyList};
+    }
+}
+
 #[wasm_bindgen(typescript_custom_section)]
 const TS_HEADER: &'static str = r#"
 /**
@@ -77,6 +85,7 @@ extern "C" {
 /// @category Consensus
 #[derive(Clone, Debug, Serialize, Deserialize, CastFromJs)]
 #[serde(rename_all = "camelCase")]
+#[cfg_attr(feature = "py-sdk", pyclass)]
 #[wasm_bindgen(inspectable)]
 pub struct Header {
     inner: native::Header,
@@ -317,6 +326,44 @@ impl TryCastFromJs for Header {
                 Err(Error::Custom("supplied argument must be an object".to_string()))
             }
         })
+    }
+}
+
+#[cfg(feature="py-sdk")]
+impl TryFrom<Bound<'_, PyAny>> for Header {
+    type Error = PyErr;
+    fn try_from(value: Bound<'_, PyAny>) -> Result<Self, Self::Error> {        
+        let parents_by_level = value
+            .get_item("parents_by_level")?
+            .downcast::<PyList>()?
+            .iter()
+            .map(|level| {
+                level
+                    .downcast::<PyList>()
+                    .iter()
+                    .map(|hash| Hash::try_from(hash.extract::<PyBinary>().unwrap().data.as_slice()).unwrap())
+                    .collect::<Vec<Hash>>()
+            })
+            .collect::<Vec<Vec<Hash>>>();
+
+        let header = native::Header {
+            hash: value.get_item("hash")?.extract()?,
+            version: value.get_item("version")?.extract()?,
+            parents_by_level,
+            hash_merkle_root: value.get_item("hash_merkle_root")?.extract()?,
+            accepted_id_merkle_root: value.get_item("accepted_id_merkle_root")?.extract()?,
+            utxo_commitment: value.get_item("utxo_commitment")?.extract()?,
+            nonce: value.get_item("nonce")?.extract()?,
+            timestamp: value.get_item("timestamp")?.extract()?,
+            daa_score: value.get_item("daa_score")?.extract()?,
+            bits: value.get_item("bits")?.extract()?,
+            // blue_work: v.get_item("blue_work")?.extract()?,
+            blue_work: kaspa_math::Uint192::from_u64(0u64),
+            blue_score: value.get_item("blue_score")?.extract()?,
+            pruning_point: value.get_item("pruning_point")?.extract()?,
+        };
+
+        Ok(header.into())
     }
 }
 

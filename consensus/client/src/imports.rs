@@ -11,6 +11,7 @@ cfg_if::cfg_if! {
     if #[cfg(feature = "py-sdk")] {
         pub use kaspa_addresses::Address;
         pub use kaspa_python_core::types::PyBinary;
+        pub use kaspa_hashes::Hash;
         pub use kaspa_utils::hex::FromHex;
         pub use pyo3::{
             exceptions::PyException,

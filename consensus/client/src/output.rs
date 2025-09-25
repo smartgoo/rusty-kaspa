@@ -188,3 +188,14 @@ impl TryCastFromJs for TransactionOutput {
         })
     }
 }
+
+#[cfg(feature = "py-sdk")]
+impl TryFrom<&Bound<'_, PyAny>> for TransactionOutput {
+    type Error = PyErr;
+    fn try_from(value: &Bound<'_, PyAny>) -> Result<Self, Self::Error> {
+        let value_amount = value.get_item("value")?.extract::<u64>()?;
+        let script_public_key = value.get_item("scriptPublicKey")?.extract::<ScriptPublicKey>()?;
+
+        Ok(TransactionOutput::new(value_amount, script_public_key).into())
+    }
+}

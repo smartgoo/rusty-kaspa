@@ -1,4 +1,4 @@
-use crate::{message::*, RpcTransaction, RpcTransactionInput, RpcTransactionOutput};
+use crate::{message::*, RpcRawBlock, RpcTransaction, RpcTransactionInput, RpcTransactionOutput};
 use kaspa_addresses::Address;
 use kaspa_consensus_client::Transaction;
 use pyo3::{
@@ -220,9 +220,33 @@ try_from_args! ( dict : ResolveFinalityConflictRequest, {
 });
 
 // PY-TODO
-// try_from_args! ( dict : SubmitBlockRequest, {
-//     Ok(from_pyobject(dict)?)
-// });
+try_from_args! ( dict : SubmitBlockRequest, {
+    let block = dict.get_item("block")?
+        .ok_or_else(|| PyException::new_err("Key `block` not present"))?;
+
+    let header = serde_pyobject::from_pyobject(block.get_item("header")?)?;
+        // .extract::<Header>()?;
+    // let header = RpcRawHeader::from(native::Header::try_from(header));
+
+    let transactions = serde_pyobject::from_pyobject(block.get_item("transactions")?)?;
+
+    // let transactions = block.get_item("transactions")?
+    //     .downcast::<PyList>()?
+    //     .iter()
+    //     .map(Transaction::try_from)
+    //     .collect::<PyResult<Vec<Transaction>>>()?;
+
+    let allow_non_daa_blocks = dict.get_item("allowNonDaaBlocks")?
+        .ok_or_else(|| PyException::new_err("Key `allowNonDaaBlocks` not present"))?
+        .extract::<bool>()?;
+
+    let block = RpcRawBlock {
+        header,
+        transactions,
+    };
+
+    Ok(SubmitBlockRequest { block, allow_non_daa_blocks })
+});
 
 try_from_args! ( dict : SubmitTransactionRequest, {
     let transaction: Transaction = dict.get_item("transaction")?
