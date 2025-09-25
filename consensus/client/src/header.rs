@@ -18,9 +18,7 @@ use workflow_wasm::prelude::*;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "py-sdk")] {
-        use kaspa_python_core::types::PyBinary;
         use pyo3::prelude::*;
-        use pyo3::types::{PyDict, PyList};
     }
 }
 
@@ -329,22 +327,12 @@ impl TryCastFromJs for Header {
     }
 }
 
-#[cfg(feature="py-sdk")]
+#[cfg(feature = "py-sdk")]
 impl TryFrom<Bound<'_, PyAny>> for Header {
     type Error = PyErr;
-    fn try_from(value: Bound<'_, PyAny>) -> Result<Self, Self::Error> {        
-        let parents_by_level = value
-            .get_item("parents_by_level")?
-            .downcast::<PyList>()?
-            .iter()
-            .map(|level| {
-                level
-                    .downcast::<PyList>()
-                    .iter()
-                    .map(|hash| Hash::try_from(hash.extract::<PyBinary>().unwrap().data.as_slice()).unwrap())
-                    .collect::<Vec<Hash>>()
-            })
-            .collect::<Vec<Vec<Hash>>>();
+
+    fn try_from(value: Bound<'_, PyAny>) -> Result<Self, Self::Error> {
+        let parents_by_level = value.get_item("parents_by_level")?.extract::<Vec<Vec<Hash>>>()?;
 
         let header = native::Header {
             hash: value.get_item("hash")?.extract()?,

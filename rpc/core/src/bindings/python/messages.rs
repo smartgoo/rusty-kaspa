@@ -219,31 +219,15 @@ try_from_args! ( dict : ResolveFinalityConflictRequest, {
     Ok(from_pyobject(dict)?)
 });
 
-// PY-TODO
 try_from_args! ( dict : SubmitBlockRequest, {
-    let block = dict.get_item("block")?
-        .ok_or_else(|| PyException::new_err("Key `block` not present"))?;
+    let d = dict.as_any();
 
+    let block = d.get_item("block")?;
     let header = serde_pyobject::from_pyobject(block.get_item("header")?)?;
-        // .extract::<Header>()?;
-    // let header = RpcRawHeader::from(native::Header::try_from(header));
-
     let transactions = serde_pyobject::from_pyobject(block.get_item("transactions")?)?;
+    let allow_non_daa_blocks = d.get_item("allowNonDaaBlocks")?.extract::<bool>()?;
 
-    // let transactions = block.get_item("transactions")?
-    //     .downcast::<PyList>()?
-    //     .iter()
-    //     .map(Transaction::try_from)
-    //     .collect::<PyResult<Vec<Transaction>>>()?;
-
-    let allow_non_daa_blocks = dict.get_item("allowNonDaaBlocks")?
-        .ok_or_else(|| PyException::new_err("Key `allowNonDaaBlocks` not present"))?
-        .extract::<bool>()?;
-
-    let block = RpcRawBlock {
-        header,
-        transactions,
-    };
+    let block = RpcRawBlock { header, transactions };
 
     Ok(SubmitBlockRequest { block, allow_non_daa_blocks })
 });
