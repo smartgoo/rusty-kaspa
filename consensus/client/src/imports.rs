@@ -14,7 +14,7 @@ cfg_if::cfg_if! {
         pub use kaspa_hashes::Hash;
         pub use kaspa_utils::hex::FromHex;
         pub use pyo3::{
-            exceptions::PyException,
+            exceptions::{PyException, PyKeyError},
             prelude::*,
             types::PyDict,
         };
