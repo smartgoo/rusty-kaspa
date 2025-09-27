@@ -2,7 +2,10 @@ use crate::{message::*, RpcRawBlock, RpcTransaction, RpcTransactionInput, RpcTra
 use kaspa_addresses::Address;
 use kaspa_consensus_client::Transaction;
 use pyo3::{
-    exceptions::{PyDeprecationWarning, PyException, PyKeyError}, ffi::c_str, prelude::*, types::{PyDict, PyList}
+    exceptions::{PyDeprecationWarning, PyException, PyKeyError},
+    ffi::c_str,
+    prelude::*,
+    types::{PyDict, PyList},
 };
 use serde_pyobject::from_pyobject;
 
@@ -237,7 +240,7 @@ try_from_args! ( dict : SubmitTransactionRequest, {
     let inner = transaction.inner();
 
     // Deprecate allow_orphan in favor of allowOrphan for case consistency
-    // Deprecation introduced September 2025
+    // Deprecation warning added September 2025, version 1.0.1.post1
     let py = dict.py();
     if dict.get_item("allow_orphan")?.is_some() {
         PyErr::warn(
