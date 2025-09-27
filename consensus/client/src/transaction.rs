@@ -487,31 +487,6 @@ impl TryCastFromJs for Transaction {
     }
 }
 
-#[cfg(feature = "py-sdk")]
-impl TryFrom<Bound<'_, PyAny>> for Transaction {
-    type Error = PyErr;
-
-    fn try_from(value: Bound<'_, PyAny>) -> std::result::Result<Self, Self::Error> {
-        let id = value.get_item("id")?.extract::<Option<Vec<u8>>>()?.map(|v| Hash::from_slice(v.as_slice()));
-        let version = value.get_item("version")?.extract::<u16>()?;
-        let lock_time = value.get_item("lockTime")?.extract::<u64>()?;
-        let gas = value.get_item("gas")?.extract::<u64>()?;
-        let payload = value.get_item("payload")?.extract::<Vec<u8>>()?;
-        let mass: u64 = value.get_item("mass").map_or(Ok(0), |v| v.extract::<u64>())?;
-        let subnetwork_id: SubnetworkId = value
-            .get_item("subnetworkId")?
-            .extract::<Vec<u8>>()?
-            .as_slice()
-            .try_into()
-            .map_err(|err| PyException::new_err(format!("Subnetwork Id conversion error: {}", err)))?;
-        let inputs = value.get_item("inputs").iter().map(TransactionInput::try_from).collect::<PyResult<Vec<TransactionInput>>>()?;
-        let outputs =
-            value.get_item("outputs").iter().map(TransactionOutput::try_from).collect::<PyResult<Vec<TransactionOutput>>>()?;
-
-        Ok(Transaction::new(id, version, inputs, outputs, lock_time, subnetwork_id, gas, payload, mass)?)
-    }
-}
-
 impl From<cctx::Transaction> for Transaction {
     fn from(tx: cctx::Transaction) -> Self {
         let id = tx.id();

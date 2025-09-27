@@ -292,20 +292,6 @@ impl TryCastFromJs for TransactionInput {
     }
 }
 
-#[cfg(feature = "py-sdk")]
-impl TryFrom<&Bound<'_, PyAny>> for TransactionInput {
-    type Error = PyErr;
-    fn try_from(value: &Bound<'_, PyAny>) -> std::result::Result<Self, Self::Error> {
-        let previous_outpoint = value.get_item("previousOutpoint")?.extract::<TransactionOutpoint>()?;
-        let signature_script = value.get_item("signatureScript")?.extract::<Option<Vec<u8>>>()?;
-        let sequence = value.get_item("sequence")?.extract::<u64>()?;
-        let sig_op_count = value.get_item("sigOpCount")?.extract::<u8>()?;
-        let utxo = value.get_item("utxo")?.extract::<Option<UtxoEntryReference>>()?;
-
-        Ok(TransactionInput::new(previous_outpoint, signature_script, sequence, sig_op_count, utxo).into())
-    }
-}
-
 impl From<cctx::TransactionInput> for TransactionInput {
     fn from(tx_input: cctx::TransactionInput) -> Self {
         TransactionInput::new(

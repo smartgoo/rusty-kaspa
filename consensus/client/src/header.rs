@@ -327,34 +327,6 @@ impl TryCastFromJs for Header {
     }
 }
 
-#[cfg(feature = "py-sdk")]
-impl TryFrom<Bound<'_, PyAny>> for Header {
-    type Error = PyErr;
-
-    fn try_from(value: Bound<'_, PyAny>) -> Result<Self, Self::Error> {
-        let parents_by_level = value.get_item("parents_by_level")?.extract::<Vec<Vec<Hash>>>()?;
-
-        let header = native::Header {
-            hash: value.get_item("hash")?.extract()?,
-            version: value.get_item("version")?.extract()?,
-            parents_by_level,
-            hash_merkle_root: value.get_item("hash_merkle_root")?.extract()?,
-            accepted_id_merkle_root: value.get_item("accepted_id_merkle_root")?.extract()?,
-            utxo_commitment: value.get_item("utxo_commitment")?.extract()?,
-            nonce: value.get_item("nonce")?.extract()?,
-            timestamp: value.get_item("timestamp")?.extract()?,
-            daa_score: value.get_item("daa_score")?.extract()?,
-            bits: value.get_item("bits")?.extract()?,
-            // blue_work: v.get_item("blue_work")?.extract()?,
-            blue_work: kaspa_math::Uint192::from_u64(0u64),
-            blue_score: value.get_item("blue_score")?.extract()?,
-            pruning_point: value.get_item("pruning_point")?.extract()?,
-        };
-
-        Ok(header.into())
-    }
-}
-
 impl From<native::Header> for Header {
     fn from(header: native::Header) -> Self {
         Self { inner: header }
