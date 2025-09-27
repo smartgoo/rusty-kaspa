@@ -106,7 +106,6 @@ async def main():
     })
 
     block_template['block']['header']['nonce'] = 1000023
-
     print(await client.submit_block(request={
         "block": block_template['block'],
         "allowNonDaaBlocks": True
