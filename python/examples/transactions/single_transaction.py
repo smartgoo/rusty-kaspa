@@ -46,7 +46,7 @@ async def main():
 
     print(await client.submit_transaction({
         "transaction": tx_signed,
-        "allow_orphan": True
+        "allowOrphan": True
     }))
 
 if __name__ == "__main__":

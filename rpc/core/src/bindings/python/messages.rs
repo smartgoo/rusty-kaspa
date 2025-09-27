@@ -2,9 +2,7 @@ use crate::{message::*, RpcRawBlock, RpcTransaction, RpcTransactionInput, RpcTra
 use kaspa_addresses::Address;
 use kaspa_consensus_client::Transaction;
 use pyo3::{
-    exceptions::{PyException, PyKeyError},
-    prelude::*,
-    types::{PyDict, PyList},
+    exceptions::{PyDeprecationWarning, PyException, PyKeyError}, ffi::c_str, prelude::*, types::{PyDict, PyList}
 };
 use serde_pyobject::from_pyobject;
 
@@ -238,9 +236,25 @@ try_from_args! ( dict : SubmitTransactionRequest, {
         .extract()?;
     let inner = transaction.inner();
 
-    let allow_orphan: bool = dict.get_item("allow_orphan")?
-        .ok_or_else(|| PyKeyError::new_err("Key `allow_orphan` not present"))?
-        .extract()?;
+    // Deprecate allow_orphan in favor of allowOrphan for case consistency
+    // Deprecation introduced September 2025
+    let py = dict.py();
+    if dict.get_item("allow_orphan")?.is_some() {
+        PyErr::warn(
+            py,
+            &py.get_type::<PyDeprecationWarning>(),
+            c_str!("`allow_orphan` will be deprecated in favor of `allowOrphan` for case consistency. Please switch."),
+            0
+        )?;
+    }
+
+    let allow_orphan: bool = if let Some(item) = dict.get_item("allowOrphan")? {
+        item.extract()?
+    } else if let Some(item) = dict.get_item("allow_orphan")? {
+        item.extract()?
+    } else {
+        return Err(PyKeyError::new_err("Key `allowOrphan` not present"));
+    };
 
     let inputs: Vec<RpcTransactionInput> =
         inner.inputs.clone().into_iter().map(|input| input.into()).collect::<Vec<RpcTransactionInput>>();
