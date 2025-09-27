@@ -100,14 +100,22 @@ async def main():
         "includeTransactions": True,
     })
         
-    await client.get_block_template(request={
+    block_template = await client.get_block_template(request={
         "payAddress": addresses[0],
         "extraData": list("my miner name is...".encode('utf-8'))
     })
-        
+
+    block_template['block']['header']['nonce'] = 1000023
+
+    print(await client.submit_block(request={
+        "block": block_template['block'],
+        "allowNonDaaBlocks": True
+    }))
+
     # await client.get_current_block_color(request={
     #     "hash": block_dag_info_response["pruningPointHash"]
     # })
+
         
     await client.get_daa_score_timestamp_estimate(request={
         "daaScores": [block_dag_info_response["virtualDaaScore"]]
@@ -164,8 +172,6 @@ async def main():
     })
 
     # await client.resolve_finality_conflict(request)
-
-    # await client.submit_block(request)
 
     # await client.submit_transaction(request)
 
