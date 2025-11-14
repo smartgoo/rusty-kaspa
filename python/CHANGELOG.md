@@ -3,7 +3,7 @@
 - Support for Python 3.14
 
 ### Changed
-- Defined Python compatibility as >=3.8,<=3.14
+- Specify Python compatibility as >=3.9,<=3.14
 - Upgraded crate pyo3 from 0.24.2 to 0.27.1.
 - Upgraded crate pyo3-async-runtimes from 0.24 to 0.27.0
 - Upgraded crate pyo3-log from 0.12.4 to 0.13.2
