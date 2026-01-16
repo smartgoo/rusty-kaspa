@@ -1,6 +1,6 @@
 mod access;
 mod cache;
-mod db;
+pub mod db;
 mod errors;
 mod item;
 mod key;
