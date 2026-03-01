@@ -192,6 +192,20 @@ extern "C" {
     pub type GenesisCovenantGroupArrayT;
 }
 
+impl TryFrom<&GenesisCovenantGroupArrayT> for Vec<GenesisCovenantGroup> {
+    type Error = workflow_wasm::error::Error;
+    fn try_from(value: &GenesisCovenantGroupArrayT) -> Result<Self, Self::Error> {
+        if value.is_array() {
+            let array = js_sys::Array::from(value);
+            let groups =
+                array.iter().map(GenesisCovenantGroup::try_owned_from).collect::<Result<Vec<_>, workflow_wasm::error::Error>>()?;
+            Ok(groups)
+        } else {
+            Err(workflow_wasm::error::Error::WrongType("Must be an array".to_string()))
+        }
+    }
+}
+
 /// A genesis covenant group for bulk covenant binding population.
 ///
 /// All listed outputs are bound to the same covenant id, derived from the
