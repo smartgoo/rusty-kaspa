@@ -193,15 +193,15 @@ extern "C" {
 }
 
 impl TryFrom<&GenesisCovenantGroupArrayT> for Vec<GenesisCovenantGroup> {
-    type Error = workflow_wasm::error::Error;
+    type Error = CastErr;
     fn try_from(value: &GenesisCovenantGroupArrayT) -> Result<Self, Self::Error> {
         if value.is_array() {
             let array = js_sys::Array::from(value);
             let groups =
-                array.iter().map(GenesisCovenantGroup::try_owned_from).collect::<Result<Vec<_>, workflow_wasm::error::Error>>()?;
+                array.iter().map(GenesisCovenantGroup::try_owned_from).collect::<Result<Vec<_>, CastErr>>()?;
             Ok(groups)
         } else {
-            Err(workflow_wasm::error::Error::WrongType("Must be an array".to_string()))
+            Err(CastErr::WrongType("Must be an array".to_string()))
         }
     }
 }
@@ -243,7 +243,7 @@ impl GenesisCovenantGroup {
     }
 
     #[wasm_bindgen(js_name = "toJSON")]
-    pub fn to_js_object(&self) -> Result<Object, workflow_wasm::error::Error> {
+    pub fn to_js_object(&self) -> Result<Object, CastErr> {
         let obj = Object::new();
         obj.set("authorizingInput", &self.authorizing_input.into())?;
         obj.set("outputs", &js_sys::Array::from_iter(self.outputs.iter().map(|&v| JsValue::from(v))))?;
@@ -251,7 +251,7 @@ impl GenesisCovenantGroup {
     }
 
     #[wasm_bindgen(js_name = "toString")]
-    pub fn js_to_string(&self) -> Result<js_sys::JsString, workflow_wasm::error::Error> {
+    pub fn js_to_string(&self) -> Result<js_sys::JsString, CastErr> {
         Ok(js_sys::JSON::stringify(&self.to_js_object()?.into())?)
     }
 }
@@ -270,7 +270,7 @@ impl TryCastFromJs for GenesisCovenantGroup {
                 .get_vec("outputs")?
                 .iter()
                 .map(|idx| idx.try_as_u32())
-                .collect::<Result<Vec<u32>, workflow_wasm::error::Error>>()?;
+                .collect::<Result<Vec<u32>, CastErr>>()?;
             Ok(Self { authorizing_input, outputs })
         })
     }
