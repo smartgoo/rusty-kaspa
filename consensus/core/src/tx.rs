@@ -193,7 +193,7 @@ extern "C" {
 }
 
 impl TryFrom<&GenesisCovenantGroupArrayT> for Vec<GenesisCovenantGroup> {
-    type Error = CastErr;
+    type Error = PopulateGenesisCovenantsError;
     fn try_from(value: &GenesisCovenantGroupArrayT) -> Result<Self, Self::Error> {
         if value.is_array() {
             let array = js_sys::Array::from(value);
@@ -201,7 +201,7 @@ impl TryFrom<&GenesisCovenantGroupArrayT> for Vec<GenesisCovenantGroup> {
                 array.iter().map(GenesisCovenantGroup::try_owned_from).collect::<Result<Vec<_>, CastErr>>()?;
             Ok(groups)
         } else {
-            Err(CastErr::WrongType("Must be an array".to_string()))
+            Err(PopulateGenesisCovenantsError::InvalidGenesisCovenantGroupArray)
         }
     }
 }
