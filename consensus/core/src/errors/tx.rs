@@ -122,6 +122,8 @@ pub enum PopulateGenesisCovenantsError {
     OutputsNotDisjoint(u32),
     #[error("output index {0} covenant field is already populated")]
     CovenantAlreadyPopulated(u32),
+    #[error("The genesis covenant group array is invalid")]
+    InvalidGenesisCovenantGroupArray,
 }
 
 pub type TxResult<T> = std::result::Result<T, TxRuleError>;
