@@ -196,10 +196,11 @@ impl TryFrom<&GenesisCovenantGroupArrayT> for Vec<GenesisCovenantGroup> {
     type Error = PopulateGenesisCovenantsError;
     fn try_from(value: &GenesisCovenantGroupArrayT) -> Result<Self, Self::Error> {
         if value.is_array() {
-            let array = js_sys::Array::from(value);
-            let groups =
-                array.iter().map(GenesisCovenantGroup::try_owned_from).collect::<Result<Vec<_>, CastErr>>()?;
-            Ok(groups)
+            value
+                .iter()
+                .map(GenesisCovenantGroup::try_owned_from)
+                .map(|r| r.map_err(PopulateGenesisCovenantsError::from))
+                .collect::<Result<Vec<GenesisCovenantGroup>, PopulateGenesisCovenantsError>>()
         } else {
             Err(PopulateGenesisCovenantsError::InvalidGenesisCovenantGroupArray)
         }
@@ -266,11 +267,7 @@ impl TryCastFromJs for GenesisCovenantGroup {
         Self::resolve(value, || {
             let Some(object) = Object::try_from(value.as_ref()) else { return Err(CastErr::NotAnObject) };
             let authorizing_input = object.get_u16("authorizingInput")?;
-            let outputs = object
-                .get_vec("outputs")?
-                .iter()
-                .map(|idx| idx.try_as_u32())
-                .collect::<Result<Vec<u32>, CastErr>>()?;
+            let outputs = object.get_vec("outputs")?.iter().map(|idx| idx.try_as_u32()).collect::<Result<Vec<u32>, CastErr>>()?;
             Ok(Self { authorizing_input, outputs })
         })
     }
