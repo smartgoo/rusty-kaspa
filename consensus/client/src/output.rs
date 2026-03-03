@@ -111,6 +111,16 @@ impl TransactionOutput {
     pub fn set_script_public_key(&self, v: &ScriptPublicKey) {
         self.inner().script_public_key = v.clone();
     }
+
+    #[wasm_bindgen(getter, js_name = covenant)]
+    pub fn get_covenant(&self) -> Option<cctx::CovenantBinding> {
+        self.inner().covenant
+    }
+
+    #[wasm_bindgen(setter, js_name = covenant)]
+    pub fn set_covenant(&self, v: cctx::CovenantBinding) {
+        self.inner().covenant = Some(v)
+    }
 }
 
 impl AsRef<TransactionOutput> for TransactionOutput {
