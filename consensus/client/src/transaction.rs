@@ -277,6 +277,7 @@ impl Transaction {
         self.inner().mass = v;
     }
 
+    #[wasm_bindgen(js_name = populateGenesisCovenants)]
     pub fn populate_genesis_covenants(&self, groups: &GenesisCovenantGroupArrayT) -> Result<()> {
         let groups: Vec<GenesisCovenantGroup> = groups.try_into()?;
         let mut tx: cctx::Transaction = self.into();
