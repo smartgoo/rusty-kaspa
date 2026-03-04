@@ -144,7 +144,7 @@ impl From<&cctx::TransactionOutput> for TransactionOutput {
 impl From<&TransactionOutput> for cctx::TransactionOutput {
     fn from(output: &TransactionOutput) -> Self {
         let inner = output.inner();
-        cctx::TransactionOutput::new(inner.value, inner.script_public_key.clone())
+        cctx::TransactionOutput::with_covenant(inner.value, inner.script_public_key.clone(), inner.covenant)
     }
 }
 
