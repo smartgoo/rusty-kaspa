@@ -12,6 +12,7 @@
 //! async / threaded environments and WASM bindings.
 //!
 
+mod covenant;
 pub mod error;
 mod imports;
 mod input;
@@ -21,6 +22,7 @@ pub mod result;
 mod serializable;
 mod transaction;
 mod utxo;
+pub use covenant::*;
 pub use input::*;
 pub use outpoint::*;
 pub use output::*;
@@ -30,7 +32,6 @@ pub use utxo::*;
 
 cfg_if::cfg_if! {
     if #[cfg(feature = "wasm32-sdk")] {
-        mod covenant;
         mod header;
         mod utils;
         mod hash;
@@ -38,7 +39,6 @@ cfg_if::cfg_if! {
         mod parents;
         mod optional_header;
 
-        pub use covenant::*;
         pub use header::*;
         pub use utils::*;
         pub use hash::*;
