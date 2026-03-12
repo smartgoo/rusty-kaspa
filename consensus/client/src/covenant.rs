@@ -228,6 +228,8 @@ impl TryCastFromJs for GenesisCovenantGroup {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use kaspa_hashes::HASH_SIZE;
+    use std::str::FromStr;
     use wasm_bindgen::JsValue;
     use wasm_bindgen_test::wasm_bindgen_test;
 
@@ -388,5 +390,70 @@ mod tests {
         let typed: &GenesisCovenantGroupArrayT = obj.unchecked_ref();
         let result = Vec::<CoreGenesisCovenantGroup>::try_from(typed);
         assert!(result.is_err());
+    }
+
+    // -------------------------------------
+    // CovenantBinding tests
+
+    #[wasm_bindgen_test]
+    fn test_covenant_binding_construction() {
+        let covenant_id = Hash::from_bytes([0xab; HASH_SIZE]);
+        let binding = CovenantBinding::new(0, covenant_id);
+
+        assert_eq!(binding.get_authorizing_input(), 0);
+        assert_eq!(binding.get_covenant_id(), covenant_id);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_covenant_binding_construction_plain() {
+        let covenant_id = Hash::from_bytes([0xab; HASH_SIZE]);
+
+        let obj = Object::new();
+        obj.set("authorizingInput", &JsValue::from(0)).expect("set authorizingInput");
+        obj.set("covenantId", &JsValue::from_str(&covenant_id.to_string())).expect("set covenantId");
+
+        let binding = CovenantBinding::try_owned_from(obj).expect("try_cast_from failed");
+
+        assert_eq!(binding.get_authorizing_input(), 0);
+        assert_eq!(binding.get_covenant_id(), covenant_id);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_covenant_binding_to_json() {
+        let covenant_id_in = Hash::from_bytes([0xab; HASH_SIZE]);
+        let binding = CovenantBinding::new(0, covenant_id_in);
+
+        let obj = binding.to_js_object().expect("to_js_object failed");
+
+        let authorizing_input_out = obj.get_u16("authorizingInput").expect("failed to get authorizingInput");
+        let covenant_id_out =
+            Hash::from_str(&obj.get_string("covenantId").expect("failed to get covenantId")).expect("failed to create Hash from str");
+
+        assert_eq!(0, authorizing_input_out);
+        assert_eq!(covenant_id_in, covenant_id_out);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_covenant_binding_set_authorizing_input() {
+        let covenant_id = Hash::from_bytes([0xab; HASH_SIZE]);
+        let mut binding = CovenantBinding::new(0, covenant_id);
+
+        let new_input = 1;
+
+        binding.set_authorizing_input(new_input);
+
+        assert_eq!(binding.get_authorizing_input(), new_input);
+    }
+
+    #[wasm_bindgen_test]
+    fn test_covenant_binding_set_covenant_id() {
+        let covenant_id = Hash::from_bytes([0xab; HASH_SIZE]);
+        let mut binding = CovenantBinding::new(0, covenant_id);
+
+        let new_covenant_id = Hash::from_bytes([0xac; HASH_SIZE]);
+
+        binding.set_covenant_id(new_covenant_id);
+
+        assert_eq!(binding.get_covenant_id(), new_covenant_id);
     }
 }
