@@ -11,6 +11,7 @@ use kaspa_consensus_core::errors::tx::PopulateGenesisCovenantsError;
 use kaspa_consensus_core::tx::{CovenantBinding as CoreCovenantBinding, GenesisCovenantGroup as CoreGenesisCovenantGroup};
 use kaspa_hashes::Hash;
 use kaspa_wasm_core::types::NumberArray;
+use workflow_wasm::error::Error as WasmError;
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_COVENANT_BINDING: &'static str = r#"
@@ -31,12 +32,6 @@ export interface ICovenantBinding {
 pub struct CovenantBinding {
     inner: CoreCovenantBinding,
 }
-
-// impl CovenantBinding {
-//     pub fn inner(&self) -> &CoreCovenantBinding {
-//         &self.inner
-//     }
-// }
 
 #[wasm_bindgen]
 impl CovenantBinding {
@@ -66,7 +61,7 @@ impl CovenantBinding {
     }
 
     #[wasm_bindgen(js_name = toJSON)]
-    pub fn to_js_object(&self) -> Result<Object, workflow_wasm::error::Error> {
+    pub fn to_js_object(&self) -> Result<Object, WasmError> {
         let obj = Object::new();
         obj.set("authorizingInput", &self.get_authorizing_input().into())?;
         obj.set("covenantId", &self.get_covenant_id().to_string().into())?;
@@ -87,7 +82,7 @@ impl From<CovenantBinding> for CoreCovenantBinding {
 }
 
 impl TryCastFromJs for CovenantBinding {
-    type Error = workflow_wasm::error::Error;
+    type Error = WasmError;
 
     fn try_cast_from<'a, R>(value: &'a R) -> Result<Cast<'a, Self>, Self::Error>
     where
@@ -198,7 +193,7 @@ impl GenesisCovenantGroup {
     }
 
     #[wasm_bindgen(js_name = "toJSON")]
-    pub fn to_js_object(&self) -> Result<Object, workflow_wasm::error::Error> {
+    pub fn to_js_object(&self) -> Result<Object, WasmError> {
         let obj = Object::new();
         obj.set("authorizingInput", &self.inner.authorizing_input.into())?;
         obj.set("outputs", &js_sys::Array::from_iter(self.inner.outputs.iter().map(|&v| JsValue::from(v))))?;
@@ -206,13 +201,13 @@ impl GenesisCovenantGroup {
     }
 
     #[wasm_bindgen(js_name = "toString")]
-    pub fn js_to_string(&self) -> Result<js_sys::JsString, workflow_wasm::error::Error> {
+    pub fn js_to_string(&self) -> Result<js_sys::JsString, WasmError> {
         Ok(js_sys::JSON::stringify(&self.to_js_object()?.into())?)
     }
 }
 
 impl TryCastFromJs for GenesisCovenantGroup {
-    type Error = workflow_wasm::error::Error;
+    type Error = WasmError;
 
     fn try_cast_from<'a, R>(value: &'a R) -> Result<Cast<'a, Self>, Self::Error>
     where
@@ -220,11 +215,11 @@ impl TryCastFromJs for GenesisCovenantGroup {
     {
         Self::resolve(value, || {
             let Some(object) = Object::try_from(value.as_ref()) else {
-                return Err(workflow_wasm::error::Error::NotAnObject);
+                return Err(Self::Error::NotAnObject);
             };
             let authorizing_input = object.get_u16("authorizingInput")?;
-            let outputs: Vec<u32> = serde_wasm_bindgen::from_value(object.get_value("outputs")?)
-                .map_err(|err| workflow_wasm::error::Error::from(JsValue::from(err)))?;
+            let outputs: Vec<u32> =
+                serde_wasm_bindgen::from_value(object.get_value("outputs")?).map_err(|err| Self::Error::from(JsValue::from(err)))?;
             Ok(Self { inner: CoreGenesisCovenantGroup::new(authorizing_input, outputs) })
         })
     }
