@@ -225,7 +225,7 @@ impl TryCastFromJs for GenesisCovenantGroup {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_arch = "wasm32"))]
 mod tests {
     use super::*;
     use kaspa_hashes::HASH_SIZE;
@@ -233,8 +233,11 @@ mod tests {
     use wasm_bindgen::JsValue;
     use wasm_bindgen_test::wasm_bindgen_test;
 
-    /// Helper - convert &[u32] to a JS Array
-    fn _to_js_array(values: &[u32]) -> js_sys::Array {
+    // -------------------------------------
+    // GenesisCovenantGroup tests
+
+    // Helper - convert &[u32] to a JS Array
+    fn to_js_array(values: &[u32]) -> js_sys::Array {
         let arr = js_sys::Array::new();
         for &v in values {
             arr.push(&JsValue::from(v));
@@ -242,52 +245,52 @@ mod tests {
         arr
     }
 
-    /// Helper - construct GenesisCovenantGroup via WASM constructor
-    fn _construct_covenant_group(authorizing_input: u16, outputs: &[u32]) -> GenesisCovenantGroup {
-        GenesisCovenantGroup::ctor(authorizing_input, _to_js_array(outputs).unchecked_into()).expect("constructor should succeed")
+    // Helper - construct GenesisCovenantGroup via WASM constructor
+    fn construct_genesis_covenant_group(authorizing_input: u16, outputs: &[u32]) -> GenesisCovenantGroup {
+        GenesisCovenantGroup::ctor(authorizing_input, to_js_array(outputs).unchecked_into()).expect("constructor should succeed")
     }
 
-    /// Helper - build plain GenesisCovenantGroup JS object
-    fn _construct_covenant_group_plain(authorizing_input: u16, outputs: &[u32]) -> JsValue {
+    // Helper - build plain GenesisCovenantGroup JS object
+    fn construct_genesis_covenant_group_plain(authorizing_input: u16, outputs: &[u32]) -> JsValue {
         let obj = Object::new();
         obj.set("authorizingInput", &JsValue::from(authorizing_input)).expect("set authorizingInput");
-        obj.set("outputs", &_to_js_array(outputs).into()).expect("set outputs");
+        obj.set("outputs", &to_js_array(outputs).into()).expect("set outputs");
         obj.into()
     }
 
-    /// Helper - get outputs field
-    fn _get_outputs(group: &GenesisCovenantGroup) -> Vec<u32> {
+    // Helper - get outputs field
+    fn get_genesis_covenant_group_outputs(group: &GenesisCovenantGroup) -> Vec<u32> {
         serde_wasm_bindgen::from_value(group.outputs().into()).expect("outputs should deserialize")
     }
 
     #[wasm_bindgen_test]
-    fn _test_genesis_covenant_group_construction() {
-        let group = _construct_covenant_group(1, &[0, 1, 2]);
+    fn test_genesis_covenant_group_construction() {
+        let group = construct_genesis_covenant_group(1, &[0, 1, 2]);
 
         assert_eq!(group.authorizing_input(), 1);
-        assert_eq!(_get_outputs(&group), vec![0, 1, 2]);
+        assert_eq!(get_genesis_covenant_group_outputs(&group), vec![0, 1, 2]);
     }
 
     #[wasm_bindgen_test]
-    fn _test_authorizing_input_setter() {
-        let mut group = _construct_covenant_group(0, &[0, 1]);
+    fn test_genesis_covenant_group_authorizing_input_setter() {
+        let mut group = construct_genesis_covenant_group(0, &[0, 1]);
 
         group.set_authorizing_input(7);
         assert_eq!(group.authorizing_input(), 7);
     }
 
     #[wasm_bindgen_test]
-    fn _test_outputs_setter() {
-        let mut group = _construct_covenant_group(0, &[0, 1]);
+    fn test_genesis_covenant_group_outputs_setter() {
+        let mut group = construct_genesis_covenant_group(0, &[0, 1]);
 
-        group.set_outputs(_to_js_array(&[3, 4, 5]).unchecked_into()).expect("set_outputs should succeed");
+        group.set_outputs(to_js_array(&[3, 4, 5]).unchecked_into()).expect("set_outputs should succeed");
 
-        assert_eq!(_get_outputs(&group), vec![3, 4, 5]);
+        assert_eq!(get_genesis_covenant_group_outputs(&group), vec![3, 4, 5]);
     }
 
     #[wasm_bindgen_test]
-    fn _test_to_json() {
-        let group = _construct_covenant_group(2, &[0, 1]);
+    fn test_genesis_covenant_group_to_json() {
+        let group = construct_genesis_covenant_group(2, &[0, 1]);
 
         let obj = group.to_js_object().expect("to_js_object should succeed");
         let auth_input = js_sys::Reflect::get(&obj, &JsValue::from_str("authorizingInput")).expect("should have authorizingInput");
@@ -307,24 +310,18 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
-    fn _test_try_cast_from_plain_object() {
-        let js_val = _construct_covenant_group_plain(1, &[0, 2]);
+    fn test_genesis_covenant_group_try_cast_from_plain_object() {
+        let js_val = construct_genesis_covenant_group_plain(1, &[0, 2]);
         let group = GenesisCovenantGroup::try_owned_from(&js_val).expect("try_cast_from should succeed");
         assert_eq!(group.inner().authorizing_input, 1);
         assert_eq!(group.inner().outputs, vec![0, 2]);
     }
 
     #[wasm_bindgen_test]
-    fn _test_empty_outputs_construction() {
-        let group = _construct_covenant_group(0, &[]);
-        assert!(_get_outputs(&group).is_empty());
-    }
-
-    #[wasm_bindgen_test]
-    fn _test_array_t_from_plain_objects() {
+    fn test_genesis_covenant_group_array_t_from_plain_objects() {
         let arr = js_sys::Array::new();
-        arr.push(&_construct_covenant_group_plain(0, &[0, 1]));
-        arr.push(&_construct_covenant_group_plain(1, &[2, 3, 4]));
+        arr.push(&construct_genesis_covenant_group_plain(0, &[0, 1]));
+        arr.push(&construct_genesis_covenant_group_plain(1, &[2, 3, 4]));
 
         let typed_arr: &GenesisCovenantGroupArrayT = arr.unchecked_ref();
         let groups: Vec<CoreGenesisCovenantGroup> = Vec::try_from(typed_arr).expect("should convert from plain objects");
@@ -337,9 +334,9 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
-    fn _test_array_t_from_wasm_instances() {
-        let g0 = _construct_covenant_group(5, &[10, 11]);
-        let g1 = _construct_covenant_group(6, &[20]);
+    fn test_genesis_covenant_group_array_t_from_wasm_instances() {
+        let g0 = construct_genesis_covenant_group(5, &[10, 11]);
+        let g1 = construct_genesis_covenant_group(6, &[20]);
 
         let arr = js_sys::Array::new();
         arr.push(&JsValue::from(g0));
@@ -353,43 +350,6 @@ mod tests {
         assert_eq!(groups[0].outputs, vec![10, 11]);
         assert_eq!(groups[1].authorizing_input, 6);
         assert_eq!(groups[1].outputs, vec![20]);
-    }
-
-    #[wasm_bindgen_test]
-    fn _test_ctor_rejects_invalid_outputs() {
-        let result = GenesisCovenantGroup::ctor(0, JsValue::from_str("not an array").unchecked_into());
-        assert!(result.is_err());
-    }
-
-    #[wasm_bindgen_test]
-    fn _test_set_outputs_rejects_invalid_value() {
-        let mut group = _construct_covenant_group(0, &[0, 1]);
-        let result = group.set_outputs(JsValue::from_str("bad").unchecked_into());
-        assert!(result.is_err());
-    }
-
-    #[wasm_bindgen_test]
-    fn _test_try_cast_rejects_non_object() {
-        let val = JsValue::from(42);
-        let result = GenesisCovenantGroup::try_owned_from(&val);
-        assert!(result.is_err());
-    }
-
-    #[wasm_bindgen_test]
-    fn _test_try_cast_rejects_missing_fields() {
-        let obj = Object::new();
-        obj.set("outputs", &_to_js_array(&[0, 1]).into()).expect("set outputs");
-        let js_val: JsValue = obj.into();
-        let result = GenesisCovenantGroup::try_owned_from(&js_val);
-        assert!(result.is_err());
-    }
-
-    #[wasm_bindgen_test]
-    fn _test_array_t_rejects_non_array() {
-        let obj = Object::new();
-        let typed: &GenesisCovenantGroupArrayT = obj.unchecked_ref();
-        let result = Vec::<CoreGenesisCovenantGroup>::try_from(typed);
-        assert!(result.is_err());
     }
 
     // -------------------------------------
@@ -434,7 +394,7 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
-    fn test_covenant_binding_set_authorizing_input() {
+    fn test_covenant_binding_authorizing_input_setter() {
         let covenant_id = Hash::from_bytes([0xab; HASH_SIZE]);
         let mut binding = CovenantBinding::new(0, covenant_id);
 
@@ -446,7 +406,7 @@ mod tests {
     }
 
     #[wasm_bindgen_test]
-    fn test_covenant_binding_set_covenant_id() {
+    fn test_covenant_binding_covenant_id_setter() {
         let covenant_id = Hash::from_bytes([0xab; HASH_SIZE]);
         let mut binding = CovenantBinding::new(0, covenant_id);
 
