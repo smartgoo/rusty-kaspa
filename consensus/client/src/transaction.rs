@@ -580,13 +580,13 @@ mod tests {
         let cov2 = inner.outputs[2].get_covenant().unwrap();
         let cov3 = inner.outputs[3].get_covenant().unwrap();
 
-        assert_eq!(cov0.authorizing_input, 0);
-        assert_eq!(cov1.authorizing_input, 0);
-        assert_eq!(cov2.authorizing_input, 1);
-        assert_eq!(cov3.authorizing_input, 1);
-        assert_eq!(cov0.covenant_id, cov1.covenant_id);
-        assert_eq!(cov2.covenant_id, cov3.covenant_id);
-        assert_ne!(cov0.covenant_id, cov2.covenant_id);
+        assert_eq!(cov0.get_authorizing_input(), 0);
+        assert_eq!(cov1.get_authorizing_input(), 0);
+        assert_eq!(cov2.get_authorizing_input(), 1);
+        assert_eq!(cov3.get_authorizing_input(), 1);
+        assert_eq!(cov0.get_covenant_id(), cov1.get_covenant_id());
+        assert_eq!(cov2.get_covenant_id(), cov3.get_covenant_id());
+        assert_ne!(cov0.get_covenant_id(), cov2.get_covenant_id());
     }
 
     #[wasm_bindgen_test]

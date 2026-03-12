@@ -6,9 +6,101 @@
 
 use crate::imports::*;
 use crate::result::Result as ClientResult;
+use borsh::{BorshDeserialize, BorshSerialize};
 use kaspa_consensus_core::errors::tx::PopulateGenesisCovenantsError;
-use kaspa_consensus_core::tx::GenesisCovenantGroup as CoreGenesisCovenantGroup;
+use kaspa_consensus_core::tx::{CovenantBinding as CoreCovenantBinding, GenesisCovenantGroup as CoreGenesisCovenantGroup};
+use kaspa_hashes::Hash;
 use kaspa_wasm_core::types::NumberArray;
+
+#[wasm_bindgen(typescript_custom_section)]
+const TS_COVENANT_BINDING: &'static str = r#"
+/**
+ * A covenant binding binds a transaction output to the covenant and input authorizing its creation.
+ *
+ * @category Consensus
+ */
+export interface ICovenantBinding {
+    authorizingInput: number;
+    covenantId: HexString;
+}
+"#;
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Copy, BorshSerialize, BorshDeserialize, CastFromJs)]
+#[serde(rename_all = "camelCase")]
+#[wasm_bindgen(inspectable)]
+pub struct CovenantBinding {
+    inner: CoreCovenantBinding,
+}
+
+// impl CovenantBinding {
+//     pub fn inner(&self) -> &CoreCovenantBinding {
+//         &self.inner
+//     }
+// }
+
+#[wasm_bindgen]
+impl CovenantBinding {
+    #[wasm_bindgen(constructor)]
+    pub fn new(authorizing_input: u16, covenant_id: Hash) -> Self {
+        Self { inner: CoreCovenantBinding::new(authorizing_input, covenant_id) }
+    }
+
+    #[wasm_bindgen(setter, js_name = authorizingInput)]
+    pub fn set_authorizing_input(&mut self, v: u16) {
+        self.inner.authorizing_input = v;
+    }
+
+    #[wasm_bindgen(getter, js_name = authorizingInput)]
+    pub fn get_authorizing_input(&self) -> u16 {
+        self.inner.authorizing_input
+    }
+
+    #[wasm_bindgen(setter, js_name = covenantId)]
+    pub fn set_covenant_id(&mut self, v: Hash) {
+        self.inner.covenant_id = v;
+    }
+
+    #[wasm_bindgen(getter, js_name = covenantId)]
+    pub fn get_covenant_id(&self) -> Hash {
+        self.inner.covenant_id
+    }
+
+    #[wasm_bindgen(js_name = toJSON)]
+    pub fn to_js_object(&self) -> Result<Object, workflow_wasm::error::Error> {
+        let obj = Object::new();
+        obj.set("authorizingInput", &self.get_authorizing_input().into())?;
+        obj.set("covenantId", &self.get_covenant_id().to_string().into())?;
+        Ok(obj)
+    }
+}
+
+impl From<CoreCovenantBinding> for CovenantBinding {
+    fn from(value: CoreCovenantBinding) -> Self {
+        Self { inner: value }
+    }
+}
+
+impl From<CovenantBinding> for CoreCovenantBinding {
+    fn from(value: CovenantBinding) -> Self {
+        value.inner
+    }
+}
+
+impl TryCastFromJs for CovenantBinding {
+    type Error = workflow_wasm::error::Error;
+
+    fn try_cast_from<'a, R>(value: &'a R) -> Result<Cast<'a, Self>, Self::Error>
+    where
+        R: AsRef<JsValue> + 'a,
+    {
+        Self::resolve(value, || {
+            let Some(object) = Object::try_from(value.as_ref()) else { return Err(Self::Error::NotAnObject) };
+            let authorizing_input = object.get_u16("authorizingInput")?;
+            let covenant_id = object.get_value("covenantId")?.try_into_owned()?;
+            Ok(Self { inner: CoreCovenantBinding::new(authorizing_input, covenant_id) })
+        })
+    }
+}
 
 #[wasm_bindgen(typescript_custom_section)]
 const TS_GENESIS_COVENANT_GROUP: &'static str = r#"
