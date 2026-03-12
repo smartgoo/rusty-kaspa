@@ -572,7 +572,7 @@ mod tests {
     fn _test_populate_multiple_groups() {
         let tx = _construct_tx(2, 4);
         let groups = _construct_groups_array(&[(0, &[0, 1]), (1, &[2, 3])]);
-        tx.populate_genesis_covenants(groups.unchecked_ref()).expect("populate should succeed");
+        tx.js_populate_genesis_covenants(groups.unchecked_ref()).expect("populate should succeed");
 
         let inner = tx.inner();
         let cov0 = inner.outputs[0].get_covenant().unwrap();
@@ -594,7 +594,7 @@ mod tests {
         let spk = _construct_spk();
         let tx = _construct_tx(1, 2);
         let groups = _construct_groups_array(&[(0, &[0, 1])]);
-        tx.populate_genesis_covenants(groups.unchecked_ref()).expect("populate should succeed");
+        tx.js_populate_genesis_covenants(groups.unchecked_ref()).expect("populate should succeed");
 
         let inner = tx.inner();
         for output in &inner.outputs {
