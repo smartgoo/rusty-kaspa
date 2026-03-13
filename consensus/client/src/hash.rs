@@ -145,22 +145,22 @@ mod tests {
 
     // Helper - construct ICovenantAuthorizedOutput[] JS array
     fn construct_auth_outputs_array(entries: &[(u32, u64)]) -> js_sys::Array {
-        let spk = _construct_spk();
+        let spk = construct_spk();
         let arr = js_sys::Array::new();
         for &(index, value) in entries {
-            arr.push(&_construct_auth_output_obj(index, value, &spk));
+            arr.push(&construct_auth_output_obj(index, value, &spk));
         }
         arr
     }
 
     #[wasm_bindgen_test]
     fn test_covenant_id_matches_core() {
-        let spk = _construct_spk();
+        let spk = construct_spk();
         let entries: &[(u32, u64)] = &[(0, 1000), (1, 2000)];
 
         // WASM covenant id
-        let outpoint_js = _construct_outpoint_obj(5);
-        let auth_array = _construct_auth_outputs_array(entries);
+        let outpoint_js = construct_outpoint_obj(5);
+        let auth_array = construct_auth_outputs_array(entries);
         let wasm_hash = js_covenant_id(outpoint_js.unchecked_ref(), auth_array.unchecked_ref()).expect("wasm call should succeed");
 
         // Core covenant id
@@ -174,7 +174,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_covenant_id_rejects_non_object_in_array() {
-        let outpoint = _construct_outpoint_obj(0);
+        let outpoint = construct_outpoint_obj(0);
         let arr = js_sys::Array::new();
         arr.push(&JsValue::from(42));
         let result = js_covenant_id(outpoint.unchecked_ref(), arr.unchecked_ref());
@@ -183,7 +183,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_covenant_id_rejects_missing_fields() {
-        let outpoint = _construct_outpoint_obj(0);
+        let outpoint = construct_outpoint_obj(0);
         let arr = js_sys::Array::new();
         let obj = Object::new();
         obj.set("index", &JsValue::from(0)).unwrap();

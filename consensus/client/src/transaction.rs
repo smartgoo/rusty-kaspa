@@ -537,7 +537,7 @@ mod tests {
     // Helper - construct Transaction with given number of inputs and outputs
     fn construct_tx(num_inputs: u32, num_outputs: u32) -> Transaction {
         let fixed_txid = TransactionId::from_slice(&[0u8; 32]);
-        let spk = _construct_spk();
+        let spk = construct_spk();
 
         let inputs: Vec<TransactionInput> = (0..num_inputs)
             .map(|i| {
@@ -570,8 +570,8 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_populate_multiple_groups() {
-        let tx = _construct_tx(2, 4);
-        let groups = _construct_groups_array(&[(0, &[0, 1]), (1, &[2, 3])]);
+        let tx = construct_tx(2, 4);
+        let groups = construct_groups_array(&[(0, &[0, 1]), (1, &[2, 3])]);
         tx.js_populate_genesis_covenants(groups.unchecked_ref()).expect("populate should succeed");
 
         let inner = tx.inner();
@@ -591,9 +591,9 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_outputs_preserve_value_and_spk() {
-        let spk = _construct_spk();
-        let tx = _construct_tx(1, 2);
-        let groups = _construct_groups_array(&[(0, &[0, 1])]);
+        let spk = construct_spk();
+        let tx = construct_tx(1, 2);
+        let groups = construct_groups_array(&[(0, &[0, 1])]);
         tx.js_populate_genesis_covenants(groups.unchecked_ref()).expect("populate should succeed");
 
         let inner = tx.inner();
