@@ -197,21 +197,6 @@ impl ConnBuilder<PathBuf, false, Unspecified, i32> {
         ));
         Ok(db)
     }
-
-    pub fn build_secondary(self, secondary_path: PathBuf) -> Result<Arc<DB>, kaspa_utils::fd_budget::Error> {
-        let (mut opts, guard) = default_opts!(self)?;
-        opts.set_max_open_files(-1);
-        let db = Arc::new(DB::new(
-            <DBWithThreadMode<MultiThreaded>>::open_as_secondary(
-                &opts,
-                self.db_path.to_str().unwrap(),
-                secondary_path.to_str().unwrap(),
-            )
-            .unwrap(),
-            guard,
-        ));
-        Ok(db)
-    }
 }
 
 impl ConnBuilder<PathBuf, true, Unspecified, i32> {
